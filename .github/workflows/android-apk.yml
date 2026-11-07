@@ -1,0 +1,65 @@
+# Baut eine installierbare Test-APK (debug) in der Cloud – ohne Android Studio.
+# Start: GitHub → Actions → "Android APK" → "Run workflow".
+# Ergebnis: Release „Quran Muallem - معلم القرآن – Android Test-APK“ mit quran-muallem.apk (Link direkt am Handy öffnen).
+name: Android APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install
+        run: npm install --legacy-peer-deps
+
+      - name: Optional – Einstellungen aus GitHub-Secrets
+        run: |
+          {
+            echo "VITE_INVITE_URL=${{ secrets.VITE_INVITE_URL }}"
+          } > .env.local
+
+      - name: Build web assets
+        run: npm run build:app
+
+      - name: Android-Projekt anlegen & synchronisieren
+        run: |
+          [ -d android ] || npx cap add android
+          npx cap sync android
+          node scripts/native-permissions.mjs
+
+      - name: APK bauen
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../quran-muallem.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: quran-muallem-apk
+          path: quran-muallem.apk
+
+      - name: Als Release veröffentlichen (Download-Link fürs Handy)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-test
+          name: "Quran Muallem - معلم القرآن – Android Test-APK"
+          prerelease: true
+          files: quran-muallem.apk

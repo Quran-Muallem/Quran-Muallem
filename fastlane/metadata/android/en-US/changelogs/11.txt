@@ -1,0 +1,6 @@
+New in this version:
+• 100 % offline: speech recognition runs only on your device, no cloud services at all
+• My voice profile: tap a red word you said correctly and add it – the app learns your accent and pace
+• Choose how strict the check is; see your accuracy per surah over time
+• Mushaf page fits the screen without scrolling; cleaner audio bar with the Sheikh's icon
+• Silences are trimmed before recognition for more reliable results

@@ -1,0 +1,6 @@
+New in this version:
+• Listen back to your own recitation: every Tasmīʿ is kept on your phone – play or delete it anytime
+• Verses you recorded are marked in the Mushaf
+• Choose your Sheikh right at the top of the Mushaf and Recitation screens, with quick search
+• Switching the Sheikh keeps playing at the same verse
+• Optional: more accurate recognition with Groq (your own key)

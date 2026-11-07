@@ -1,0 +1,533 @@
+{
+  "version": 1,
+  "about": "Daily adhkar from the Quran and authentic Sunnah (selection following Ḥiṣn al-Muslim). Quranic passages are referenced by verse and rendered from the bundled Uthmani Mushaf text.",
+  "categories": [
+    {
+      "id": "morning",
+      "items": [
+        {
+          "id": "m-kursi",
+          "count": 1,
+          "preface": "أعوذ بالله من الشيطان الرجيم",
+          "quran": [
+            {
+              "surah": 2,
+              "from": 255,
+              "to": 255
+            }
+          ],
+          "sourceAr": "رواه النسائي في الكبرى والحاكم، وصححه الألباني",
+          "sourceEn": "an-Nasāʾī (al-Kubrā) and al-Ḥākim; authenticated by al-Albānī",
+          "benefitAr": "من قالها حين يصبح أُجير من الجن حتى يمسي",
+          "benefitEn": "Whoever says it in the morning is protected from the jinn until the evening."
+        },
+        {
+          "id": "m-quls",
+          "count": 3,
+          "quran": [
+            {
+              "surah": 112,
+              "from": 1,
+              "to": 4,
+              "basmala": true
+            },
+            {
+              "surah": 113,
+              "from": 1,
+              "to": 5,
+              "basmala": true
+            },
+            {
+              "surah": 114,
+              "from": 1,
+              "to": 6,
+              "basmala": true
+            }
+          ],
+          "sourceAr": "رواه أبو داود والترمذي",
+          "sourceEn": "Abū Dāwūd and at-Tirmidhī",
+          "benefitAr": "تكفيك من كل شيء",
+          "benefitEn": "They suffice you against everything."
+        },
+        {
+          "id": "m-asbahna-mulk",
+          "count": 1,
+          "text": "أصبحنا وأصبح الملك لله، والحمد لله، لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير، رب أسألك خير ما في هذا اليوم وخير ما بعده، وأعوذ بك من شر ما في هذا اليوم وشر ما بعده، رب أعوذ بك من الكسل وسوء الكبر، رب أعوذ بك من عذاب في النار وعذاب في القبر",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim"
+        },
+        {
+          "id": "m-sayyid",
+          "count": 1,
+          "text": "اللهم أنت ربي لا إله إلا أنت، خلقتني وأنا عبدك، وأنا على عهدك ووعدك ما استطعت، أعوذ بك من شر ما صنعت، أبوء لك بنعمتك علي، وأبوء بذنبي فاغفر لي، فإنه لا يغفر الذنوب إلا أنت",
+          "sourceAr": "رواه البخاري — سيد الاستغفار",
+          "sourceEn": "al-Bukhārī — the master supplication for forgiveness",
+          "benefitAr": "من قالها من النهار موقنًا بها فمات من يومه قبل أن يمسي فهو من أهل الجنة",
+          "benefitEn": "Whoever says it during the day with certainty and dies that day before the evening is among the people of Paradise."
+        },
+        {
+          "id": "m-bika-asbahna",
+          "count": 1,
+          "text": "اللهم بك أصبحنا، وبك أمسينا، وبك نحيا، وبك نموت، وإليك النشور",
+          "sourceAr": "رواه الترمذي وأبو داود، وصححه الألباني",
+          "sourceEn": "at-Tirmidhī and Abū Dāwūd; authenticated by al-Albānī"
+        },
+        {
+          "id": "m-afini",
+          "count": 3,
+          "text": "اللهم عافني في بدني، اللهم عافني في سمعي، اللهم عافني في بصري، لا إله إلا أنت. اللهم إني أعوذ بك من الكفر والفقر، وأعوذ بك من عذاب القبر، لا إله إلا أنت",
+          "sourceAr": "رواه أبو داود، وحسّنه الألباني",
+          "sourceEn": "Abū Dāwūd; graded ḥasan by al-Albānī"
+        },
+        {
+          "id": "m-afw",
+          "count": 1,
+          "text": "اللهم إني أسألك العفو والعافية في الدنيا والآخرة، اللهم إني أسألك العفو والعافية في ديني ودنياي وأهلي ومالي، اللهم استر عوراتي وآمن روعاتي، اللهم احفظني من بين يدي ومن خلفي وعن يميني وعن شمالي ومن فوقي، وأعوذ بعظمتك أن أغتال من تحتي",
+          "sourceAr": "رواه أبو داود وابن ماجه، وصححه الألباني",
+          "sourceEn": "Abū Dāwūd and Ibn Mājah; authenticated by al-Albānī"
+        },
+        {
+          "id": "m-alim-ghayb",
+          "count": 1,
+          "text": "اللهم عالم الغيب والشهادة، فاطر السماوات والأرض، رب كل شيء ومليكه، أشهد أن لا إله إلا أنت، أعوذ بك من شر نفسي، ومن شر الشيطان وشركه، وأن أقترف على نفسي سوءًا أو أجره إلى مسلم",
+          "sourceAr": "رواه الترمذي وأبو داود، وصححه الألباني",
+          "sourceEn": "at-Tirmidhī and Abū Dāwūd; authenticated by al-Albānī"
+        },
+        {
+          "id": "m-bismillah",
+          "count": 3,
+          "text": "بسم الله الذي لا يضر مع اسمه شيء في الأرض ولا في السماء وهو السميع العليم",
+          "sourceAr": "رواه أبو داود والترمذي، وصححه الألباني",
+          "sourceEn": "Abū Dāwūd and at-Tirmidhī; authenticated by al-Albānī",
+          "benefitAr": "من قالها ثلاثًا حين يصبح لم يضره شيء حتى يمسي",
+          "benefitEn": "Whoever says it three times in the morning, nothing will harm him until the evening."
+        },
+        {
+          "id": "m-hayy",
+          "count": 1,
+          "text": "يا حي يا قيوم برحمتك أستغيث، أصلح لي شأني كله، ولا تكلني إلى نفسي طرفة عين",
+          "sourceAr": "رواه الحاكم، وحسّنه الألباني",
+          "sourceEn": "al-Ḥākim; graded ḥasan by al-Albānī"
+        },
+        {
+          "id": "m-fitra",
+          "count": 1,
+          "text": "أصبحنا على فطرة الإسلام، وعلى كلمة الإخلاص، وعلى دين نبينا محمد ﷺ، وعلى ملة أبينا إبراهيم حنيفًا مسلمًا وما كان من المشركين",
+          "sourceAr": "رواه أحمد، وصححه الألباني",
+          "sourceEn": "Aḥmad; authenticated by al-Albānī"
+        },
+        {
+          "id": "m-adada-khalqihi",
+          "count": 3,
+          "text": "سبحان الله وبحمده، عدد خلقه، ورضا نفسه، وزنة عرشه، ومداد كلماته",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim"
+        },
+        {
+          "id": "m-ilman-nafian",
+          "count": 1,
+          "text": "اللهم إني أسألك علمًا نافعًا، ورزقًا طيبًا، وعملًا متقبلًا",
+          "sourceAr": "رواه ابن ماجه، وصححه الألباني — بعد صلاة الصبح",
+          "sourceEn": "Ibn Mājah; authenticated by al-Albānī — after the Fajr prayer"
+        },
+        {
+          "id": "m-tahlil-100",
+          "count": 100,
+          "text": "لا إله إلا الله وحده لا شريك له، له الملك وله الحمد، وهو على كل شيء قدير",
+          "sourceAr": "متفق عليه",
+          "sourceEn": "al-Bukhārī and Muslim",
+          "benefitAr": "كانت له عدل عشر رقاب، وكُتبت له مائة حسنة، ومُحيت عنه مائة سيئة، وكانت له حرزًا من الشيطان يومه ذلك حتى يمسي",
+          "benefitEn": "Like freeing ten slaves; a hundred good deeds are written for him, a hundred bad deeds erased, and he is protected from Shayṭān that day until the evening."
+        },
+        {
+          "id": "m-subhan-100",
+          "count": 100,
+          "text": "سبحان الله وبحمده",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim",
+          "benefitAr": "لم يأت أحد يوم القيامة بأفضل مما جاء به، إلا أحد قال مثل ما قال أو زاد عليه",
+          "benefitEn": "No one brings anything better on the Day of Resurrection, except someone who said the same or more."
+        },
+        {
+          "id": "m-istighfar-100",
+          "count": 100,
+          "text": "أستغفر الله وأتوب إليه",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim",
+          "benefitAr": "قال ﷺ: «توبوا إلى الله، فإني أتوب في اليوم إليه مائة مرة»",
+          "benefitEn": "The Prophet ﷺ said: “Turn to Allah in repentance, for I repent to Him a hundred times a day.”"
+        }
+      ]
+    },
+    {
+      "id": "evening",
+      "items": [
+        {
+          "id": "e-kursi",
+          "count": 1,
+          "preface": "أعوذ بالله من الشيطان الرجيم",
+          "quran": [
+            {
+              "surah": 2,
+              "from": 255,
+              "to": 255
+            }
+          ],
+          "sourceAr": "رواه النسائي في الكبرى والحاكم، وصححه الألباني",
+          "sourceEn": "an-Nasāʾī (al-Kubrā) and al-Ḥākim; authenticated by al-Albānī",
+          "benefitAr": "من قالها حين يمسي أُجير من الجن حتى يصبح",
+          "benefitEn": "Whoever says it in the evening is protected from the jinn until the morning."
+        },
+        {
+          "id": "e-quls",
+          "count": 3,
+          "quran": [
+            {
+              "surah": 112,
+              "from": 1,
+              "to": 4,
+              "basmala": true
+            },
+            {
+              "surah": 113,
+              "from": 1,
+              "to": 5,
+              "basmala": true
+            },
+            {
+              "surah": 114,
+              "from": 1,
+              "to": 6,
+              "basmala": true
+            }
+          ],
+          "sourceAr": "رواه أبو داود والترمذي",
+          "sourceEn": "Abū Dāwūd and at-Tirmidhī",
+          "benefitAr": "تكفيك من كل شيء",
+          "benefitEn": "They suffice you against everything."
+        },
+        {
+          "id": "e-amsayna-mulk",
+          "count": 1,
+          "text": "أمسينا وأمسى الملك لله، والحمد لله، لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير، رب أسألك خير ما في هذه الليلة وخير ما بعدها، وأعوذ بك من شر ما في هذه الليلة وشر ما بعدها، رب أعوذ بك من الكسل وسوء الكبر، رب أعوذ بك من عذاب في النار وعذاب في القبر",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim"
+        },
+        {
+          "id": "e-sayyid",
+          "count": 1,
+          "text": "اللهم أنت ربي لا إله إلا أنت، خلقتني وأنا عبدك، وأنا على عهدك ووعدك ما استطعت، أعوذ بك من شر ما صنعت، أبوء لك بنعمتك علي، وأبوء بذنبي فاغفر لي، فإنه لا يغفر الذنوب إلا أنت",
+          "sourceAr": "رواه البخاري — سيد الاستغفار",
+          "sourceEn": "al-Bukhārī — the master supplication for forgiveness",
+          "benefitAr": "من قالها من الليل وهو موقن بها فمات قبل أن يصبح فهو من أهل الجنة",
+          "benefitEn": "Whoever says it at night with certainty and dies before the morning is among the people of Paradise."
+        },
+        {
+          "id": "e-bika-amsayna",
+          "count": 1,
+          "text": "اللهم بك أمسينا، وبك أصبحنا، وبك نحيا، وبك نموت، وإليك المصير",
+          "sourceAr": "رواه الترمذي وأبو داود، وصححه الألباني",
+          "sourceEn": "at-Tirmidhī and Abū Dāwūd; authenticated by al-Albānī"
+        },
+        {
+          "id": "e-afini",
+          "count": 3,
+          "text": "اللهم عافني في بدني، اللهم عافني في سمعي، اللهم عافني في بصري، لا إله إلا أنت. اللهم إني أعوذ بك من الكفر والفقر، وأعوذ بك من عذاب القبر، لا إله إلا أنت",
+          "sourceAr": "رواه أبو داود، وحسّنه الألباني",
+          "sourceEn": "Abū Dāwūd; graded ḥasan by al-Albānī"
+        },
+        {
+          "id": "e-afw",
+          "count": 1,
+          "text": "اللهم إني أسألك العفو والعافية في الدنيا والآخرة، اللهم إني أسألك العفو والعافية في ديني ودنياي وأهلي ومالي، اللهم استر عوراتي وآمن روعاتي، اللهم احفظني من بين يدي ومن خلفي وعن يميني وعن شمالي ومن فوقي، وأعوذ بعظمتك أن أغتال من تحتي",
+          "sourceAr": "رواه أبو داود وابن ماجه، وصححه الألباني",
+          "sourceEn": "Abū Dāwūd and Ibn Mājah; authenticated by al-Albānī"
+        },
+        {
+          "id": "e-alim-ghayb",
+          "count": 1,
+          "text": "اللهم عالم الغيب والشهادة، فاطر السماوات والأرض، رب كل شيء ومليكه، أشهد أن لا إله إلا أنت، أعوذ بك من شر نفسي، ومن شر الشيطان وشركه، وأن أقترف على نفسي سوءًا أو أجره إلى مسلم",
+          "sourceAr": "رواه الترمذي وأبو داود، وصححه الألباني",
+          "sourceEn": "at-Tirmidhī and Abū Dāwūd; authenticated by al-Albānī"
+        },
+        {
+          "id": "e-bismillah",
+          "count": 3,
+          "text": "بسم الله الذي لا يضر مع اسمه شيء في الأرض ولا في السماء وهو السميع العليم",
+          "sourceAr": "رواه أبو داود والترمذي، وصححه الألباني",
+          "sourceEn": "Abū Dāwūd and at-Tirmidhī; authenticated by al-Albānī",
+          "benefitAr": "من قالها ثلاثًا حين يمسي لم يضره شيء حتى يصبح",
+          "benefitEn": "Whoever says it three times in the evening, nothing will harm him until the morning."
+        },
+        {
+          "id": "e-kalimat",
+          "count": 3,
+          "text": "أعوذ بكلمات الله التامات من شر ما خلق",
+          "sourceAr": "رواه أحمد والترمذي، وصححه الألباني",
+          "sourceEn": "Aḥmad and at-Tirmidhī; authenticated by al-Albānī",
+          "benefitAr": "من قالها حين يمسي ثلاث مرات لم تضره حُمة تلك الليلة",
+          "benefitEn": "Whoever says it three times in the evening will not be harmed by any sting that night."
+        },
+        {
+          "id": "e-hayy",
+          "count": 1,
+          "text": "يا حي يا قيوم برحمتك أستغيث، أصلح لي شأني كله، ولا تكلني إلى نفسي طرفة عين",
+          "sourceAr": "رواه الحاكم، وحسّنه الألباني",
+          "sourceEn": "al-Ḥākim; graded ḥasan by al-Albānī"
+        },
+        {
+          "id": "e-fitra",
+          "count": 1,
+          "text": "أمسينا على فطرة الإسلام، وعلى كلمة الإخلاص، وعلى دين نبينا محمد ﷺ، وعلى ملة أبينا إبراهيم حنيفًا مسلمًا وما كان من المشركين",
+          "sourceAr": "رواه أحمد، وصححه الألباني",
+          "sourceEn": "Aḥmad; authenticated by al-Albānī"
+        },
+        {
+          "id": "e-subhan-100",
+          "count": 100,
+          "text": "سبحان الله وبحمده",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim",
+          "benefitAr": "من قالها حين يصبح وحين يمسي مائة مرة لم يأت أحد يوم القيامة بأفضل مما جاء به، إلا أحد قال مثل ما قال أو زاد عليه",
+          "benefitEn": "Said a hundred times morning and evening: no one brings anything better on the Day of Resurrection, except someone who said the same or more."
+        },
+        {
+          "id": "e-istighfar-100",
+          "count": 100,
+          "text": "أستغفر الله وأتوب إليه",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim"
+        }
+      ]
+    },
+    {
+      "id": "prayer",
+      "items": [
+        {
+          "id": "p-istighfar",
+          "count": 3,
+          "text": "أستغفر الله",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim"
+        },
+        {
+          "id": "p-salam",
+          "count": 1,
+          "text": "اللهم أنت السلام ومنك السلام، تباركت يا ذا الجلال والإكرام",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim"
+        },
+        {
+          "id": "p-la-mania",
+          "count": 1,
+          "text": "لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير، اللهم لا مانع لما أعطيت، ولا معطي لما منعت، ولا ينفع ذا الجد منك الجد",
+          "sourceAr": "متفق عليه",
+          "sourceEn": "al-Bukhārī and Muslim"
+        },
+        {
+          "id": "p-la-hawla",
+          "count": 1,
+          "text": "لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير، لا حول ولا قوة إلا بالله، لا إله إلا الله، ولا نعبد إلا إياه، له النعمة وله الفضل وله الثناء الحسن، لا إله إلا الله مخلصين له الدين ولو كره الكافرون",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim"
+        },
+        {
+          "id": "p-subhanallah",
+          "count": 33,
+          "text": "سبحان الله",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim"
+        },
+        {
+          "id": "p-alhamdulillah",
+          "count": 33,
+          "text": "الحمد لله",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim"
+        },
+        {
+          "id": "p-allahuakbar",
+          "count": 33,
+          "text": "الله أكبر",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim"
+        },
+        {
+          "id": "p-tamam-100",
+          "count": 1,
+          "text": "لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير",
+          "sourceAr": "رواه مسلم — تمام المائة",
+          "sourceEn": "Muslim — completing the hundred",
+          "benefitAr": "غُفرت خطاياه وإن كانت مثل زبد البحر",
+          "benefitEn": "His sins are forgiven even if they are like the foam of the sea."
+        },
+        {
+          "id": "p-kursi",
+          "count": 1,
+          "quran": [
+            {
+              "surah": 2,
+              "from": 255,
+              "to": 255
+            }
+          ],
+          "sourceAr": "رواه النسائي في الكبرى، وصححه الألباني",
+          "sourceEn": "an-Nasāʾī (al-Kubrā); authenticated by al-Albānī",
+          "benefitAr": "من قرأها دبر كل صلاة مكتوبة لم يمنعه من دخول الجنة إلا أن يموت",
+          "benefitEn": "Whoever recites it after every obligatory prayer, nothing prevents him from entering Paradise except death."
+        },
+        {
+          "id": "p-muawwidhat",
+          "count": 1,
+          "quran": [
+            {
+              "surah": 112,
+              "from": 1,
+              "to": 4,
+              "basmala": true
+            },
+            {
+              "surah": 113,
+              "from": 1,
+              "to": 5,
+              "basmala": true
+            },
+            {
+              "surah": 114,
+              "from": 1,
+              "to": 6,
+              "basmala": true
+            }
+          ],
+          "sourceAr": "رواه أبو داود والنسائي",
+          "sourceEn": "Abū Dāwūd and an-Nasāʾī",
+          "benefitAr": "أمرني رسول الله ﷺ أن أقرأ بالمعوذات دبر كل صلاة",
+          "benefitEn": "“The Messenger of Allah ﷺ commanded me to recite the Muʿawwidhāt after every prayer.”"
+        },
+        {
+          "id": "p-ainni",
+          "count": 1,
+          "text": "اللهم أعني على ذكرك وشكرك وحسن عبادتك",
+          "sourceAr": "رواه أبو داود والنسائي، وصححه الألباني",
+          "sourceEn": "Abū Dāwūd and an-Nasāʾī; authenticated by al-Albānī"
+        }
+      ]
+    },
+    {
+      "id": "sleep",
+      "items": [
+        {
+          "id": "s-kursi",
+          "count": 1,
+          "quran": [
+            {
+              "surah": 2,
+              "from": 255,
+              "to": 255
+            }
+          ],
+          "sourceAr": "رواه البخاري",
+          "sourceEn": "al-Bukhārī",
+          "benefitAr": "لا يزال عليك من الله حافظ، ولا يقربك شيطان حتى تصبح",
+          "benefitEn": "A guardian from Allah stays with you and no devil comes near you until the morning."
+        },
+        {
+          "id": "s-baqarah-end",
+          "count": 1,
+          "quran": [
+            {
+              "surah": 2,
+              "from": 285,
+              "to": 286
+            }
+          ],
+          "sourceAr": "متفق عليه",
+          "sourceEn": "al-Bukhārī and Muslim",
+          "benefitAr": "من قرأ بالآيتين من آخر سورة البقرة في ليلة كفتاه",
+          "benefitEn": "Whoever recites the last two verses of Sūrat al-Baqarah at night, they suffice him."
+        },
+        {
+          "id": "s-quls",
+          "count": 3,
+          "quran": [
+            {
+              "surah": 112,
+              "from": 1,
+              "to": 4,
+              "basmala": true
+            },
+            {
+              "surah": 113,
+              "from": 1,
+              "to": 5,
+              "basmala": true
+            },
+            {
+              "surah": 114,
+              "from": 1,
+              "to": 6,
+              "basmala": true
+            }
+          ],
+          "sourceAr": "رواه البخاري",
+          "sourceEn": "al-Bukhārī",
+          "benefitAr": "يجمع كفيه ثم ينفث فيهما فيقرؤها، ثم يمسح بهما ما استطاع من جسده، يبدأ برأسه ووجهه، يفعل ذلك ثلاث مرات",
+          "benefitEn": "He would cup his hands, blow into them and recite them, then wipe over as much of his body as he could, starting with his head and face — three times."
+        },
+        {
+          "id": "s-bismika-rabbi",
+          "count": 1,
+          "text": "باسمك ربي وضعت جنبي، وبك أرفعه، إن أمسكت نفسي فارحمها، وإن أرسلتها فاحفظها بما تحفظ به عبادك الصالحين",
+          "sourceAr": "متفق عليه",
+          "sourceEn": "al-Bukhārī and Muslim"
+        },
+        {
+          "id": "s-qini",
+          "count": 3,
+          "text": "اللهم قني عذابك يوم تبعث عبادك",
+          "sourceAr": "رواه أبو داود، وحسّنه الألباني",
+          "sourceEn": "Abū Dāwūd; graded ḥasan by al-Albānī"
+        },
+        {
+          "id": "s-subhanallah",
+          "count": 33,
+          "text": "سبحان الله",
+          "sourceAr": "متفق عليه",
+          "sourceEn": "al-Bukhārī and Muslim"
+        },
+        {
+          "id": "s-alhamdulillah",
+          "count": 33,
+          "text": "الحمد لله",
+          "sourceAr": "متفق عليه",
+          "sourceEn": "al-Bukhārī and Muslim"
+        },
+        {
+          "id": "s-allahuakbar",
+          "count": 34,
+          "text": "الله أكبر",
+          "sourceAr": "متفق عليه",
+          "sourceEn": "al-Bukhārī and Muslim",
+          "benefitAr": "فهو خير لكما من خادم",
+          "benefitEn": "“That is better for you than a servant.”"
+        },
+        {
+          "id": "s-bismika-amut",
+          "count": 1,
+          "text": "باسمك اللهم أموت وأحيا",
+          "sourceAr": "رواه البخاري",
+          "sourceEn": "al-Bukhārī"
+        },
+        {
+          "id": "s-aslamtu",
+          "count": 1,
+          "text": "اللهم أسلمت وجهي إليك، وفوضت أمري إليك، وألجأت ظهري إليك، رغبة ورهبة إليك، لا ملجأ ولا منجا منك إلا إليك، آمنت بكتابك الذي أنزلت، وبنبيك الذي أرسلت",
+          "sourceAr": "متفق عليه",
+          "sourceEn": "al-Bukhārī and Muslim",
+          "benefitAr": "فإن مت من ليلتك مت على الفطرة، واجعلهن آخر ما تتكلم به",
+          "benefitEn": "If you die that night, you die upon the fiṭrah; make these your last words."
+        }
+      ]
+    }
+  ]
+}

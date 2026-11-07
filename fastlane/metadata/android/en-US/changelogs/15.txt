@@ -1,0 +1,6 @@
+New in this version:
+• Khatma: plan and track completing the Quran – reading and memorization, juz/pages/surahs, one-tap daily log
+• Sheikh recitation keeps playing with the screen off, with lock-screen controls
+• Memorization: "Show word" reveals one word at a time, no limit
+• The Mushaf turns the page by itself when you finish reciting it
+• Short vibration on a mistake; menu on every screen; week starts on Monday

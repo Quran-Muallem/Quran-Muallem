@@ -1,0 +1,6 @@
+New in this version:
+• New Quran recognition engine: a model trained on Hafs recitation listens to letters, vowels and madd – fully on your device
+• Words are judged as you recite; madd and ghunna length is checked separately
+• Works offline, nothing is uploaded
+• Automatic feedback can be wrong and does not replace a teacher
+• Fixed: model download no longer stops at 99 %

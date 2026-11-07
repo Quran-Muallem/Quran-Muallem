@@ -1,0 +1,5 @@
+New in this version:
+• New Tajweed guide – works fully offline: nūn & mīm sākinah, madd, makharij and sifat, qalqalah, heavy and light letters
+• Examples with the key letters highlighted, instant search in Arabic and English
+• The AI chat has been removed – no AI keys needed
+• Recitation check (Tasmīʿ) works as before

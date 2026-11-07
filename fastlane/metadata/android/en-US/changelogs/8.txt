@@ -1,0 +1,6 @@
+New in this version:
+• Daily Adhkar: morning, evening, after prayer and before sleep – with a tap counter, vibration and a fresh start every day, fully offline
+• Surah badges: silver for reading, gold for reciting – 114 unique badges
+• Recitation (Tasmīʿ) no longer stops after a few seconds; pauses are fine
+• No login needed – just enter your name
+• Smaller fixes and improvements

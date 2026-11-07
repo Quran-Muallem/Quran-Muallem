@@ -1,0 +1,4 @@
+New in this version:
+• Fixed: a missed or misread word is now always shown in red/orange – never hidden as dots, also in memorization
+• Tap a red/orange word: see it with full tashkeel and its tajweed, hear it in the Sheikh's voice, add it to your voice profile
+• Khatma, background recitation, "Show word", auto page turn, vibration on mistakes
