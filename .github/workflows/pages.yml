@@ -20,7 +20,7 @@ jobs:
         with:
           lfs: true
       - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
+      - run: bun install
       - run: bun run build:pwa
       - uses: actions/upload-pages-artifact@v3
         with:
