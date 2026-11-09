@@ -7,11 +7,17 @@ import data from "@/data/adhkar.json";
 import { createSignal, kv } from "@/lib/storage";
 import { localDate } from "@/lib/progressStorage";
 
-export type AdhkarCategoryId = "morning" | "evening" | "prayer" | "sleep";
-export const ADHKAR_CATEGORIES: AdhkarCategoryId[] = ["morning", "evening", "prayer", "sleep"];
+export type AdhkarCategoryId = "morning" | "evening" | "prayer" | "sleep" | "dua";
+export const ADHKAR_CATEGORIES: AdhkarCategoryId[] = ["morning", "evening", "prayer", "sleep", "dua"];
 
-/** A Quranic passage, rendered from the bundled Mushaf text. */
-export type QuranRef = { surah: number; from: number; to: number; basmala?: boolean };
+/**
+ * A Quranic passage, rendered from the bundled Mushaf text. `fromWord` (1-based) starts the first verse at
+ * that word, e.g. the supplication inside a longer verse (2:201 from «رَبَّنَآ»).
+ */
+export type QuranRef = { surah: number; from: number; to: number; basmala?: boolean; fromWord?: number };
+
+/** Words of verse `ayah` of a reference (the first verse cut at `fromWord`). */
+export const refWords = (r: QuranRef, ayah: number, words: string[]): string[] => (ayah === r.from && r.fromWord && r.fromWord > 1 ? words.slice(r.fromWord - 1) : words);
 
 export type Dhikr = {
   id: string;
@@ -21,6 +27,8 @@ export type Dhikr = {
   text?: string;
   /** Quranic verses (shown from the Mushaf data). */
   quran?: QuranRef[];
+  /** Duas: from the Quran or from the Sunnah (shown under their own heading). */
+  group?: "quran" | "sunnah";
   /** Said before the verses, e.g. the istiʿādhah. */
   preface?: string;
   sourceAr: string;

@@ -6,6 +6,7 @@ Falas përgjithmonë: pa reklama, pa abonim, pa llogari. Gjithçka mbetet në pa
 **Mus’hafi**
 • Mus’hafi i Medinës me shkrim osmanisht: të 604 faqet me 15 rreshta, si kopja e shtypur
 • Rrëshqit për të kthyer faqen; shko te çdo sure, xhuz ose faqe nga menyja
+• Kërkim në Kuran: sure sipas emrit ose numrit, ajet (2:255) ose fjalë arabe në gjithë tekstin – pa internet
 
 **Leximi dhe hifzi me IA në pajisje**
 • Lexo drejtpërdrejt në faqe: fjalët bëhen të gjelbra (të sakta), portokalli (pothuajse të sakta) ose të kuqe (të kapërcyera ose të lexuara gabim)
@@ -13,6 +14,7 @@ Falas përgjithmonë: pa reklama, pa abonim, pa llogari. Gjithçka mbetet në pa
 • "Shfaq fjalën" zbulon fjalën tjetër kur ngec, pa kufi
 • Motor fonetik kuranor i trajnuar me leximin Hafs; punon jashtë linje dhe zëri yt nuk ngarkohet kurrë
 • Gjatë leximit faqet kthehen vetë, dhe fjalët e sakta e të gabuara numërohen përgjatë faqeve
+• Ngjyrat mbeten: fjalët e gjelbra, portokalli dhe të kuqe mbeten në çdo faqe – pas kthimit të faqes, kalimit te ekrani i leximit, ndërrimit të hifzit ose rinisjes; një ajet ringjyroset vetëm kur e lexon përsëri
 • Sureja u përfundua: mikrofoni ndalet me një tingull të butë dhe një dridhje
 • Një dridhje e lehtë shënon gabimin pa të ndërprerë
 

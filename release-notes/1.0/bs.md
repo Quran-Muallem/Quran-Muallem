@@ -6,6 +6,7 @@ Zauvijek besplatno: bez reklama, bez pretplate, bez računa. Sve ostaje na tvom 
 **Mushaf**
 • Medinski Mushaf osmanskim pismom: sve 604 stranice sa 15 redova, kao štampani primjerak
 • Prevuci prstom za okretanje stranice; iz menija idi na bilo koju suru, džuz ili stranicu
+• Pretraga Kur'ana: sura po imenu ili broju, ajet (2:255) ili arapske riječi u cijelom tekstu – bez interneta
 
 **Učenje i hifz uz AI na uređaju**
 • Uči direktno sa stranice: riječi postaju zelene (tačne), narandžaste (skoro tačne) ili crvene (izostavljene ili pogrešno proučene)
@@ -13,6 +14,7 @@ Zauvijek besplatno: bez reklama, bez pretplate, bez računa. Sve ostaje na tvom 
 • „Prikaži riječ“ otkriva sljedeću riječ kad zapneš, bez ograničenja
 • Kur'anski fonemski pogon treniran na učenju po Hafsu; radi bez interneta i tvoj glas se nikad ne šalje
 • Dok učiš, stranice se okreću same, a tačne i pogrešne riječi broje se kroz sve stranice
+• Tvoje boje ostaju: zelene, narandžaste i crvene riječi ostaju na svakoj stranici – nakon okretanja stranice, prelaska na ekran učenja, uključivanja hifza ili ponovnog pokretanja; ajet se ponovo boji tek kad ga opet proučiš
 • Sura završena: mikrofon se zaustavlja uz blagi zvuk i vibraciju
 • Lagana vibracija označi grešku bez prekidanja
 

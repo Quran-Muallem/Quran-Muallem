@@ -1,4 +1,4 @@
-# Quran Muallem 1.0 – Release Notes (versionCode 18)
+# Quran Muallem 1.0 – Release Notes (versionCode 20)
 
 Teil A: Play Console → Release → „Versionshinweise“ (je Sprache max. 500 Zeichen). Den Block unten komplett einfügen; die Tags sind die Play-Sprachcodes.
 Teil B: ausführliche Release Notes mit allen Features (Website, Social Media, Store-Beschreibung).
@@ -10,7 +10,7 @@ Hinweis: Bosnisch gibt es in der Play Console nicht als Store-Sprache. Der bosni
 ```
 <en-US>
 Quran Muallem – first release. Free, no ads, your data stays on your phone.
-• Madani Mushaf: all 604 pages, page by page
+• Madani Mushaf: all 604 pages, with Quran search
 • Recitation & Hifz: words light up live as you recite (on-device AI)
 • Tap a word: tajweed, the Sheikh's audio, your voice profile
 • Auto page turn; a soft chime when a surah is complete
@@ -21,7 +21,7 @@ Quran Muallem – first release. Free, no ads, your data stays on your phone.
 </en-US>
 <ar>
 معلم القرآن – الإصدار الأول. مجاني بلا إعلانات، وبياناتك تبقى على هاتفك.
-• مصحف المدينة: ٦٠٤ صفحات، صفحةً صفحة
+• مصحف المدينة: ٦٠٤ صفحات، مع بحث في القرآن
 • التلاوة والحفظ: تُضاء الكلمات مباشرةً أثناء تلاوتك (ذكاء اصطناعي على الجهاز)
 • اضغط على كلمة: أحكام التجويد، صوت الشيخ، ملفك الصوتي
 • تقليب الصفحات تلقائيًا، ونغمة هادئة عند إتمام السورة
@@ -32,7 +32,7 @@ Quran Muallem – first release. Free, no ads, your data stays on your phone.
 </ar>
 <de-DE>
 Quran Muallem – erste Version. Kostenlos, werbefrei, deine Daten bleiben auf dem Handy.
-• Madani-Mushaf: alle 604 Seiten, Seite für Seite
+• Madani-Mushaf: alle 604 Seiten, mit Quran-Suche
 • Rezitation & Hifz: Wörter leuchten beim Lesen live auf (KI auf dem Gerät)
 • Wort antippen: Tajwīd, Audio des Scheichs, dein Sprachprofil
 • Automatisches Umblättern; Gong, wenn eine Sure fertig ist
@@ -43,7 +43,7 @@ Quran Muallem – erste Version. Kostenlos, werbefrei, deine Daten bleiben auf d
 </de-DE>
 <fr-FR>
 Quran Muallem – première version. Gratuite, sans pub, vos données restent sur le téléphone.
-• Mushaf de Médine : les 604 pages, page par page
+• Mushaf de Médine : 604 pages, avec recherche
 • Récitation & Hifz : les mots s’allument en direct quand vous récitez (IA sur l’appareil)
 • Touchez un mot : tajwid, voix du cheikh, profil vocal
 • Pages tournées seules ; carillon à la fin d’une sourate
@@ -54,7 +54,7 @@ Quran Muallem – première version. Gratuite, sans pub, vos données restent su
 </fr-FR>
 <tr-TR>
 Quran Muallem – ilk sürüm. Ücretsiz, reklamsız; verilerin telefonunda kalır.
-• Medine Mushafı: 604 sayfanın tamamı, sayfa sayfa
+• Medine Mushafı: 604 sayfanın tamamı, arama ile
 • Tilavet ve hıfz: okudukça kelimeler canlı olarak yanar (cihaz üzerinde yapay zekâ)
 • Bir kelimeye dokun: tecvit, hocanın sesi, ses profilin
 • Otomatik sayfa çevirme; sure bitince yumuşak bir zil sesi
@@ -65,7 +65,7 @@ Quran Muallem – ilk sürüm. Ücretsiz, reklamsız; verilerin telefonunda kal�
 </tr-TR>
 <ur>
 معلم القرآن – پہلا ورژن۔ مفت، بغیر اشتہار، آپ کا ڈیٹا آپ کے فون پر ہی رہتا ہے۔
-• مدنی مصحف: تمام 604 صفحات، صفحہ بہ صفحہ
+• مدنی مصحف: تمام 604 صفحات، قرآن میں تلاش کے ساتھ
 • تلاوت اور حفظ: پڑھتے ہوئے الفاظ فوراً روشن ہوتے ہیں (آلے پر مصنوعی ذہانت)
 • لفظ پر ٹیپ کریں: تجوید، شیخ کی آواز، آپ کا صوتی پروفائل
 • خودکار صفحہ پلٹنا؛ سورت مکمل ہونے پر ہلکی گھنٹی
@@ -76,7 +76,7 @@ Quran Muallem – ilk sürüm. Ücretsiz, reklamsız; verilerin telefonunda kal�
 </ur>
 <id>
 Quran Muallem – versi pertama. Gratis, tanpa iklan, datamu tetap di ponselmu.
-• Mushaf Madinah: 604 halaman lengkap, halaman demi halaman
+• Mushaf Madinah: 604 halaman lengkap, dengan pencarian
 • Tilawah & hafalan: kata menyala langsung saat kamu membaca (AI di perangkat)
 • Ketuk kata: tajwid, suara syaikh, profil suaramu
 • Halaman berganti otomatis; nada lembut saat surah selesai
@@ -87,7 +87,7 @@ Quran Muallem – versi pertama. Gratis, tanpa iklan, datamu tetap di ponselmu.
 </id>
 <ms>
 Quran Muallem – versi pertama. Percuma, tanpa iklan, data kekal dalam telefon anda.
-• Mushaf Madinah: kesemua 604 halaman, halaman demi halaman
+• Mushaf Madinah: kesemua 604 halaman, dengan carian
 • Bacaan & hafazan: perkataan menyala langsung semasa anda membaca (AI pada peranti)
 • Ketik perkataan: tajwid, suara syeikh, profil suara anda
 • Halaman diselak automatik; nada lembut apabila surah selesai
@@ -98,7 +98,7 @@ Quran Muallem – versi pertama. Percuma, tanpa iklan, data kekal dalam telefon 
 </ms>
 <es-ES>
 Quran Muallem – primera versión. Gratis, sin anuncios, tus datos se quedan en tu teléfono.
-• Mushaf de Medina: las 604 páginas, una a una
+• Mushaf de Medina: las 604 páginas, con buscador
 • Recitación y hifz: las palabras se iluminan mientras recitas (IA en el dispositivo)
 • Toca una palabra: tajwid, voz del jeque, tu perfil de voz
 • Paso de página automático; tono suave al completar una sura
@@ -109,7 +109,7 @@ Quran Muallem – primera versión. Gratis, sin anuncios, tus datos se quedan en
 </es-ES>
 <ru-RU>
 Quran Muallem – первая версия. Бесплатно, без рекламы, ваши данные остаются на телефоне.
-• Мединский Мусхаф: все 604 страницы, страница за страницей
+• Мединский Мусхаф: все 604 страницы, с поиском
 • Чтение и хифз: слова подсвечиваются прямо во время чтения (ИИ на устройстве)
 • Нажмите на слово: таджвид, голос шейха, ваш голосовой профиль
 • Автоматическое перелистывание; мягкий сигнал по завершении суры
@@ -120,7 +120,7 @@ Quran Muallem – первая версия. Бесплатно, без рекл
 </ru-RU>
 <bn-BD>
 Quran Muallem – প্রথম সংস্করণ। বিনামূল্যে, বিজ্ঞাপন ছাড়া; আপনার ডেটা আপনার ফোনেই থাকে।
-• মদিনার মুসহাফ: সম্পূর্ণ ৬০৪ পৃষ্ঠা, পৃষ্ঠা ধরে ধরে
+• মদিনার মুসহাফ: সম্পূর্ণ ৬০৪ পৃষ্ঠা, কুরআন অনুসন্ধানসহ
 • তিলাওয়াত ও হিফজ: পড়ার সাথে সাথে শব্দ আলোকিত হয় (ডিভাইসে এআই)
 • শব্দে ট্যাপ করুন: তাজবীদ, শায়খের কণ্ঠ, আপনার কণ্ঠ প্রোফাইল
 • স্বয়ংক্রিয় পৃষ্ঠা পরিবর্তন; সূরা শেষে মৃদু ধ্বনি
@@ -131,7 +131,7 @@ Quran Muallem – প্রথম সংস্করণ। বিনামূল
 </bn-BD>
 <sq>
 Quran Muallem – versioni i parë. Falas, pa reklama; të dhënat mbeten në telefonin tënd.
-• Mus’hafi i Medinës: të 604 faqet, faqe pas faqeje
+• Mus’hafi i Medinës: të 604 faqet, me kërkim
 • Leximi dhe hifzi: fjalët ndriçohen drejtpërdrejt ndërsa lexon (IA në pajisje)
 • Prek një fjalë: texhvidi, zëri i shejhut, profili yt i zërit
 • Kthim automatik i faqes; tingull i butë kur përfundon sureja
@@ -146,7 +146,7 @@ Bosnisch (nicht für die Play Console):
 
 ```
 Quran Muallem – prva verzija. Besplatno, bez reklama; tvoji podaci ostaju na telefonu.
-• Medinski Mushaf: sve 604 stranice, stranicu po stranicu
+• Medinski Mushaf: sve 604 stranice, s pretragom
 • Učenje i hifz: riječi svijetle uživo dok učiš (AI na uređaju)
 • Dodirni riječ: tedžvid, glas šejha, tvoj glasovni profil
 • Automatsko okretanje stranica; blagi zvuk kad završiš suru
@@ -156,7 +156,7 @@ Quran Muallem – prva verzija. Besplatno, bez reklama; tvoji podaci ostaju na t
 • 13 jezika, 3 teme
 ```
 
-Zeichenzahl: en-US 452, ar 430, de-DE 494, fr-FR 498, tr-TR 461, ur 422, id 467, ms 497, es-ES 494, ru-RU 497, bn-BD 462, sq 498, bs 470
+Zeichenzahl: en-US 457, ar 436, de-DE 494, fr-FR 495, tr-TR 459, ur 431, id 463, ms 490, es-ES 497, ru-RU 485, bn-BD 465, sq 492, bs (Website)
 
 ## Teil B – Ausführliche Release Notes
 
@@ -168,6 +168,7 @@ Free forever: no ads, no subscription, no account. Everything stays on your devi
 **The Mushaf**
 • The Madani Mushaf in Uthmani script: all 604 pages with 15 lines, laid out like the printed copy
 • Swipe to turn pages; jump to any surah, juz or page from the menu
+• Quran search: find a surah by name or number, a verse (2:255) or Arabic words anywhere in the text – offline
 
 **Recitation & Hifz with on-device AI**
 • Recite on the page: words turn green (correct), orange (almost right) or red (missed or misread) as you go
@@ -175,6 +176,7 @@ Free forever: no ads, no subscription, no account. Everything stays on your devi
 • "Show word" reveals the next word whenever you get stuck, as often as you need
 • Quran phoneme engine trained on Ḥafṣ recitation; it works offline and your voice is never uploaded
 • Pages turn automatically while you recite, and correct and wrong words are counted across pages
+• Your colours stay: green, orange and red words remain on every page – after turning pages, switching to the Recite screen, toggling Hifz or restarting; a verse is only re-coloured when you recite it again
 • Surah complete: the microphone stops with a soft chime and a vibration
 • A light vibration marks a mistake without interrupting you
 
@@ -214,6 +216,7 @@ Note: automatic feedback can make mistakes and does not replace a qualified teac
 **المصحف**
 • مصحف المدينة بالرسم العثماني: ٦٠٤ صفحات بخمسة عشر سطرًا، كما في المصحف المطبوع
 • اسحب لتقليب الصفحات، وانتقل إلى أي سورة أو جزء أو صفحة من القائمة
+• البحث في القرآن: ابحث عن سورة باسمها أو رقمها، أو عن آية (٢:٢٥٥)، أو عن كلمات عربية في النص كله – دون إنترنت
 
 **التلاوة والحفظ بذكاء اصطناعي على الجهاز**
 • اتلُ على الصفحة نفسها: تتلوّن الكلمات بالأخضر (صحيحة) أو البرتقالي (قريبة) أو الأحمر (متروكة أو خاطئة) أثناء التلاوة
@@ -221,6 +224,7 @@ Note: automatic feedback can make mistakes and does not replace a qualified teac
 • «أظهر الكلمة» يكشف الكلمة التالية كلما توقفت، دون حدّ
 • محرّك صوتي قرآني مدرَّب على رواية حفص، يعمل دون إنترنت ولا يُرفع صوتك أبدًا
 • تتقلّب الصفحات تلقائيًا أثناء التلاوة، وتُحسب الكلمات الصحيحة والخاطئة عبر الصفحات
+• ألوانك تبقى: الكلمات الخضراء والبرتقالية والحمراء تبقى في كل صفحة – بعد تقليب الصفحات والانتقال إلى شاشة التسميع وتبديل الحفظ وإعادة التشغيل؛ ولا يتغيّر لون الآية إلا إذا تلوتها من جديد
 • عند إتمام السورة: يتوقف الميكروفون مع نغمة هادئة واهتزاز
 • اهتزاز خفيف ينبّهك إلى الخطأ دون أن يقطع تلاوتك
 
@@ -260,6 +264,7 @@ Für immer kostenlos: keine Werbung, kein Abo, kein Konto. Alles bleibt auf dein
 **Der Mushaf**
 • Der Madani-Mushaf in uthmanischer Schrift: alle 604 Seiten mit 15 Zeilen, wie im gedruckten Exemplar
 • Wischen zum Umblättern; über das Menü direkt zu jeder Sure, jedem Juz oder jeder Seite
+• Quran-Suche: Sure nach Name oder Nummer, Vers (2:255) oder arabische Wörter im ganzen Text – offline
 
 **Rezitation & Hifz mit KI auf dem Gerät**
 • Direkt auf der Seite rezitieren: Wörter werden grün (richtig), orange (fast richtig) oder rot (ausgelassen oder falsch gelesen)
@@ -267,6 +272,7 @@ Für immer kostenlos: keine Werbung, kein Abo, kein Konto. Alles bleibt auf dein
 • „Wort zeigen“ deckt das nächste Wort auf, wenn du hängen bleibst – so oft du willst
 • Koranische Phonem-Engine, trainiert auf die Ḥafṣ-Rezitation; sie arbeitet offline, deine Stimme wird nie hochgeladen
 • Beim Rezitieren wird automatisch umgeblättert; richtige und falsche Wörter werden seitenübergreifend gezählt
+• Deine Farben bleiben: grüne, orange und rote Wörter bleiben auf jeder Seite – nach dem Umblättern, beim Wechsel zum Rezitieren-Bildschirm, beim Hifz-Umschalten und nach einem Neustart; ein Vers wird erst neu gefärbt, wenn du ihn wieder rezitierst
 • Sure abgeschlossen: Das Mikrofon stoppt mit einem leisen Gong und einer Vibration
 • Eine leichte Vibration zeigt einen Fehler an, ohne dich zu unterbrechen
 
@@ -306,6 +312,7 @@ Gratuit pour toujours : sans publicité, sans abonnement, sans compte. Tout rest
 **Le Mushaf**
 • Le Mushaf de Médine en écriture uthmanie : les 604 pages de 15 lignes, comme l’exemplaire imprimé
 • Glissez pour tourner les pages ; allez à n’importe quelle sourate, juz ou page depuis le menu
+• Recherche dans le Coran : une sourate par nom ou numéro, un verset (2:255) ou des mots arabes dans tout le texte – hors ligne
 
 **Récitation & Hifz avec l’IA sur l’appareil**
 • Récitez sur la page : les mots deviennent verts (justes), orange (presque justes) ou rouges (omis ou mal lus)
@@ -313,6 +320,7 @@ Gratuit pour toujours : sans publicité, sans abonnement, sans compte. Tout rest
 • « Afficher le mot » révèle le mot suivant dès que vous bloquez, sans limite
 • Moteur phonétique coranique entraîné sur la récitation de Ḥafṣ ; il fonctionne hors ligne et votre voix n’est jamais envoyée
 • Les pages tournent automatiquement pendant la récitation, et les mots justes et faux sont comptés sur plusieurs pages
+• Vos couleurs restent : les mots verts, orange et rouges restent sur chaque page – après un changement de page, sur l’écran de récitation, en mode hifz ou après un redémarrage ; un verset n’est recoloré que si vous le récitez à nouveau
 • Sourate terminée : le micro s’arrête avec un carillon doux et une vibration
 • Une légère vibration signale une erreur sans vous interrompre
 
@@ -352,6 +360,7 @@ Her zaman ücretsiz: reklam yok, abonelik yok, hesap yok. Her şey cihazında ka
 **Mushaf**
 • Osmanlı hattıyla Medine Mushafı: 15 satırlı 604 sayfanın tamamı, basılı nüsha gibi
 • Sayfa çevirmek için kaydır; menüden istediğin sureye, cüze veya sayfaya git
+• Kur'an'da arama: adı veya numarasıyla sure, ayet (2:255) ya da tüm metinde Arapça kelimeler – internetsiz
 
 **Cihaz üzerinde yapay zekâ ile tilavet ve hıfz**
 • Doğrudan sayfa üzerinde oku: kelimeler yeşil (doğru), turuncu (neredeyse doğru) veya kırmızı (atlanmış ya da yanlış okunmuş) olur
@@ -359,6 +368,7 @@ Her zaman ücretsiz: reklam yok, abonelik yok, hesap yok. Her şey cihazında ka
 • "Kelimeyi göster" takıldığında sıradaki kelimeyi açar, sınırsız
 • Hafs kıraatiyle eğitilmiş Kur'an fonem motoru; çevrimdışı çalışır, sesin asla yüklenmez
 • Okurken sayfalar otomatik çevrilir; doğru ve yanlış kelimeler sayfalar boyunca sayılır
+• Renklerin kalır: yeşil, turuncu ve kırmızı kelimeler her sayfada kalır – sayfa çevirince, okuma ekranına geçince, hıfz modunu açıp kapatınca ve yeniden başlatınca; bir ayet ancak tekrar okuduğunda yeniden renklenir
 • Sure tamamlandı: mikrofon yumuşak bir zil sesi ve titreşimle durur
 • Hafif bir titreşim seni durdurmadan hatayı gösterir
 
@@ -398,6 +408,7 @@ Not: Otomatik geri bildirim hata yapabilir ve yetkin bir hocanın yerini tutmaz.
 **مصحف**
 • عثمانی رسم الخط میں مدنی مصحف: 15 سطروں والے تمام 604 صفحات، چھپے ہوئے نسخے کی طرح
 • صفحہ پلٹنے کے لیے سوائپ کریں؛ مینو سے کسی بھی سورت، پارے یا صفحے پر جائیں
+• قرآن میں تلاش: نام یا نمبر سے سورت، آیت (2:255) یا پورے متن میں عربی الفاظ – انٹرنیٹ کے بغیر
 
 **آلے پر مصنوعی ذہانت کے ساتھ تلاوت اور حفظ**
 • صفحے پر ہی تلاوت کریں: الفاظ سبز (درست)، نارنجی (تقریباً درست) یا سرخ (چھوٹا ہوا یا غلط پڑھا گیا) ہو جاتے ہیں
@@ -405,6 +416,7 @@ Not: Otomatik geri bildirim hata yapabilir ve yetkin bir hocanın yerini tutmaz.
 • "لفظ دکھائیں" اٹکنے پر اگلا لفظ دکھاتا ہے، جتنی بار چاہیں
 • روایتِ حفص پر تربیت یافتہ قرآنی صوتی انجن؛ آف لائن چلتا ہے اور آپ کی آواز کبھی اپ لوڈ نہیں ہوتی
 • تلاوت کے دوران صفحات خود بخود پلٹتے ہیں، اور درست و غلط الفاظ صفحات کے پار گنے جاتے ہیں
+• آپ کے رنگ باقی رہتے ہیں: سبز، نارنجی اور سرخ الفاظ ہر صفحے پر رہتے ہیں – صفحہ پلٹنے، تلاوت اسکرین پر جانے، حفظ بدلنے اور دوبارہ شروع کرنے کے بعد بھی؛ آیت کا رنگ تبھی بدلتا ہے جب آپ اسے دوبارہ پڑھیں
 • سورت مکمل: مائیکروفون ہلکی گھنٹی اور ارتعاش کے ساتھ رک جاتا ہے
 • ہلکا ارتعاش آپ کو روکے بغیر غلطی کی نشاندہی کرتا ہے
 
@@ -444,6 +456,7 @@ Gratis selamanya: tanpa iklan, tanpa langganan, tanpa akun. Semuanya tetap di pe
 **Mushaf**
 • Mushaf Madinah dengan rasm Utsmani: 604 halaman lengkap, 15 baris, seperti mushaf cetak
 • Geser untuk membalik halaman; buka surah, juz, atau halaman mana pun dari menu
+• Pencarian Al-Qur'an: surah berdasarkan nama atau nomor, ayat (2:255) atau kata Arab di seluruh teks – tanpa internet
 
 **Tilawah & hafalan dengan AI di perangkat**
 • Baca langsung di halaman: kata menjadi hijau (benar), oranye (hampir benar), atau merah (terlewat atau salah baca)
@@ -451,6 +464,7 @@ Gratis selamanya: tanpa iklan, tanpa langganan, tanpa akun. Semuanya tetap di pe
 • "Tampilkan kata" membuka kata berikutnya saat kamu lupa, tanpa batas
 • Mesin fonem Al-Qur’an yang dilatih dengan bacaan Hafs; bekerja luring dan suaramu tidak pernah diunggah
 • Halaman berganti otomatis saat membaca, dan kata benar maupun salah dihitung lintas halaman
+• Warnamu tetap: kata hijau, oranye, dan merah tetap ada di setiap halaman – setelah membalik halaman, pindah ke layar Tilawah, mengganti mode hafalan, atau memulai ulang; ayat hanya diwarnai ulang saat kamu membacanya lagi
 • Surah selesai: mikrofon berhenti dengan nada lembut dan getaran
 • Getaran ringan menandai kesalahan tanpa memotong bacaanmu
 
@@ -490,6 +504,7 @@ Percuma selama-lamanya: tanpa iklan, tanpa langganan, tanpa akaun. Semuanya keka
 **Mushaf**
 • Mushaf Madinah dalam rasm Uthmani: kesemua 604 halaman, 15 baris, seperti mushaf bercetak
 • Leret untuk menyelak halaman; pergi ke mana-mana surah, juzuk atau halaman dari menu
+• Carian Al-Quran: surah mengikut nama atau nombor, ayat (2:255) atau perkataan Arab dalam seluruh teks – tanpa internet
 
 **Bacaan & hafazan dengan AI pada peranti**
 • Baca terus pada halaman: perkataan menjadi hijau (betul), oren (hampir betul) atau merah (tertinggal atau salah baca)
@@ -497,6 +512,7 @@ Percuma selama-lamanya: tanpa iklan, tanpa langganan, tanpa akaun. Semuanya keka
 • "Tunjuk perkataan" mendedahkan perkataan seterusnya apabila anda tersekat, tanpa had
 • Enjin fonem al-Quran yang dilatih dengan bacaan Hafs; berfungsi luar talian dan suara anda tidak pernah dimuat naik
 • Halaman diselak secara automatik semasa membaca, dan perkataan betul serta salah dikira merentas halaman
+• Warna anda kekal: perkataan hijau, oren dan merah kekal pada setiap halaman – selepas menyelak halaman, beralih ke skrin bacaan, menukar mod hafazan atau memulakan semula; ayat hanya diwarnakan semula apabila anda membacanya lagi
 • Surah selesai: mikrofon berhenti dengan nada lembut dan getaran
 • Getaran ringan menandakan kesilapan tanpa mengganggu bacaan anda
 
@@ -536,6 +552,7 @@ Gratis para siempre: sin anuncios, sin suscripción, sin cuenta. Todo se queda e
 **El Mushaf**
 • El Mushaf de Medina en escritura uthmani: las 604 páginas de 15 líneas, como el ejemplar impreso
 • Desliza para pasar página; ve a cualquier sura, yuz o página desde el menú
+• Buscador del Corán: una sura por nombre o número, una aleya (2:255) o palabras árabes en todo el texto, sin conexión
 
 **Recitación y hifz con IA en el dispositivo**
 • Recita sobre la página: las palabras se vuelven verdes (correctas), naranjas (casi correctas) o rojas (omitidas o mal leídas)
@@ -543,6 +560,7 @@ Gratis para siempre: sin anuncios, sin suscripción, sin cuenta. Todo se queda e
 • «Mostrar palabra» revela la siguiente palabra cuando te atascas, sin límite
 • Motor fonético coránico entrenado con la recitación de Ḥafṣ; funciona sin conexión y tu voz nunca se sube
 • Las páginas pasan solas mientras recitas, y las palabras correctas e incorrectas se cuentan a lo largo de las páginas
+• Tus colores se quedan: las palabras verdes, naranjas y rojas permanecen en cada página, al pasar página, al ir a la pantalla de recitación, al cambiar a hifz o al reiniciar; una aleya solo cambia de color cuando la vuelves a recitar
 • Sura completada: el micrófono se detiene con un tono suave y una vibración
 • Una vibración ligera marca un error sin interrumpirte
 
@@ -582,6 +600,7 @@ Nota: los comentarios automáticos pueden equivocarse y no sustituyen a un maest
 **Мусхаф**
 • Мединский Мусхаф османским письмом: все 604 страницы по 15 строк, как в печатном издании
 • Листайте свайпом; переходите к любой суре, джузу или странице через меню
+• Поиск по Корану: сура по названию или номеру, аят (2:255) или арабские слова во всём тексте – офлайн
 
 **Чтение и хифз с ИИ на устройстве**
 • Читайте прямо по странице: слова становятся зелёными (верно), оранжевыми (почти верно) или красными (пропущено или прочитано неверно)
@@ -589,6 +608,7 @@ Nota: los comentarios automáticos pueden equivocarse y no sustituyen a un maest
 • «Показать слово» открывает следующее слово, если вы запнулись, без ограничений
 • Фонемный движок Корана, обученный на чтении Хафс; работает офлайн, ваш голос никогда не загружается
 • Во время чтения страницы перелистываются сами, а верные и неверные слова считаются по всем страницам
+• Цвета сохраняются: зелёные, оранжевые и красные слова остаются на каждой странице – после перелистывания, перехода к экрану чтения, переключения хифза и перезапуска; аят перекрашивается, только когда вы читаете его снова
 • Сура завершена: микрофон останавливается с мягким сигналом и вибрацией
 • Лёгкая вибрация отмечает ошибку, не прерывая чтение
 
@@ -628,6 +648,7 @@ Nota: los comentarios automáticos pueden equivocarse y no sustituyen a un maest
 **মুসহাফ**
 • উসমানী লিপিতে মদিনার মুসহাফ: ১৫ লাইনের সম্পূর্ণ ৬০৪ পৃষ্ঠা, ছাপা কপির মতো
 • পৃষ্ঠা উল্টাতে সোয়াইপ করুন; মেনু থেকে যেকোনো সূরা, পারা বা পৃষ্ঠায় যান
+• কুরআন অনুসন্ধান: নাম বা নম্বর দিয়ে সূরা, আয়াত (2:255) বা পুরো পাঠে আরবি শব্দ – ইন্টারনেট ছাড়াই
 
 **ডিভাইসে এআই দিয়ে তিলাওয়াত ও হিফজ**
 • পৃষ্ঠাতেই তিলাওয়াত করুন: শব্দ সবুজ (সঠিক), কমলা (প্রায় সঠিক) বা লাল (বাদ পড়া বা ভুল পড়া) হয়ে যায়
@@ -635,6 +656,7 @@ Nota: los comentarios automáticos pueden equivocarse y no sustituyen a un maest
 • আটকে গেলে "শব্দ দেখান" পরের শব্দটি দেখায়, যতবার দরকার
 • হাফস রেওয়ায়েতে প্রশিক্ষিত কুরআনিক ধ্বনি ইঞ্জিন; অফলাইনে চলে, আপনার কণ্ঠ কখনো আপলোড হয় না
 • তিলাওয়াতের সময় পৃষ্ঠা স্বয়ংক্রিয়ভাবে পাল্টায়, আর সঠিক ও ভুল শব্দ সব পৃষ্ঠা জুড়ে গোনা হয়
+• আপনার রং থেকে যায়: সবুজ, কমলা ও লাল শব্দ প্রতিটি পৃষ্ঠায় থাকে – পৃষ্ঠা ওল্টানো, তিলাওয়াত স্ক্রিনে যাওয়া, হিফজ বদলানো বা আবার চালুর পরেও; আয়াত আবার পড়লেই কেবল রং বদলায়
 • সূরা সম্পন্ন: মৃদু ধ্বনি ও কম্পনের সাথে মাইক্রোফোন থেমে যায়
 • হালকা কম্পন আপনাকে না থামিয়ে ভুল চিহ্নিত করে
 
@@ -674,6 +696,7 @@ Falas përgjithmonë: pa reklama, pa abonim, pa llogari. Gjithçka mbetet në pa
 **Mus’hafi**
 • Mus’hafi i Medinës me shkrim osmanisht: të 604 faqet me 15 rreshta, si kopja e shtypur
 • Rrëshqit për të kthyer faqen; shko te çdo sure, xhuz ose faqe nga menyja
+• Kërkim në Kuran: sure sipas emrit ose numrit, ajet (2:255) ose fjalë arabe në gjithë tekstin – pa internet
 
 **Leximi dhe hifzi me IA në pajisje**
 • Lexo drejtpërdrejt në faqe: fjalët bëhen të gjelbra (të sakta), portokalli (pothuajse të sakta) ose të kuqe (të kapërcyera ose të lexuara gabim)
@@ -681,6 +704,7 @@ Falas përgjithmonë: pa reklama, pa abonim, pa llogari. Gjithçka mbetet në pa
 • "Shfaq fjalën" zbulon fjalën tjetër kur ngec, pa kufi
 • Motor fonetik kuranor i trajnuar me leximin Hafs; punon jashtë linje dhe zëri yt nuk ngarkohet kurrë
 • Gjatë leximit faqet kthehen vetë, dhe fjalët e sakta e të gabuara numërohen përgjatë faqeve
+• Ngjyrat mbeten: fjalët e gjelbra, portokalli dhe të kuqe mbeten në çdo faqe – pas kthimit të faqes, kalimit te ekrani i leximit, ndërrimit të hifzit ose rinisjes; një ajet ringjyroset vetëm kur e lexon përsëri
 • Sureja u përfundua: mikrofoni ndalet me një tingull të butë dhe një dridhje
 • Një dridhje e lehtë shënon gabimin pa të ndërprerë
 
@@ -720,6 +744,7 @@ Zauvijek besplatno: bez reklama, bez pretplate, bez računa. Sve ostaje na tvom 
 **Mushaf**
 • Medinski Mushaf osmanskim pismom: sve 604 stranice sa 15 redova, kao štampani primjerak
 • Prevuci prstom za okretanje stranice; iz menija idi na bilo koju suru, džuz ili stranicu
+• Pretraga Kur'ana: sura po imenu ili broju, ajet (2:255) ili arapske riječi u cijelom tekstu – bez interneta
 
 **Učenje i hifz uz AI na uređaju**
 • Uči direktno sa stranice: riječi postaju zelene (tačne), narandžaste (skoro tačne) ili crvene (izostavljene ili pogrešno proučene)
@@ -727,6 +752,7 @@ Zauvijek besplatno: bez reklama, bez pretplate, bez računa. Sve ostaje na tvom 
 • „Prikaži riječ“ otkriva sljedeću riječ kad zapneš, bez ograničenja
 • Kur'anski fonemski pogon treniran na učenju po Hafsu; radi bez interneta i tvoj glas se nikad ne šalje
 • Dok učiš, stranice se okreću same, a tačne i pogrešne riječi broje se kroz sve stranice
+• Tvoje boje ostaju: zelene, narandžaste i crvene riječi ostaju na svakoj stranici – nakon okretanja stranice, prelaska na ekran učenja, uključivanja hifza ili ponovnog pokretanja; ajet se ponovo boji tek kad ga opet proučiš
 • Sura završena: mikrofon se zaustavlja uz blagi zvuk i vibraciju
 • Lagana vibracija označi grešku bez prekidanja
 

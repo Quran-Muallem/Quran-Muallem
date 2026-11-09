@@ -6,6 +6,7 @@ Gratis selamanya: tanpa iklan, tanpa langganan, tanpa akun. Semuanya tetap di pe
 **Mushaf**
 • Mushaf Madinah dengan rasm Utsmani: 604 halaman lengkap, 15 baris, seperti mushaf cetak
 • Geser untuk membalik halaman; buka surah, juz, atau halaman mana pun dari menu
+• Pencarian Al-Qur'an: surah berdasarkan nama atau nomor, ayat (2:255) atau kata Arab di seluruh teks – tanpa internet
 
 **Tilawah & hafalan dengan AI di perangkat**
 • Baca langsung di halaman: kata menjadi hijau (benar), oranye (hampir benar), atau merah (terlewat atau salah baca)
@@ -13,6 +14,7 @@ Gratis selamanya: tanpa iklan, tanpa langganan, tanpa akun. Semuanya tetap di pe
 • "Tampilkan kata" membuka kata berikutnya saat kamu lupa, tanpa batas
 • Mesin fonem Al-Qur’an yang dilatih dengan bacaan Hafs; bekerja luring dan suaramu tidak pernah diunggah
 • Halaman berganti otomatis saat membaca, dan kata benar maupun salah dihitung lintas halaman
+• Warnamu tetap: kata hijau, oranye, dan merah tetap ada di setiap halaman – setelah membalik halaman, pindah ke layar Tilawah, mengganti mode hafalan, atau memulai ulang; ayat hanya diwarnai ulang saat kamu membacanya lagi
 • Surah selesai: mikrofon berhenti dengan nada lembut dan getaran
 • Getaran ringan menandai kesalahan tanpa memotong bacaanmu
 

@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from "react";
-import { BookOpen, ChevronLeft, ChevronRight, Compass, Home, BookOpenCheck, Mic, Settings, Share2, SunMoon, Target, X } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, Home, LayoutGrid, Mic, Search, Settings, Share2, Target, X } from "lucide-react";
 import { AppLogo, AppWordmark, GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import { TOTAL_PAGES } from "@/lib/mushafData";
 import { SURAH_META, toArabicDigits } from "@/lib/quranService";
@@ -8,7 +8,8 @@ import { directionFor, useI18n, type CopyKey } from "@/lib/i18n";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { cn } from "@/lib/utils";
 
-export type AppTab = "home" | "mushaf" | "practice" | "khatma" | "tajweed" | "adhkar" | "qibla";
+/** Prayer times, Qibla, adhkar, Tajweed and Hadith live together in the Islamic hub ("hub"). */
+export type AppTab = "home" | "mushaf" | "practice" | "khatma" | "hub";
 
 /** Burger button: top of the full-screen Mushaf and of every other screen (global header). */
 export function BurgerButton({ onClick, label }: { onClick: () => void; label: string }) {
@@ -23,11 +24,22 @@ export function BurgerButton({ onClick, label }: { onClick: () => void; label: s
   );
 }
 
+/** Search button (opens the Quran search), next to the burger. */
+export function SearchButton({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button type="button" onClick={onClick} aria-label={label}
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-amber-200"
+      style={{ background: alpha("var(--mf-page-deep)", 0.85), boxShadow: `inset 0 0 0 1px ${alpha(GOLD_LIGHT, 0.5)}` }}>
+      <Search className="h-5 w-5" aria-hidden="true" />
+    </button>
+  );
+}
+
 /**
  * The app's side menu (burger), available on every screen: navigation, surah / juz / page selection
  * (opens the Mushaf there), settings and invite. `current` marks the screen that is open.
  */
-export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, onJuz, onNavigate, onSettings, onInvite, current = "mushaf" }: {
+export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, onJuz, onNavigate, onSettings, onInvite, onSearch, current = "mushaf" }: {
   current?: AppTab;
   open: boolean;
   onClose: () => void;
@@ -40,6 +52,8 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
   onNavigate: (tab: AppTab) => void;
   onSettings: () => void;
   onInvite: () => void;
+  /** Opens the Quran search (surah, verse, words). */
+  onSearch?: (() => void) | undefined;
 }) {
   const { t, language } = useI18n();
   const num = (n: number) => (language === "ar" ? toArabicDigits(n) : String(n));
@@ -56,9 +70,7 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
     { id: "mushaf", label: "navMushaf", icon: <BookOpen className="h-5 w-5" /> },
     { id: "practice", label: "navPractice", icon: <Mic className="h-5 w-5" /> },
     { id: "khatma", label: "navKhatma", icon: <Target className="h-5 w-5" /> },
-    { id: "tajweed", label: "navTajweed", icon: <BookOpenCheck className="h-5 w-5" /> },
-    { id: "adhkar", label: "navAdhkar", icon: <SunMoon className="h-5 w-5" /> },
-    { id: "qibla", label: "navQibla", icon: <Compass className="h-5 w-5" /> },
+    { id: "hub", label: "navHub", icon: <LayoutGrid className="h-5 w-5" /> },
   ];
   const go = (fn: () => void) => () => { fn(); onClose(); };
 
@@ -85,6 +97,11 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
 
         <div className="my-4 h-px" style={{ background: alpha(GOLD, 0.4) }} />
 
+        {onSearch && (
+          <button type="button" onClick={go(onSearch)} className="mb-3 flex w-full items-center gap-3 rounded-xl border border-amber-400/40 px-3 py-2.5 text-start text-sm text-emerald-50 hover:bg-white/5">
+            <Search className="h-5 w-5" style={{ color: GOLD_LIGHT }} />{t("searchTitle")}
+          </button>
+        )}
         <h2 className="mb-2 text-xs font-medium text-emerald-100/70">{t("goTo")}</h2>
         <div className="space-y-2">
           <label className="block text-xs text-emerald-100/70">{t("surah")}

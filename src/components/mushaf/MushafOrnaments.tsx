@@ -75,8 +75,7 @@ export function PageFrame({ children, className }: { children: ReactNode; classN
       {(["-left-1 -top-1", "-right-1 -top-1 rotate-90", "-left-1 -bottom-1 -rotate-90", "-right-1 -bottom-1 rotate-180"] as const).map((pos) => (
         <Corner key={pos} className={cn("pointer-events-none absolute h-9 w-9", pos)} />
       ))}
-      <Rosette className="pointer-events-none absolute -left-5 top-1/2 h-11 w-11 -translate-y-1/2 drop-shadow-[0_0_6px_rgba(0,0,0,.6)]" />
-      <Rosette className="pointer-events-none absolute -right-5 top-1/2 h-11 w-11 -translate-y-1/2 drop-shadow-[0_0_6px_rgba(0,0,0,.6)]" />
+      {/* No rosettes on the side margins: they covered the text of lines 8–9 on narrow screens. */}
     </div>
   );
 }

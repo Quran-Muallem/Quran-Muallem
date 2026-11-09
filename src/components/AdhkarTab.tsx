@@ -3,7 +3,7 @@ import { Check, HandHeart, Moon, RotateCcw, Sunrise, Sunset } from "lucide-react
 import { GoldFrame, GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import {
   ADHKAR_CATEGORIES, adhkarCategory, categoryProgress, countDhikr, resetAdhkar, suggestedCategory, useAdhkarDay,
-  type AdhkarCategoryId, type Dhikr, type QuranRef,
+  refWords, type AdhkarCategoryId, type Dhikr, type QuranRef,
 } from "@/lib/adhkar";
 import { tapHaptic, successHaptic } from "@/lib/haptics";
 import { loadMushaf, type Mushaf } from "@/lib/mushafData";
@@ -11,11 +11,17 @@ import { toArabicDigits } from "@/lib/quranService";
 import { useI18n, type CopyKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-const TABS: Record<AdhkarCategoryId, { label: CopyKey; title: CopyKey; icon: typeof Sunrise }> = {
+/** Raised praying hands (الدعاء) — lucide has no supplication icon. */
+function PrayingHands({ className }: { className?: string }) {
+  return <span className={cn("flex items-center justify-center text-[1.15rem] leading-none", className)} aria-hidden="true">🤲</span>;
+}
+
+const TABS: Record<AdhkarCategoryId, { label: CopyKey; title: CopyKey; icon: (p: { className?: string }) => React.ReactNode }> = {
   morning: { label: "adhkarMorning", title: "adhkarMorningTitle", icon: Sunrise },
   evening: { label: "adhkarEvening", title: "adhkarEveningTitle", icon: Sunset },
   prayer: { label: "adhkarPrayer", title: "adhkarPrayerTitle", icon: HandHeart },
   sleep: { label: "adhkarSleep", title: "adhkarSleepTitle", icon: Moon },
+  dua: { label: "adhkarDua", title: "adhkarDuaTitle", icon: PrayingHands },
 };
 
 /** Daily adhkar: morning, evening, after prayer and before sleep, each with a tap counter. */
@@ -48,14 +54,14 @@ export function AdhkarTab() {
         <p className="text-sm text-emerald-100/70">{t("adhkarSub")}</p>
       </header>
 
-      <div className="grid grid-cols-4 gap-1.5 rounded-2xl bg-black/20 p-1.5" role="tablist" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
+      <div className="grid grid-cols-5 gap-1 rounded-2xl bg-black/20 p-1.5" role="tablist" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
         {ADHKAR_CATEGORIES.map((id) => {
           const { label, icon: Icon } = TABS[id];
           const on = id === active;
           const p = categoryProgress(day, adhkarCategory(id));
           return (
             <button key={id} type="button" role="tab" aria-selected={on} onClick={() => { setActive(id); window.scrollTo({ top: 0 }); }}
-              className={cn("relative flex flex-col items-center gap-1 rounded-xl py-2 text-[0.72rem] transition", on ? "font-semibold text-emerald-950" : "text-emerald-100/75 hover:bg-white/5")}
+              data-adhkar-tab={id} className={cn("relative flex min-w-0 flex-col items-center gap-1 rounded-xl px-0.5 py-2 text-[0.68rem] leading-tight transition", on ? "font-semibold text-emerald-950" : "text-emerald-100/75 hover:bg-white/5")}
               style={on ? { background: GOLD_GRADIENT } : undefined}>
               <Icon className="h-5 w-5" />
               {t(label)}
@@ -92,6 +98,11 @@ export function AdhkarTab() {
       <ol className="space-y-3">
         {category.items.map((d, i) => (
           <li key={d.id}>
+            {d.group && d.group !== category.items[i - 1]?.group && (
+              <h3 className="mb-2 mt-1 flex items-center gap-2 text-sm font-semibold" style={{ color: GOLD_LIGHT }} data-dua-group={d.group}>
+                <span className="h-px flex-1" style={{ background: alpha(GOLD, 0.35) }} />{t(d.group === "quran" ? "duaFromQuran" : "duaFromSunnah")}<span className="h-px flex-1" style={{ background: alpha(GOLD, 0.35) }} />
+              </h3>
+            )}
             <DhikrCard dhikr={d} count={day.counts[d.id] ?? 0} mushaf={mushaf} onCount={() => onCount(d, i)}
               cardRef={(el) => { cards.current[d.id] = el; }} />
           </li>
@@ -159,7 +170,7 @@ function QuranText({ refs, mushaf, clamp }: { refs: QuranRef[]; mushaf: Mushaf |
         <p key={`${r.surah}:${r.from}`}>
           {r.basmala && <span className="block text-[0.9em] text-emerald-100/80">{basmala}</span>}
           {Array.from({ length: r.to - r.from + 1 }, (_, i) => r.from + i).map((a) => (
-            <span key={a}>{mushaf.words(r.surah, a).join(" ")} <span className="whitespace-nowrap text-[0.85em]" style={{ color: GOLD_LIGHT }}>﴿{toArabicDigits(a)}﴾</span> </span>
+            <span key={a}>{refWords(r, a, mushaf.words(r.surah, a)).join(" ")} <span className="whitespace-nowrap text-[0.85em]" style={{ color: GOLD_LIGHT }}>﴿{toArabicDigits(a)}﴾</span> </span>
           ))}
         </p>
       ))}

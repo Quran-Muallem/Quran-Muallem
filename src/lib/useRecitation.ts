@@ -96,6 +96,11 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
     /** "phonemes" while the Zipformer engine judges this recitation. */
     engine: textEngine,
     match, transcript, listening, rebase, forgetMistakes, processing, useWhisper, reset, toggle,
+    /** Paused recitation (on-device engines): state and colours kept, recognition goes on after `resume`. */
+    paused: useWhisper && whisper.paused,
+    canPause: useWhisper,
+    pause: whisper.pause,
+    resume: whisper.resume,
     error: useWhisper ? whisper.error : speechErrorKey(speech.error),
     getLevel: useWhisper ? whisper.getLevel : undefined,
     /** Seconds recorded so far (Whisper engines; 0 for the browser recognizer). */

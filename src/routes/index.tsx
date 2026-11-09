@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { BookOpen, BookOpenCheck, Compass, Headphones, Home, Languages, Loader2, PenLine, Mic, Pause, Play, Lightbulb, Repeat, RotateCcw, Settings, Sparkles, Square, SunMoon, Target } from "lucide-react";
+import { BookOpen, Headphones, Home, LayoutGrid, Loader2, PenLine, Mic, Lightbulb, RotateCcw, Search, Settings, Sparkles, Square, Target, Pause, Play } from "lucide-react";
 import { VoiceWordFix, type WordFix } from "@/components/VoiceWordFix";
 import { useVoiceProfile } from "@/lib/userAdaptation";
 import { useMistakeHaptics } from "@/lib/useMistakeHaptics";
@@ -13,26 +13,29 @@ import { BurgerButton, MushafMenu, type AppTab } from "@/components/mushaf/Musha
 import { KhatmaView } from "@/components/KhatmaView";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { startAdhanService } from "@/lib/AdhanNotificationService";
+import { AdhanAlert } from "@/components/hub/AdhanAlert";
 import { LanguageContext, directionFor, translate, useI18n, type CopyKey, type Language } from "@/lib/i18n";
 import { loadLanguage } from "@/i18n";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { BadgeProvider } from "@/context/BadgeContext";
-import { RecitationProvider, unifiedMode, useRecitationStore } from "@/context/RecitationContext";
-import { passageFinished, practiceWordResults } from "@/lib/surahCompletion";
+import { RecitationProvider, recitationStore, unifiedMode, useRecitationStore, useWordColors, type RecitedWord } from "@/context/RecitationContext";
+import { isJudged, passageTokenKeys } from "@/lib/wordColors";
+import { QuranSearchModal, type SearchTarget } from "@/components/QuranSearchModal";
+import { passageFinished, practiceWordResults, tally } from "@/lib/surahCompletion";
 import { WelcomeModal } from "@/components/WelcomeModal";
 import { SplashScreen } from "@/components/SplashScreen";
 import { SettingsModal } from "@/components/SettingsModal";
 import { Dashboard, type StudyTarget } from "@/components/Dashboard";
 import { MushafReader } from "@/components/MushafReader";
-import { TajweedGuide } from "@/components/TajweedGuide";
-import { QiblaCompass } from "@/components/QiblaCompass";
-import { AdhkarTab } from "@/components/AdhkarTab";
+import { IslamicHubView, type HubSection } from "@/components/IslamicHubView";
 import { BadgesModal } from "@/components/badges/BadgesModal";
 import { BadgeCelebration } from "@/components/badges/BadgeCelebration";
 import { initBadges } from "@/lib/badges";
 import { speechEngineFor, useRecognizer } from "@/lib/speechEngine";
 import { ReciterSelectModal } from "@/components/ReciterSelectModal";
-import { ReciterPill } from "@/components/ReciterPill";
+import { SheikhControls } from "@/components/ReciterPill";
+import { useKeepAwake } from "@/lib/wakeLock";
 import { InviteDialog } from "@/components/InviteDialog";
 import { WhisperModelStatus } from "@/components/WhisperModelStatus";
 import { GOLD_GRADIENT, GOLD_LIGHT } from "@/components/ornaments";
@@ -40,7 +43,7 @@ import { useAuth } from "@/lib/useAuth";
 import { type UserSession } from "@/lib/authService";
 import { DEFAULT_SETTINGS, applyTheme, updateSettings, useSettings } from "@/lib/settings";
 import { loadProgress, recordAttempt } from "@/lib/progressStorage";
-import { recordingForRange, saveRecording, useRecordings } from "@/lib/audioStorage";
+import { accuracyOf, recordingForRange, saveRecording, useRecordings } from "@/lib/audioStorage";
 import { RecitationPlayerBar } from "@/components/RecitationPlayerBar";
 import { ayahResults } from "@/lib/practiceResults";
 import { ayahMarker, toArabicDigits, type Ayah } from "@/lib/quranService";
@@ -69,6 +72,8 @@ export const Route = createFileRoute("/")({
 type Tab = AppTab;
 type PracticeMode = "RECITATION_MODE" | "MEMORIZATION_MODE";
 type PracticeTarget = { surahId: number; fromAyah: number; toAyah: number; mode: PracticeMode };
+/** Where the Mushaf opens: a verse (and mode / words to mark); `jumpId` changes on every request. */
+type MushafTarget = { surahId: number; focus?: number | undefined; mode?: PracticeMode | undefined; mark?: string[] | undefined; jumpId: number };
 
 /** At most this many verses per practice range (keeps live matching fast on phones). */
 const MAX_RANGE = 15;
@@ -77,12 +82,16 @@ export function App() {
   const settings = useSettings();
   const language = settings.language;
   useEffect(() => { void loadLanguage(language); }, [language]);
+  // Adhan notifications stay planned (7 days ahead) without opening the prayer screen.
+  useEffect(() => { startAdhanService(language); }, [language]);
   useEffect(() => { document.documentElement.lang = language; document.documentElement.dir = directionFor(language); }, [language]);
   // Apply the theme once the saved settings are loaded (until then app-main.tsx has set the saved one).
   useEffect(() => { if (settings !== DEFAULT_SETTINGS) applyTheme(settings.theme); }, [settings]);
 
   const [tab, setTab] = useState<Tab>("home");
-  const [mushaf, setMushaf] = useState<{ surahId: number; focus?: number | undefined }>({ surahId: 1 });
+  /** Open section of the Islamic hub (null = the hub's overview). */
+  const [hubSection, setHubSection] = useState<HubSection | null>(null);
+  const [mushaf, setMushaf] = useState<MushafTarget>({ surahId: 1, jumpId: 0 });
   const [practice, setPractice] = useState<PracticeTarget>({ surahId: 1, fromAyah: 1, toAyah: 3, mode: "RECITATION_MODE" });
   const auth = useAuth();
   const [renameOpen, setRenameOpen] = useState(false);
@@ -99,65 +108,91 @@ export function App() {
     void loadProgress().then((p) => {
       const last = p.lastPosition;
       if (!last) return;
-      setMushaf({ surahId: last.surahId, focus: last.ayahId });
+      setMushaf((cur) => ({ surahId: last.surahId, focus: last.ayahId, jumpId: cur.jumpId + 1 }));
       setPractice((cur) => ({ ...cur, surahId: last.surahId, fromAyah: last.ayahId, toAyah: last.ayahId + 2, mode: last.mode === "MEMORIZATION_MODE" ? "MEMORIZATION_MODE" : "RECITATION_MODE" }));
     });
   }, []);
 
   // Global burger menu (all screens except the Mushaf, which has its own with page controls).
   const [menuOpen, setMenuOpen] = useState(false);
-  const go = useCallback((t: Tab) => { setTab(t); window.scrollTo({ top: 0 }); }, []);
+  const [searchOpen, setSearchOpen] = useState(false);
+  /** Mushaf ↔ Recite: switching views opens the passage recited last in the other view (exact verses, mode). */
+  const synced = useRef(0);
+  const syncTo = useCallback((t: Tab) => {
+    const r = recitationStore.activeRange.get();
+    if (!r || r.at <= synced.current) return;
+    if (t === "practice" && r.view === "mushaf") {
+      synced.current = r.at;
+      setPractice({ surahId: r.surah, fromAyah: r.from, toAyah: Math.min(r.to, r.from + MAX_RANGE - 1), mode: r.mode });
+    } else if (t === "mushaf" && r.view === "practice") {
+      synced.current = r.at;
+      setMushaf((cur) => ({ surahId: r.surah, focus: r.from, mode: r.mode, jumpId: cur.jumpId + 1 }));
+    }
+  }, []);
+  const switchTab = useCallback((t: Tab) => { syncTo(t); setTab(t); }, [syncTo]);
+  const go = useCallback((t: Tab) => { if (t === "hub") setHubSection(null); switchTab(t); window.scrollTo({ top: 0 }); }, [switchTab]);
+  const jump = useCallback((target: { surahId: number; focus?: number | undefined; mark?: string[] | undefined; mode?: PracticeMode | undefined }) => {
+    // An explicit target wins over the last recited passage.
+    synced.current = Math.max(synced.current, recitationStore.activeRange.get()?.at ?? 0);
+    setMushaf((cur) => ({ ...target, jumpId: cur.jumpId + 1 }));
+  }, []);
+  const onSearchResult = useCallback((r: SearchTarget) => {
+    jump({ surahId: r.surahId, focus: r.ayah, mark: r.words?.map((w) => `${r.surahId}:${r.ayah}:${w}`) });
+    go("mushaf");
+  }, [jump, go]);
   /** Opens the Mushaf at a page (Khatma "next page", menu juz / page). */
   const openPage = useCallback((page: number) => {
     void loadMushaf().then((m) => {
       const v = m.pageVerses(Math.min(TOTAL_PAGES, Math.max(1, page)))[0];
-      if (v) setMushaf({ surahId: v.surah, focus: v.ayah });
+      if (v) jump({ surahId: v.surah, focus: v.ayah });
       go("mushaf");
     }).catch(() => {});
-  }, [go]);
+  }, [go, jump]);
 
   const open = useCallback((t: StudyTarget) => {
-    if (t.mode === "READING") { setMushaf({ surahId: t.surahId, focus: t.fromAyah }); setTab("mushaf"); }
+    if (t.mode === "READING") { jump({ surahId: t.surahId, focus: t.fromAyah }); setTab("mushaf"); }
     else {
       const to = Math.max(t.toAyah, Math.min(t.fromAyah + 2, t.toAyah + 2));
+      synced.current = Math.max(synced.current, recitationStore.activeRange.get()?.at ?? 0);
       setPractice({ surahId: t.surahId, fromAyah: t.fromAyah, toAyah: Math.min(to, t.fromAyah + MAX_RANGE - 1), mode: t.mode });
       setTab("practice");
     }
     window.scrollTo({ top: 0 });
-  }, []);
+  }, [jump]);
 
   return (
     <LanguageContext.Provider value={language}><RecitationProvider><BadgeProvider>
       <div lang={language} dir={directionFor(language)} className="min-h-screen bg-background">
+        <AdhanAlert />
         <div className="mx-auto flex min-h-screen max-w-md flex-col bg-hero">
           {/* Global header on every screen (the full-screen Mushaf has the same burger in its own top row) */}
           <div className={cn("sticky top-0 z-30 -mb-1 flex items-center gap-2 bg-gradient-to-b from-[var(--hq-emerald-deep)] via-[var(--hq-emerald-deep)]/90 to-transparent px-5 pb-2 pt-[max(1rem,env(safe-area-inset-top))]", tab === "mushaf" && "hidden")}>
             <BurgerButton onClick={() => setMenuOpen(true)} label={translate(language, "menu")} />
             {auth.status === "signedIn" ? <AccountMenu session={auth.session} onRename={() => setRenameOpen(true)} /> : <span />}
             <span className="flex-1" />
+            <TopButton onClick={() => setSearchOpen(true)} label={translate(language, "searchTitle")}><Search className="h-4 w-4" /></TopButton>
             <TopButton onClick={() => setSettingsOpen("manual")} label={translate(language, "settingsTitle")}><Settings className="h-4 w-4" /></TopButton>
             <LanguageSelector />
           </div>
           <main key={tab} className={cn("flex-1 pb-28 animate-in fade-in slide-in-from-bottom-2 duration-300", tab === "mushaf" ? "px-1.5 pb-0 pt-[max(0.5rem,env(safe-area-inset-top))]" : "px-5 pt-5")}>
             {tab === "home" && <Dashboard userName={auth.session?.provider === "guest" ? null : auth.session?.name || null} onOpen={open} onInvite={() => setInviteOpen(true)} onBadges={() => setBadgesOpen({ surah: null })} />}
             {tab === "mushaf" && (
-              <MushafReader surahId={mushaf.surahId} focusAyah={mushaf.focus} onSurahChange={(id) => setMushaf({ surahId: id })} onPractice={open}
-                onNavigate={(t) => { setTab(t); window.scrollTo({ top: 0 }); }} onSettings={() => setSettingsOpen("manual")} onInvite={() => setInviteOpen(true)} />
+              <MushafReader surahId={mushaf.surahId} focusAyah={mushaf.focus} focusMode={mushaf.mode} mark={mushaf.mark} jumpId={mushaf.jumpId} onPractice={open}
+                onNavigate={go} onSettings={() => setSettingsOpen("manual")} onInvite={() => setInviteOpen(true)} onSearch={() => setSearchOpen(true)} />
             )}
             {tab === "practice" && <PracticeScreen target={practice} onTargetChange={setPractice} />}
             {tab === "khatma" && <KhatmaView onOpenPage={openPage} />}
-            {tab === "tajweed" && <TajweedGuide />}
-            {tab === "adhkar" && <AdhkarTab />}
-            {tab === "qibla" && <QiblaCompass />}
+            {tab === "hub" && <IslamicHubView section={hubSection} onSection={setHubSection} onRetest={open} />}
           </main>
           {/* Full-screen Mushaf: the tab bar is replaced by the burger menu */}
           {tab !== "mushaf" && <BottomNav tab={tab} setTab={go} />}
           {tab !== "mushaf" && (
             <MushafMenu open={menuOpen} onClose={() => setMenuOpen(false)} current={tab} page={1} surah={mushaf.surahId} juz={1}
-              onPage={openPage} onSurah={(s2) => { setMushaf({ surahId: s2, focus: 1 }); go("mushaf"); }}
+              onPage={openPage} onSurah={(s2) => { jump({ surahId: s2, focus: 1 }); go("mushaf"); }}
               onJuz={(j) => { void loadMushaf().then((m) => openPage(m.juzStartPage(j))).catch(() => {}); }}
-              onNavigate={go} onSettings={() => setSettingsOpen("manual")} onInvite={() => setInviteOpen(true)} />
+              onNavigate={go} onSettings={() => setSettingsOpen("manual")} onInvite={() => setInviteOpen(true)} onSearch={() => setSearchOpen(true)} />
           )}
+          <QuranSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} onSelect={onSearchResult} />
         </div>
         {/* First launch (no saved session): must choose a method. Later (guest → account): closable. */}
         <WelcomeModal open={!splash && auth.status === "signedOut"} mode="start"
@@ -169,7 +204,7 @@ export function App() {
         )}
         <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} />
         <BadgesModal open={badgesOpen !== null} initialSurah={badgesOpen?.surah ?? null} onOpenChange={(o) => { if (!o) setBadgesOpen(null); }}
-          onOpenSurah={(s) => { setMushaf({ surahId: s, focus: 1 }); setTab("mushaf"); window.scrollTo({ top: 0 }); }} />
+          onOpenSurah={(s) => { jump({ surahId: s, focus: 1 }); setTab("mushaf"); window.scrollTo({ top: 0 }); }} />
         {!splash && <BadgeCelebration onShowAll={(s) => setBadgesOpen({ surah: s })} />}
         <SettingsModal open={settingsOpen !== null} onOpenChange={(o) => { if (!o) setSettingsOpen(null); }} />
       </div>
@@ -216,13 +251,11 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
     { id: "mushaf", label: t("navMushaf"), icon: BookOpen },
     { id: "practice", label: t("navPractice"), icon: Mic },
     { id: "khatma", label: t("navKhatma"), icon: Target },
-    { id: "tajweed", label: t("navTajweed"), icon: BookOpenCheck },
-    { id: "adhkar", label: t("navAdhkar"), icon: SunMoon },
-    { id: "qibla", label: t("navQibla"), icon: Compass },
+    { id: "hub", label: t("navHub"), icon: LayoutGrid },
   ];
   return (
     <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t border-border bg-card/95 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1.5 backdrop-blur">
-      <div className="grid grid-cols-7">
+      <div className="grid grid-cols-5">
         {items.map(({ id, label, icon: Icon }) => (
           <button type="button" key={id} onClick={() => setTab(id)} aria-current={tab === id ? "page" : undefined}
             className={cn("flex min-w-0 flex-col items-center gap-0.5 rounded-xl py-1.5 text-[0.66rem] leading-tight transition-colors",
@@ -294,12 +327,31 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
     ? matchLivePhonemes(transcript, texts, refs, { final: !whisper.recording })
     : matchLive(transcript, texts)), [transcript, texts, profile, textKind, refs, whisper.recording]); // eslint-disable-line react-hooks/exhaustive-deps
   const listening = useWhisper ? whisper.recording : speech.isListening;
+  // Word colours shared with the Mushaf (RecitationContext): a passage recited there shows the same
+  // green / orange / red here; a new recitation replaces them verse by verse as the reciter reaches them.
+  const colors = useWordColors();
+  const tokenKeys = useMemo(() => passageTokenKeys(target.surahId, ayat, mushafWords ? (s2, a) => mushafWords.words(s2, a) : null, (tok) => !!normalizeArabic(tok)),
+    [target.surahId, ayat, mushafWords]);
+  const shown = useMemo((): LiveStatus[] => {
+    const live = listening || match.statuses.some(isJudged);
+    // Owner key of each token (a waqf sign belongs to the word before it).
+    let owner: string | null = null;
+    const owners = tokenKeys.map((k) => (owner = k ?? owner));
+    const verse = (k: string | null) => (k ? k.slice(0, k.lastIndexOf(":")) : "");
+    let reached = -1;
+    if (live) { match.statuses.forEach((st, i) => { if (isJudged(st)) reached = i; }); if (listening) reached = Math.max(reached, match.cursor); }
+    const liveVerses = new Set(owners.slice(0, reached + 1).map(verse));
+    return tokenKeys.map((k, i) => {
+      if (live && liveVerses.has(verse(owners[i] ?? null))) return match.statuses[i] ?? "PENDING";
+      return (k && colors.get(k)?.st) || "PENDING";
+    });
+  }, [listening, match.statuses, match.cursor, tokenKeys, colors]);
   // Light vibration when a word turns red/orange while reciting (recognition keeps running).
   useMistakeHaptics(match.statuses, listening);
   const [wordFix, setWordFix] = useState<WordFix | null>(null);
   useEffect(() => { if (listening) setWordFix(null); }, [listening]);
   const tapWord = (i: number) => {
-    const heard = match.heard[i];
+    const heard = match.heard[i] ?? (tokenKeys[i] ? colors.get(tokenKeys[i]!)?.heard : null) ?? null;
     let o = 0;
     for (const a of ayat) {
       const words = a.text.split(" ");
@@ -308,7 +360,7 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
         const phonemes = textKind === "phonemes" ? refs?.[i] ?? undefined : undefined;
         // Word number as Quran.com counts it: waqf signs printed as separate tokens are not words.
         const wordNo = words.slice(0, i - o + 1).filter((w) => normalizeArabic(w)).length;
-        const st = match.statuses[i];
+        const st = shown[i];
         setWordFix(word ? { id: `${target.surahId}:${a.number}:${wordNo}`, word, heard: heard ?? null, surah: target.surahId, ayah: a.number, phonemes, status: st === "WARNING" ? "WARNING" : "ERROR" } : null);
         return;
       }
@@ -320,7 +372,10 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
   const [repeat, setRepeat] = useState(false);
   const [reciterOpen, setReciterOpen] = useState(false);
   const recordings = useRecordings();
-  const player = useAyahPlayer({ reciterId: settings.reciterId, surah: target.surahId, from, to, repeat });
+  // The Sheikh reads on to the end of the surah (until paused / stopped); with "repeat" he loops the range.
+  const player = useAyahPlayer({ reciterId: settings.reciterId, surah: target.surahId, from, to: count, repeat, repeatTo: to });
+  // Screen stays on while reciting or listening.
+  useKeepAwake(listening || player.playing || player.loading);
 
   const [saved, setSaved] = useState<{ count: number; accuracy: number } | null>(null);
   // Back from another tab: the last recitation of this passage (and its word colours) comes back.
@@ -391,9 +446,18 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
       session.current = false;
       const { match: m, ayat: a, from: f, to: tt } = latest.current;
       // Keep the recording of this passage on the device (replaces an older one of the same verses).
-      void whisper.takeAudio().then((kept) => { if (kept) void saveRecording({ surah: target.surahId, fromAyah: f, toAyah: tt, ...kept }); });
+      void whisper.takeAudio().then((kept) => { if (kept) void saveRecording({ surah: target.surahId, fromAyah: f, toAyah: tt, ...kept, accuracy: accuracyOf(tally(m.statuses)) ?? undefined, mode: target.mode === "MEMORIZATION_MODE" ? "memorization" : "reading" }); });
       const mw = latestMushaf.current;
       store.recordWords(unifiedMode(target.mode), practiceWordResults(target.surahId, a, m.statuses, mw ? (s, x) => mw.words(s, x) : null, unifiedMode(target.mode), latestHints.current));
+      // Same colours in the Mushaf; this passage becomes the one the Mushaf opens at.
+      const tk = passageTokenKeys(target.surahId, a, mw ? (s, x) => mw.words(s, x) : null, (tok) => !!normalizeArabic(tok));
+      const recited: RecitedWord[] = [];
+      tk.forEach((key, i) => {
+        if (!key) return;
+        const st = m.statuses[i] ?? "PENDING";
+        recited.push({ key, status: st === "CORRECT" && latestHints.current.has(i) ? "WARNING" : st, heard: m.heard[i] ?? null });
+      });
+      store.commitWords(recited, target.mode, "practice");
       const results = ayahResults(a, m.statuses.map((st, i): LiveStatus => (st === "CORRECT" && latestHints.current.has(i) ? "WARNING" : st)), m.done);
       if (!results.length) return;
       void recordAttempt({ surahId: target.surahId, mode: target.mode, results });
@@ -423,7 +487,6 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
   const errorKey = useWhisper ? whisper.error : speechErrorKey(speech.error);
   const setRange = (f: number, tt: number) => onTargetChange({ ...target, fromAyah: f, toAyah: Math.min(Math.max(tt, f), f + MAX_RANGE - 1) });
   const num = (n: number) => (language === "ar" ? toArabicDigits(n) : String(n));
-  const reciter = getReciter(settings.reciterId);
 
   return (
     <div className="flex min-h-[calc(100dvh-9rem)] flex-col gap-4">
@@ -432,8 +495,11 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
         <p className="mt-1 text-sm text-muted-foreground">{masked ? t("hifzSub") : t("reciteSub")}</p>
       </div>
 
-      {/* prominent Sheikh selector (same Sheikh as in the Mushaf) */}
-      <ReciterPill reciterId={settings.reciterId} playing={player.playing} onOpen={() => setReciterOpen(true)} />
+      {/* Sheikh player at the top: play / pause · Sheikh (same as in the Mushaf) · repeat the range */}
+      <SheikhControls reciterId={settings.reciterId} playing={player.playing} loading={player.loading} failed={player.failed}
+        onToggle={() => { if (text.status === "ready") player.toggle(); }} onReciter={() => setReciterOpen(true)}
+        repeat={repeat} onRepeat={() => setRepeat((r) => !r)}
+        detail={player.playing ? `${t("playing")} ${num(player.ayah)}` : undefined} />
 
       <div role="tablist" className="grid grid-cols-2 gap-1 rounded-2xl bg-muted p-1">
         {([["RECITATION_MODE", "modeRecitation"], ["MEMORIZATION_MODE", "modeMemorization"]] as const).map(([id, key]) => (
@@ -463,6 +529,7 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
       {/* Start / stop right above the surah title; it stays reachable (sticky) while the text scrolls along */}
       <div className={cn("-mx-1 rounded-3xl px-1 transition-colors", listening && "sticky top-[calc(max(1rem,env(safe-area-inset-top))+3.25rem)] z-20 bg-background/85 shadow-lg backdrop-blur")}>
         <MicButton recording={listening} busy={processing || text.status !== "ready"} getLevel={useWhisper ? whisper.getLevel : undefined} wave={!useWhisper} compact={listening}
+          paused={useWhisper && whisper.paused} onPause={useWhisper ? () => { if (whisper.paused) whisper.resume(); else whisper.pause(); } : undefined}
           statusText={useWhisper ? (settings.whisperLive ? t("listeningWhisperLive") : t("recording")) : t("listening")} onClick={toggleMic} label={t("record")} />
       </div>
 
@@ -476,7 +543,7 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
           </div>
         )}
         {text.status === "ready" && (
-          <LiveText ayat={ayat} statuses={match.statuses} cursor={match.cursor} masked={masked} hints={hints} active={listening} playingAyah={player.playing ? player.ayah : null}
+          <LiveText ayat={ayat} statuses={shown} cursor={match.cursor} masked={masked} hints={hints} active={listening} playingAyah={player.playing ? player.ayah : null}
             onWordTap={listening ? undefined : tapWord} />
         )}
         {wordFix && <VoiceWordFix fix={wordFix} onClose={() => setWordFix(null)} className="mt-3" />}
@@ -492,25 +559,8 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
 
       <p className="text-center text-xs text-muted-foreground">{masked ? t("memorizeHint") : t("readAlongHint")}</p>
       {!masked && <div className="flex flex-wrap gap-2 text-xs"><Legend cls="bg-success" t={t("correct")} /><Legend cls="bg-tashkeel" t={t("warning")} /><Legend cls="bg-destructive" t={t("missing")} /></div>}
-      {!listening && match.counts.error + match.counts.warning > 0 && <p className="text-center text-xs text-accent">{t("voiceTapHint")}</p>}
+      {!listening && shown.some((st) => st === "ERROR" || st === "WARNING") && <p className="text-center text-xs text-accent">{t("voiceTapHint")}</p>}
 
-      {/* Sheikh plays along */}
-      <div className="flex items-center gap-2 rounded-2xl border border-border bg-card p-2.5">
-        <button type="button" aria-label={player.playing ? t("pause") : t("play")} onClick={player.toggle} disabled={text.status !== "ready"}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50">
-          {player.loading ? <Loader2 className="h-5 w-5 animate-spin" /> : player.playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-        </button>
-        <button type="button" onClick={() => setReciterOpen(true)} className="min-w-0 flex-1 text-start">
-          <span className="block truncate text-sm font-medium">{language === "ar" ? reciter.nameArabic : reciter.nameEnglish}</span>
-          <span className={cn("block truncate text-xs", player.failed ? "text-destructive" : "text-muted-foreground")}>
-            {player.failed ? t("audioError") : player.playing ? `${t("playing")} ${num(player.ayah)}` : t("listen")}
-          </span>
-        </button>
-        <button type="button" onClick={() => setRepeat((r) => !r)} aria-pressed={repeat} aria-label={t("repeat")}
-          className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", repeat ? "bg-accent/20 text-accent" : "text-muted-foreground")}>
-          <Repeat className="h-4 w-4" />
-        </button>
-      </div>
       {player.playing && listening && <p className="flex items-center justify-center gap-2 text-xs text-accent"><Headphones className="h-3.5 w-3.5" />{t("headphonesHint")}</p>}
 
       {useWhisper && <WhisperModelStatus model={settings.whisperModel} compact />}
@@ -558,10 +608,13 @@ function LevelMeter({ active, getLevel }: { active: boolean; getLevel: () => num
   );
 }
 
-function MicButton({ recording, busy = false, onClick, label, getLevel, wave = false, statusText, compact = false }: {
+function MicButton({ recording, busy = false, onClick, label, getLevel, wave = false, statusText, compact = false, paused = false, onPause }: {
   recording: boolean; busy?: boolean; onClick: () => void; label: string; getLevel?: (() => number) | undefined; wave?: boolean; statusText?: string;
   /** Smaller while reciting, so the verses keep most of the screen. */
   compact?: boolean;
+  /** Pause / resume while reciting (the session and its colours are kept). */
+  paused?: boolean;
+  onPause?: (() => void) | undefined;
 }) {
   const { t } = useI18n();
   return (
@@ -569,13 +622,19 @@ function MicButton({ recording, busy = false, onClick, label, getLevel, wave = f
       <Button variant="ghost" onClick={onClick} disabled={busy} aria-label={recording ? t("stop") : label}
         className={cn("relative flex shrink-0 items-center justify-center rounded-full transition [&_svg]:size-9", compact ? "h-14 w-14 [&_svg]:size-6" : "h-24 w-24",
           recording ? "bg-destructive text-destructive-foreground" : "bg-gold text-accent-foreground shadow-glow")}>
-        {recording && <span className="animate-ring absolute inset-0 rounded-full bg-destructive" />}
+        {recording && !paused && <span className="animate-ring absolute inset-0 rounded-full bg-destructive" />}
         {recording ? <Square className={cn("relative", compact ? "h-6 w-6" : "h-8 w-8")} /> : <Mic className="relative h-10 w-10" />}
       </Button>
+      {recording && onPause && (
+        <Button variant="ghost" onClick={onPause} aria-pressed={paused} data-recite-pause="" aria-label={paused ? t("reciteResume") : t("recitePause")}
+          className={cn("flex shrink-0 items-center gap-1.5 rounded-full px-3 [&_svg]:size-4", compact ? "h-11" : "h-12", paused ? "bg-gold text-accent-foreground shadow-glow" : "border border-accent/40 text-accent")}>
+          {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}<span className="text-sm">{paused ? t("reciteResume") : t("recitePause")}</span>
+        </Button>
+      )}
       <div className={cn("flex flex-col items-center gap-1.5", compact && "items-start")}>
-        {getLevel && <LevelMeter active={recording} getLevel={getLevel} />}
-        {wave && recording && <ListeningWave />}
-        <p className="text-sm text-muted-foreground">{recording ? statusText ?? t("recording") : label}</p>
+        {getLevel && <LevelMeter active={recording && !paused} getLevel={getLevel} />}
+        {wave && recording && !paused && <ListeningWave />}
+        <p className="text-sm text-muted-foreground">{recording ? (paused ? t("recitePausedStatus") : statusText ?? t("recording")) : label}</p>
       </div>
     </div>
   );

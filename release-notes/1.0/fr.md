@@ -6,6 +6,7 @@ Gratuit pour toujours : sans publicité, sans abonnement, sans compte. Tout rest
 **Le Mushaf**
 • Le Mushaf de Médine en écriture uthmanie : les 604 pages de 15 lignes, comme l’exemplaire imprimé
 • Glissez pour tourner les pages ; allez à n’importe quelle sourate, juz ou page depuis le menu
+• Recherche dans le Coran : une sourate par nom ou numéro, un verset (2:255) ou des mots arabes dans tout le texte – hors ligne
 
 **Récitation & Hifz avec l’IA sur l’appareil**
 • Récitez sur la page : les mots deviennent verts (justes), orange (presque justes) ou rouges (omis ou mal lus)
@@ -13,6 +14,7 @@ Gratuit pour toujours : sans publicité, sans abonnement, sans compte. Tout rest
 • « Afficher le mot » révèle le mot suivant dès que vous bloquez, sans limite
 • Moteur phonétique coranique entraîné sur la récitation de Ḥafṣ ; il fonctionne hors ligne et votre voix n’est jamais envoyée
 • Les pages tournent automatiquement pendant la récitation, et les mots justes et faux sont comptés sur plusieurs pages
+• Vos couleurs restent : les mots verts, orange et rouges restent sur chaque page – après un changement de page, sur l’écran de récitation, en mode hifz ou après un redémarrage ; un verset n’est recoloré que si vous le récitez à nouveau
 • Sourate terminée : le micro s’arrête avec un carillon doux et une vibration
 • Une légère vibration signale une erreur sans vous interrompre
 

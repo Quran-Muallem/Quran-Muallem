@@ -1,100 +1,138 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { getAyahAudioUrl, getReciter } from "@/lib/reciterManager";
-import { endSession, sheikhAudio, stopSheikhAudio, updateSession } from "@/lib/audioPlayback";
+import { claimSheikhAudio, endSession, sessionTexts, sheikhAudio, stopSheikhAudio, updateSession } from "@/lib/audioPlayback";
 import { getSurahMeta } from "@/lib/quranService";
+import { LanguageContext, translate } from "@/lib/i18n";
 
 export type VerseRef = { surah: number; ayah: number };
 const key = (v: VerseRef) => `${v.surah}:${v.ayah}`;
 
+/** The verse after `v` in the Mushaf (next surah after a surah's last verse; null after An-Nas). */
+export function nextVerse(v: VerseRef): VerseRef | null {
+  const meta = getSurahMeta(v.surah);
+  if (meta && v.ayah < meta.versesCount) return { surah: v.surah, ayah: v.ayah + 1 };
+  return v.surah < 114 ? { surah: v.surah + 1, ayah: 1 } : null;
+}
+/** The verse before `v` (last verse of the previous surah before a surah's first verse). */
+export function previousVerse(v: VerseRef): VerseRef | null {
+  if (v.ayah > 1) return { surah: v.surah, ayah: v.ayah - 1 };
+  const prev = getSurahMeta(v.surah - 1);
+  return prev ? { surah: prev.id, ayah: prev.versesCount } : null;
+}
+
 /**
- * Plays the verses of the current Mushaf page one after another with the chosen Sheikh.
- * At the end of the page `onPageEnd` is called (e.g. to turn the page); playback then continues
- * on the new page, skipping a verse that was already played across the page break.
+ * Plays the Mushaf verse after verse with the chosen Sheikh, from the tapped verse on — across page breaks
+ * and on to the next surah — until paused / stopped. The audio chain does not depend on the page being
+ * rendered (pages are not turned while the screen is off): the next verse is computed and played right away,
+ * and `onFollow` only asks the Mushaf to show the page of a verse that is not on the current page.
  */
-export function usePagePlayer({ reciterId, verses, onPageEnd }: { reciterId: string; verses: VerseRef[]; onPageEnd?: (() => void) | undefined }) {
+export function usePagePlayer({ reciterId, verses, onFollow }: { reciterId: string; verses: VerseRef[]; onFollow?: ((v: VerseRef) => void) | undefined }) {
+  const language = useContext(LanguageContext);
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [current, setCurrent] = useState<VerseRef | null>(null);
   const [failed, setFailed] = useState(false);
   const audio = useRef<HTMLAudioElement | null>(null);
   const token = useRef(0);
-  const continueOnNextPage = useRef(false);
-  const lastPlayed = useRef<string | null>(null);
-  const cfg = useRef({ reciterId, verses, onPageEnd });
-  cfg.current = { reciterId, verses, onPageEnd };
+  const me = useRef(Symbol("player")).current;
+  /** The page changed because playback moved on: keep playing. */
+  const following = useRef(false);
+  const cfg = useRef({ reciterId, verses, onFollow, language });
+  cfg.current = { reciterId, verses, onFollow, language };
+  const currentRef = useRef<VerseRef | null>(null);
 
   const stopAudio = () => { if (audio.current) stopSheikhAudio(); audio.current = null; };
-  /** Lock screen / notification with play / pause / stop / next / previous verse. */
+  const onPage = (v: VerseRef) => cfg.current.verses.some((x) => x.surah === v.surah && x.ayah === v.ayah);
+
+  /** Lock screen / notification: surah · verse, «بصوت الشيخ …», play / pause / previous / next verse, progress. */
   const announce = (v: VerseRef, isPlaying: boolean) => {
-    const meta = getSurahMeta(v.surah), r = getReciter(cfg.current.reciterId);
-    const indexOf = () => { const c = stateRef.current.current; return c ? cfg.current.verses.findIndex((x) => x.surah === c.surah && x.ayah === c.ayah) : -1; };
-    updateSession({ title: `${meta?.nameArabic ?? ""} · ${v.ayah}`, artist: r.nameArabic, album: meta?.nameSimple }, isPlaying, {
-      onPlay: () => { const c = stateRef.current.current; void playIndex(Math.max(0, c ? indexOf() : 0)); },
-      onPause: () => { token.current++; stopAudio(); setPlaying(false); setLoading(false); continueOnNextPage.current = false; const c = stateRef.current.current; if (c) announce(c, false); },
-      onStop: () => { token.current++; stopAudio(); setPlaying(false); setLoading(false); continueOnNextPage.current = false; endSession(); },
-      onNext: () => { void playIndex(indexOf() + 1); },
-      onPrevious: () => { void playIndex(Math.max(0, indexOf() - 1)); },
+    const c = cfg.current;
+    const meta = getSurahMeta(v.surah), r = getReciter(c.reciterId);
+    const texts = sessionTexts((k) => translate(c.language, k), { language: c.language, surahArabic: meta?.nameArabic ?? "", surahSimple: meta?.nameSimple ?? "", ayah: v.ayah, reciterArabic: r.nameArabic, reciterEnglish: r.nameEnglish });
+    updateSession({ ...texts, album: "Quran Muallem · معلم القرآن" }, isPlaying, {
+      onPlay: () => { const el = audio.current; if (el && el.paused && el.src) void el.play().then(() => { setPlaying(true); announce(v, true); }).catch(() => {}); else void playVerse(currentRef.current ?? v); },
+      onPause: () => pauseRef.current(),
+      onStop: () => { token.current++; stopAudio(); setPlaying(false); setLoading(false); endSession(); },
+      onNext: () => { const n = currentRef.current && nextVerse(currentRef.current); if (n) void playVerse(n); },
+      onPrevious: () => { const p = currentRef.current && previousVerse(currentRef.current); if (p) void playVerse(p); },
+      onSeek: (t) => { if (audio.current) audio.current.currentTime = t; },
     });
   };
 
-  const playIndex = useCallback(async (i: number) => {
+  const playVerse = useCallback(async (v: VerseRef, retried = false) => {
     const my = ++token.current;
+    claimSheikhAudio(me, () => { token.current++; audio.current = null; setPlaying(false); setLoading(false); });
     stopAudio();
-    const { verses: vs, reciterId: r } = cfg.current;
-    const v = vs[i];
-    if (!v) {
-      setPlaying(false); setCurrent(null);
-      if (cfg.current.onPageEnd) { continueOnNextPage.current = true; cfg.current.onPageEnd(); }
-      else endSession(); // last page of the Mushaf
-      return;
-    }
+    currentRef.current = v;
     setCurrent(v); setLoading(true); setFailed(false);
+    if (!onPage(v) && cfg.current.onFollow) { following.current = true; cfg.current.onFollow(v); }
     try {
-      const url = await getAyahAudioUrl(r, v.surah, v.ayah);
+      const url = await getAyahAudioUrl(cfg.current.reciterId, v.surah, v.ayah, retried ? 1 : 0);
       if (my !== token.current) return;
       // The shared element keeps playing with the screen off / app in the background (audioPlayback.ts).
       const a = sheikhAudio(url);
       audio.current = a;
-      a.onended = () => { if (my === token.current) { lastPlayed.current = key(v); void playIndex(i + 1); } };
-      a.onerror = () => { if (my === token.current) { setPlaying(false); setLoading(false); setFailed(true); } };
+      a.onended = () => {
+        if (my !== token.current) return;
+        const n = nextVerse(v);
+        if (n) void playVerse(n);
+        else { setPlaying(false); audio.current = null; endSession(); } // end of the Mushaf
+      };
+      a.onerror = () => { if (my === token.current) { if (!retried) void playVerse(v, true); else { setPlaying(false); setLoading(false); setFailed(true); } } };
       await a.play();
       if (my !== token.current) { a.pause(); return; }
       setPlaying(true); setLoading(false);
       announce(v, true);
+      // Warm up the next verse (download / cache) to keep the gap short.
+      const n = nextVerse(v);
+      if (n) void getAyahAudioUrl(cfg.current.reciterId, n.surah, n.ayah).catch(() => {});
     } catch {
-      if (my === token.current) { setPlaying(false); setLoading(false); setFailed(true); }
+      if (my !== token.current) return;
+      if (!retried) { void playVerse(v, true); return; }
+      setPlaying(false); setLoading(false); setFailed(true);
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // New page: continue automatically if the previous page ended while playing.
+  const pause = useCallback(() => {
+    audio.current?.pause();
+    setPlaying(false); setLoading(false);
+    const c = currentRef.current;
+    if (c) announce(c, false);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const pauseRef = useRef(pause);
+  pauseRef.current = pause;
+
+  // A page turned by the reader (not by playback) stops the recitation; one turned by playback keeps it.
   const pageKey = verses.map(key).join(",");
   useEffect(() => {
-    if (!continueOnNextPage.current) { token.current++; if (audio.current) endSession(); stopAudio(); setPlaying(false); setLoading(false); setCurrent(null); return; }
-    continueOnNextPage.current = false;
-    const start = verses[0] && key(verses[0]) === lastPlayed.current ? 1 : 0;
-    void playIndex(start);
+    if (following.current) { following.current = false; return; }
+    const c = currentRef.current;
+    if (c && onPage(c)) return;
+    if (!audio.current && !loading) { setCurrent(null); currentRef.current = null; return; }
+    token.current++; endSession(); stopAudio(); setPlaying(false); setLoading(false); setCurrent(null); currentRef.current = null;
   }, [pageKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Changing the Sheikh keeps the position: the verse being played starts again with the new voice.
-  const stateRef = useRef({ playing, loading, current });
-  stateRef.current = { playing, loading, current };
+  const stateRef = useRef({ playing, loading });
+  stateRef.current = { playing, loading };
   const firstReciter = useRef(true);
   useEffect(() => {
     if (firstReciter.current) { firstReciter.current = false; return; }
-    const { playing: p, loading: l, current: c } = stateRef.current;
-    if ((p || l) && c) {
-      const i = cfg.current.verses.findIndex((x) => x.surah === c.surah && x.ayah === c.ayah);
-      void playIndex(Math.max(0, i));
-    } else { token.current++; stopAudio(); setPlaying(false); }
-  }, [reciterId, playIndex]);
+    const c = currentRef.current;
+    if ((stateRef.current.playing || stateRef.current.loading) && c) void playVerse(c);
+    else { token.current++; stopAudio(); setPlaying(false); }
+  }, [reciterId, playVerse]);
   useEffect(() => () => { token.current++; if (audio.current) endSession(); stopAudio(); }, []);
 
   const playFrom = useCallback((v?: VerseRef) => {
-    const vs = cfg.current.verses;
-    const i = v ? Math.max(0, vs.findIndex((x) => x.surah === v.surah && x.ayah === v.ayah)) : 0;
-    void playIndex(i);
-  }, [playIndex]);
-  const pause = useCallback(() => { token.current++; stopAudio(); setPlaying(false); setLoading(false); continueOnNextPage.current = false; const c = stateRef.current.current; if (c) announce(c, false); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const toggle = useCallback(() => (playing || loading ? pause() : playFrom(current ?? undefined)), [playing, loading, pause, playFrom, current]);
+    const start = v ?? cfg.current.verses[0];
+    if (!start) return;
+    const el = audio.current, c = currentRef.current;
+    // Resume a paused verse where it stopped.
+    if (!v && el && el.paused && el.src && c) { void el.play().then(() => { setPlaying(true); announce(c, true); }).catch(() => void playVerse(c)); return; }
+    void playVerse(start);
+  }, [playVerse]); // eslint-disable-line react-hooks/exhaustive-deps
+  const toggle = useCallback(() => (playing || loading ? pause() : audio.current?.src ? playFrom() : playFrom(current ?? undefined)), [playing, loading, pause, playFrom, current]);
 
   return { playing, loading, current, failed, playFrom, pause, toggle };
 }

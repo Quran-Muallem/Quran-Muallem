@@ -209,7 +209,12 @@ function startKeeper(stream: MediaStream) {
       mr.onerror = () => resolve(null);
     });
     mr.start();
-    return { stop: () => { if (mr.state !== "inactive") mr.stop(); }, done };
+    return {
+      stop: () => { if (mr.state !== "inactive") mr.stop(); },
+      pause: () => { if (mr.state === "recording") mr.pause(); },
+      resume: () => { if (mr.state === "paused") mr.resume(); },
+      done,
+    };
   } catch { return null; }
 }
 
@@ -240,11 +245,12 @@ export async function recordWav(onLimit: () => void, onInterrupted?: () => void,
     const buffer = new ChunkedBuffer(outRate * 10);
     const frames = new FrameMeter();
     const maxSamples = Math.floor((MAX_AUDIO_BYTES - 44) / 2);
-    let stopped = false, limited = false, blocks = 0;
+    let stopped = false, limited = false, paused = false, blocks = 0;
     const startedAt = performance.now();
 
     const tap = await connectTap(audioContext, source, (block) => {
-      if (stopped || limited) return;
+      // Paused: nothing is added; the recording continues seamlessly on resume.
+      if (stopped || limited || paused) return;
       blocks++;
       const pcm = resampler.push(block);
       if (buffer.length + pcm.length > maxSamples) { limited = true; audioDebug("size limit reached", { seconds: secs(buffer.length, outRate) }); onLimit(); return; }
@@ -280,11 +286,18 @@ export async function recordWav(onLimit: () => void, onInterrupted?: () => void,
 
     return {
       cancel,
+      /**
+       * Pause / resume: the microphone stays reserved, but nothing is recorded (also not in the kept copy);
+       * on resume the samples go on where they stopped, so the recognizer sees one continuous recitation.
+       */
+      pause() { if (stopped || paused) return; paused = true; keeper?.pause(); if (track) track.enabled = false; },
+      resume() { if (stopped || !paused) return; paused = false; if (track) track.enabled = true; keeper?.resume(); void audioContext.resume().catch(() => {}); },
+      isPaused: () => paused,
       /** Sample rate of `samples()` (16 kHz, or lower on rare devices). */
       sampleRate: outRate,
       /** Current input loudness, 0..1, for a live meter. */
       level() {
-        if (stopped) return 0;
+        if (stopped || paused) return 0;
         analyser.getFloatTimeDomainData(meterData);
         return Math.min(1, rms(meterData) * 4);
       },

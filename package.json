@@ -1,7 +1,7 @@
 {
   "name": "quran-muallem",
   "displayName": "Quran Muallem - معلم القرآن",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "private": true,
   "sideEffects": [
     "**/*.css",
@@ -34,10 +34,12 @@
   "dependencies": {
     "@capacitor/android": "^8.0.0",
     "@capacitor/core": "^8.0.0",
+    "@capacitor/file-transfer": "^2.0.6",
     "@capacitor/filesystem": "^8.0.0",
     "@capacitor/geolocation": "^8.0.0",
     "@capacitor/haptics": "^8.0.0",
     "@capacitor/ios": "^8.0.0",
+    "@capacitor/local-notifications": "^8.0.0",
     "@capacitor/preferences": "^8.0.0",
     "@capacitor/share": "^8.0.0",
     "@fontsource/amiri": "^5.0.0",
@@ -77,7 +79,7 @@
     "@tanstack/react-start": "1.168.60",
     "@tanstack/router-plugin": "1.168.42",
     "@xenova/transformers": "^2.17.2",
-    "onnxruntime-web": "1.14.0",
+    "adhan": "^4.4.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -85,6 +87,7 @@
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.575.0",
+    "onnxruntime-web": "1.14.0",
     "react": "^19.2.0",
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.2.0",
@@ -127,5 +130,5 @@
   "engines": {
     "node": ">=22"
   },
-  "androidVersionCode": 18
+  "androidVersionCode": 25
 }

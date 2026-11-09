@@ -24,7 +24,7 @@ export type WordKey = string; // "surah:ayah:word"
  * with the original line breaks, surah banners and Basmala in their line slots, ornate verse medallions.
  * Words can be coloured (recitation), hidden (memorization) and verses highlighted (audio / selection).
  */
-export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, highlight, verseStatus, recorded, onVerseTap, onWordTap, maxTextHeight }: {
+export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, marked, highlight, verseStatus, recorded, onVerseTap, onWordTap, maxTextHeight }: {
   /** Tap on a word judged wrong or almost right (e.g. to add it to the voice profile). */
   onWordTap?: ((key: WordKey) => void) | undefined;
   /** Verses with a saved recording of the user get a small dot on their marker. */
@@ -37,13 +37,16 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, hig
   maxTextHeight?: number | undefined;
   /** Live recitation status per word. */
   statuses?: Map<WordKey, LiveStatus> | undefined;
+  /** Words found by the search (gold frame). */
+  marked?: Set<WordKey> | undefined;
   /** Words hidden for memorization (until recited correctly). */
   hidden?: Set<WordKey> | undefined;
   cursor?: WordKey | null | undefined;
   /** Verse "s:a" to highlight (playing / selected). */
   highlight?: string | null | undefined;
   verseStatus?: ((surah: number, ayah: number) => VerseStatus) | undefined;
-  onVerseTap?: ((surah: number, ayah: number) => void) | undefined;
+  /** Tap on a verse; `at` is the screen point of the tap (for the verse menu). */
+  onVerseTap?: ((surah: number, ayah: number, at: { x: number; y: number }) => void) | undefined;
 }) {
   const lines = mushaf.page(page);
   const wrap = useRef<HTMLDivElement>(null);
@@ -119,7 +122,7 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, hig
         const isHidden = !measuring && hidden?.has(k) && st !== "CORRECT" && st !== "WARNING" && st !== "ERROR";
         tokens.push(
           <span key={k} data-word={measuring ? undefined : k} data-status={st}
-            onClick={measuring ? undefined : onWordTap && (st === "ERROR" || st === "WARNING") ? () => onWordTap(k) : onVerseTap ? () => onVerseTap(seg.surah, seg.ayah) : undefined}
+            onClick={measuring ? undefined : onWordTap && (st === "ERROR" || st === "WARNING") ? () => onWordTap(k) : onVerseTap ? (e) => onVerseTap(seg.surah, seg.ayah, { x: e.clientX, y: e.clientY }) : undefined}
             className={cn("relative inline-block cursor-pointer whitespace-nowrap rounded-[0.25em] px-[0.04em] transition-colors duration-300",
               isHi && "bg-amber-200/15 shadow-[0_0_0_0.12em_rgba(253,230,138,.12)]",
               st === "CORRECT" && "text-emerald-300",
@@ -127,6 +130,7 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, hig
               st === "ERROR" && "bg-red-950/60 text-red-300 shadow-[inset_0_0_0_1px_rgba(248,113,113,.4)]",
               isHidden && "text-transparent",
               !measuring && !isHidden && st !== "CORRECT" && st !== "WARNING" && st !== "ERROR" && hinted?.has(k) && "text-amber-300 underline decoration-dotted decoration-1 underline-offset-[0.4em]",
+              !measuring && marked?.has(k) && !isHidden && "bg-amber-300/25 shadow-[0_0_0_0.1em_rgba(252,211,77,.75)]",
               !measuring && cursor === k && "ring-2 ring-amber-300/80 animate-pulse")}>
             {isHidden && <span aria-hidden="true" className="absolute inset-x-[0.08em] top-[38%] bottom-[30%] rounded-full bg-[color-mix(in_srgb,var(--mf-ink)_12%,transparent)]" />}
             {words[w - 1] ?? ""}
@@ -136,12 +140,12 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, hig
       if (seg.endsVerse) {
         const vs = verseStatus?.(seg.surah, seg.ayah);
         tokens.push(
-          <span key={`${verseKey}:end`} onClick={onVerseTap && !measuring ? () => onVerseTap(seg.surah, seg.ayah) : undefined}
+          <span key={`${verseKey}:end`} onClick={onVerseTap && !measuring ? (e) => onVerseTap(seg.surah, seg.ayah, { x: e.clientX, y: e.clientY }) : undefined}
             className={cn("relative inline-flex cursor-pointer rounded-full", isHi && "bg-amber-200/15")}>
             <AyahMedallion n={seg.ayah} tone={vs === "MEMORIZED" ? "memorized" : vs === "NEEDS_REVISION" ? "revision" : "gold"} />
             {!measuring && recorded?.(seg.surah, seg.ayah) && (
               <span className="pointer-events-none absolute -top-[0.1em] end-[-0.05em] h-[0.42em] w-[0.42em] rounded-full ring-2 ring-[var(--mf-paper,#fdf6e3)]"
-                style={{ background: "#e11d48" }} aria-hidden="true" />
+                style={{ background: "#f59e0b" }} aria-hidden="true" />
             )}
           </span>,
         );

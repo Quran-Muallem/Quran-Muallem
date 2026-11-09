@@ -6,6 +6,7 @@ Percuma selama-lamanya: tanpa iklan, tanpa langganan, tanpa akaun. Semuanya keka
 **Mushaf**
 • Mushaf Madinah dalam rasm Uthmani: kesemua 604 halaman, 15 baris, seperti mushaf bercetak
 • Leret untuk menyelak halaman; pergi ke mana-mana surah, juzuk atau halaman dari menu
+• Carian Al-Quran: surah mengikut nama atau nombor, ayat (2:255) atau perkataan Arab dalam seluruh teks – tanpa internet
 
 **Bacaan & hafazan dengan AI pada peranti**
 • Baca terus pada halaman: perkataan menjadi hijau (betul), oren (hampir betul) atau merah (tertinggal atau salah baca)
@@ -13,6 +14,7 @@ Percuma selama-lamanya: tanpa iklan, tanpa langganan, tanpa akaun. Semuanya keka
 • "Tunjuk perkataan" mendedahkan perkataan seterusnya apabila anda tersekat, tanpa had
 • Enjin fonem al-Quran yang dilatih dengan bacaan Hafs; berfungsi luar talian dan suara anda tidak pernah dimuat naik
 • Halaman diselak secara automatik semasa membaca, dan perkataan betul serta salah dikira merentas halaman
+• Warna anda kekal: perkataan hijau, oren dan merah kekal pada setiap halaman – selepas menyelak halaman, beralih ke skrin bacaan, menukar mod hafazan atau memulakan semula; ayat hanya diwarnakan semula apabila anda membacanya lagi
 • Surah selesai: mikrofon berhenti dengan nada lembut dan getaran
 • Getaran ringan menandakan kesilapan tanpa mengganggu bacaan anda
 

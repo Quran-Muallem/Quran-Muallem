@@ -111,8 +111,10 @@ export const idb = {
     return value ?? (idbMemory.get(key) as T | undefined);
   },
   async set(key: string, value: unknown): Promise<void> {
-    idbMemory.set(key, value);
-    await tx("readwrite", (s) => s.put(value, key));
+    // Kept in memory only when IndexedDB is not available (private mode): large downloads (tafsir,
+    // hadith books) must not stay in RAM as well.
+    const stored = await tx("readwrite", (s) => s.put(value, key));
+    if (stored === undefined) idbMemory.set(key, value); else idbMemory.delete(key);
   },
   async delete(key: string): Promise<void> {
     idbMemory.delete(key);

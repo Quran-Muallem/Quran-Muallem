@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, Milestone, RefreshCw } from "lucide-react";
 import { MushafPage, type WordKey } from "@/components/mushaf/MushafPage";
 import { ReciteBar, type BarMode } from "@/components/mushaf/ReciteBar";
 import { ReciterSelectModal } from "@/components/ReciterSelectModal";
-import { BurgerButton, MushafMenu, type AppTab } from "@/components/mushaf/MushafMenu";
+import { SheikhControls } from "@/components/ReciterPill";
+import { AyahActionMenu, type AyahAction } from "@/components/mushaf/AyahActionMenu";
+import { GoToModal, type GoToTarget } from "@/components/mushaf/GoToModal";
+import { TafsirModal, type AyahInfoTab } from "@/components/TafsirModal";
+import { useKeepAwake } from "@/lib/wakeLock";
+import { BurgerButton, MushafMenu, SearchButton, type AppTab } from "@/components/mushaf/MushafMenu";
 import { GOLD_B } from "@/components/mushaf/MushafOrnaments";
+import { GOLD_LIGHT, alpha } from "@/components/ornaments";
 import type { StudyTarget } from "@/components/Dashboard";
 import { TOTAL_PAGES, loadMushaf, type Mushaf } from "@/lib/mushafData";
 import { getSurahMeta, toArabicDigits } from "@/lib/quranService";
@@ -15,15 +21,16 @@ import { usePagePlayer } from "@/lib/usePagePlayer";
 import { getReciter } from "@/lib/reciterManager";
 import { recordAttempt, setLastPosition, useProgress, verseStatus } from "@/lib/progressStorage";
 import { ayahResults } from "@/lib/practiceResults";
-import { covers, recordingForVerse, saveRecording, useRecordings } from "@/lib/audioStorage";
+import { accuracyOf, covers, recordingForVerse, saveRecording, useRecordings } from "@/lib/audioStorage";
 import { RecitationPlayerBar } from "@/components/RecitationPlayerBar";
 import type { KeptAudio } from "@/lib/use-transcribing-recorder";
 import { updateSettings, useSettings } from "@/lib/settings";
 import type { LiveMatch, LiveStatus } from "@/lib/quranMatcher";
 import { useI18n } from "@/lib/i18n";
 import { VoiceWordFix, type WordFix } from "@/components/VoiceWordFix";
-import { unifiedMode, useRecitationStore, useSessionStats, wordDone, type WordResult } from "@/context/RecitationContext";
-import { finishedSurah, surahEndIndices, tally } from "@/lib/surahCompletion";
+import { unifiedMode, useRecitationStore, useSessionStats, useWordColors, wordDone, type RecitedWord, type WordResult } from "@/context/RecitationContext";
+import { colorsFor, mergeLive, reachedVerses } from "@/lib/wordColors";
+import { finishedSurah, passageFinished, surahEndIndices, tally } from "@/lib/surahCompletion";
 
 function useMushaf() {
   const [state, setState] = useState<{ data: Mushaf | null; error: boolean }>({ data: null, error: false });
@@ -41,9 +48,16 @@ function useMushaf() {
  * Swipe or tap the arrows to turn pages. Recite on the page itself: Recitation colours the words,
  * Memorization hides them until recited correctly. The selected Sheikh can read the page aloud.
  */
-export function MushafReader({ surahId, focusAyah, onPractice, onNavigate, onSettings, onInvite }: {
+export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, onPractice, onNavigate, onSettings, onInvite, onSearch }: {
   surahId: number;
   focusAyah?: number | undefined;
+  /** Mode to open in (from the passage last recited on the Recite screen). */
+  focusMode?: BarMode | undefined;
+  /** Words to mark on the page (search result). */
+  mark?: readonly string[] | undefined;
+  /** Changes on every new jump request (the same verse can be requested again, e.g. from search). */
+  jumpId?: number;
+  onSearch?: () => void;
   onSurahChange?: (id: number) => void;
   onPractice?: (target: StudyTarget) => void;
   /** Full-screen Mushaf: the app navigation lives in the burger menu. */
@@ -60,17 +74,29 @@ export function MushafReader({ surahId, focusAyah, onPractice, onNavigate, onSet
   // Back from another tab with the same target → the view continues where it was (RecitationContext).
   const store = useRecitationStore();
   const session = useSessionStats();
-  const snap = useRef(store.mushaf && store.mushaf.surahId === surahId && store.mushaf.focusAyah === focusAyah ? store.mushaf : null);
+  const snap = useRef(store.mushaf && store.mushaf.surahId === surahId && store.mushaf.focusAyah === focusAyah && store.mushaf.jumpId === jumpId ? store.mushaf : null);
+  /** Saved colours of every verse ever recited: they stay on every page (RecitationContext, IndexedDB). */
+  const colors = useWordColors();
   const [page, setPage] = useState(snap.current?.page ?? 1);
   const [mode, setMode] = useState<BarMode>(snap.current?.mode ?? "RECITATION_MODE");
   const [selected, setSelected] = useState<string | null>(snap.current?.selected ?? null);
-  /** Word colours of the last recitation, restored after a tab switch (until the next one starts). */
-  const [restored, setRestored] = useState<Map<WordKey, LiveStatus> | null>(() => (snap.current?.statuses ? new Map(snap.current.statuses) : null));
+  /** Live colours are shown from the microphone start until the recitation is saved to `colors`. */
+  const [liveShown, setLiveShown] = useState(false);
+  const [marked, setMarked] = useState<Set<WordKey> | null>(() => (mark?.length && !snap.current ? new Set(mark) : null));
   /** A surah whose last word was just reached (message in the bar). */
   const [completed, setCompleted] = useState<number | null>(null);
   const [reciterOpen, setReciterOpen] = useState(false);
   const [saved, setSaved] = useState<number | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  /** Verse menu (listen · translation · tafsir · mark for practice) at the tapped point. */
+  const [verseMenu, setVerseMenu] = useState<{ surah: number; ayah: number; at: { x: number; y: number } } | null>(null);
+  /** Translation / Tafsir sheet. */
+  const [info, setInfo] = useState<{ surah: number; ayah: number; tab: AyahInfoTab } | null>(null);
+  const [goToOpen, setGoToOpen] = useState(false);
+  /** Start of a practice range marked from the verse menu. */
+  const [markedFrom, setMarkedFrom] = useState<{ surah: number; ayah: number } | null>(null);
+  // The screen stays on while the Mushaf is open (reading, reciting, listening).
+  useKeepAwake(true);
   /** Stage 4: a word marked wrong that the user tapped — offer "Add to my voice profile". */
   const [wordFix, setWordFix] = useState<WordFix | null>(null);
   /** Words revealed with the hint button (memorization). */
@@ -106,14 +132,17 @@ export function MushafReader({ surahId, focusAyah, onPractice, onNavigate, onSet
 
   // Jump to the requested surah / verse.
   // Keyed by target (not a "first run" flag): React StrictMode runs effects twice on mount.
-  const jumped = useRef(snap.current ? `${surahId}:${focusAyah}` : "");
+  const jumped = useRef(snap.current ? `${surahId}:${focusAyah}:${jumpId}` : "");
   useEffect(() => {
     if (!mushaf) return;
-    if (jumped.current === `${surahId}:${focusAyah}`) return;
-    jumped.current = `${surahId}:${focusAyah}`;
+    const key = `${surahId}:${focusAyah}:${jumpId}`;
+    if (jumped.current === key) return;
+    jumped.current = key;
     setPage(focusAyah ? mushaf.pageOf(surahId, focusAyah) : mushaf.surahStartPage(surahId));
     setSelected(focusAyah ? `${surahId}:${focusAyah}` : null);
-  }, [mushaf, surahId, focusAyah]);
+    if (focusMode) setMode(focusMode);
+    setMarked(mark?.length ? new Set(mark) : null);
+  }, [mushaf, surahId, focusAyah, jumpId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const verses = useMemo(() => (mushaf ? mushaf.pageVerses(page) : []), [mushaf, page]);
 
@@ -184,6 +213,14 @@ export function MushafReader({ surahId, focusAyah, onPractice, onNavigate, onSet
       if (!range && results.length) range = { surah, fromAyah: Math.min(...results.map((r) => r.ayahId)), toAyah: Math.max(...results.map((r) => r.ayahId)) };
     }
     setSaved(total || null);
+    // Word colours of the recited verses → saved for every page and both views (replaces only those verses).
+    const recited: RecitedWord[] = keys.map((k, i) => {
+      const tk = tokenOfKey[i] ?? -1;
+      const st = m.statuses[tk] ?? "PENDING";
+      return { key: k, status: st === "CORRECT" && hintsRef.current.has(k) ? "WARNING" : st, heard: m.heard[tk] ?? null };
+    });
+    store.commitWords(recited, mode, "mushaf", { continues: true });
+    if (!pageTurn.current) setLiveShown(false);
     // Running totals of the continuous session (across automatic page turns).
     store.addPart(tally(m.statuses), pageTurn.current);
     store.recordWords(unifiedMode(mode), wordResults(m.statuses));
@@ -191,7 +228,7 @@ export function MushafReader({ surahId, focusAyah, onPractice, onNavigate, onSet
     // Keep the recording on the device for the verses actually recited (or the start verse).
     const first = practice[0];
     const where = range ?? (first ? { surah: first.surah, fromAyah: first.ayah, toAyah: first.ayah } : null);
-    if (where) void takeAudioRef.current?.().then((kept) => { if (kept) void saveRecording({ ...where, ...kept }); });
+    if (where) void takeAudioRef.current?.().then((kept) => { if (kept) void saveRecording({ ...where, ...kept, accuracy: accuracyOf(tally(m.statuses)) ?? undefined, mode: mode === "MEMORIZATION_MODE" ? "memorization" : "reading" }); });
   }, [practice, targets, mode, hints, keys, tokenOfKey, keyOfToken, store, wordResults]);
 
   const takeAudioRef = useRef<(() => Promise<KeptAudio | null>) | null>(null);
@@ -205,29 +242,40 @@ export function MushafReader({ surahId, focusAyah, onPractice, onNavigate, onSet
   useEffect(() => {
     const key = `${page}|${mode}|${startIdx}`;
     if (viewKey.current === key) return; // unchanged (first render, StrictMode re-run): keep what was restored
+    // Colours are not touched here: they are saved per verse and stay (memorization toggle, verse tap,
+    // page turn). Hints belong to the page they were given on; search marks only show on their own page.
+    const pageChanged = Number(viewKey.current.split("|")[0]) !== page;
     viewKey.current = key;
-    setSaved(null); setHints(new Set()); setWordFix(null); setRestored(null);
+    setSaved(null); setWordFix(null);
+    if (pageChanged) setHints(new Set());
     if (autoTurn.current) { autoTurn.current = false; return; }
     reset();
   }, [page, mode, startIdx]); // eslint-disable-line react-hooks/exhaustive-deps
   // Microphone on: a new session (an automatic page turn keeps the microphone on, so it continues).
   const doneSurahs = useRef(new Set<number>());
   useEffect(() => {
-    if (rec.listening) { setWordFix(null); setRestored(null); setCompleted(null); doneSurahs.current = new Set(); store.startSession(); }
+    if (rec.listening) { setWordFix(null); setMarked(null); setLiveShown(true); setCompleted(null); doneSurahs.current = new Set(); store.startSession(); }
     else store.endSession();
   }, [rec.listening]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const active = rec.listening || rec.match.recited > 0;
+  const pageKeys = useMemo(() => verses.flatMap((v) => v.words.map((w) => `${v.surah}:${v.ayah}:${w}`)), [verses]);
   const statuses = useMemo(() => {
-    if (!active) return restored ?? undefined;
-    const map = new Map<WordKey, LiveStatus>();
-    keys.forEach((k, i) => map.set(k, rec.match.statuses[tokenOfKey[i] ?? -1] ?? "PENDING"));
+    const showLive = rec.listening || rec.processing || liveShown;
+    if (!showLive) return colorsFor(colors, pageKeys);
+    // While reciting: live colours for the verses reached (a new recitation replaces their colours),
+    // the saved colours for every other verse of the page (before the start verse, not reached yet).
+    const live = keys.map((_, i) => rec.match.statuses[tokenOfKey[i] ?? -1] ?? "PENDING");
+    const reached = reachedVerses(keys, live, rec.listening ? keyOfToken[rec.match.cursor] ?? 0 : -1);
+    const map = colorsFor(colors, pageKeys);
+    for (const [k, st] of mergeLive(colors, keys, live, reached)) map.set(k, st);
+    for (const k of keys) if (reached.has(k.slice(0, k.lastIndexOf(":"))) && map.get(k) === "PENDING") map.delete(k);
     return map;
-  }, [active, keys, tokenOfKey, rec.match.statuses, restored]);
-  // Remember the view for the next visit of this tab.
+  }, [rec.listening, rec.processing, liveShown, colors, pageKeys, keys, tokenOfKey, keyOfToken, rec.match.statuses, rec.match.cursor]);
+  // Remember the view for the next visit of this tab (the colours themselves live in RecitationContext).
   useEffect(() => {
-    store.mushaf = { surahId, focusAyah, page, mode, selected, hints: [...hints], statuses: statuses ? [...statuses] : null };
-  }, [store, surahId, focusAyah, page, mode, selected, hints, statuses]);
+    store.mushaf = { surahId, focusAyah, jumpId, page, mode, selected, hints: [...hints] };
+  }, [store, surahId, focusAyah, jumpId, page, mode, selected, hints]);
 
   /* ---------------- surah completed ---------------- */
   // The reciter reached the last word of a surah → microphone off, success vibration, soft chime.
@@ -267,8 +315,13 @@ export function MushafReader({ surahId, focusAyah, onPractice, onNavigate, onSet
   // said from now on). After a recitation has ended, the "next page" button stays manual.
   const latestMatch = useRef(rec.match);
   latestMatch.current = rec.match;
+  // "Reached" alone is not enough: a single word heard far ahead can make the matcher jump to the
+  // page's last word (marking everything before it red). Turn only when the last word was said and
+  // most of the page was said — otherwise one stray word would flip page after page.
+  const pageComplete = useMemo(() => rec.match.done && passageFinished(keys.map((_, i) => rec.match.statuses[tokenOfKey[i] ?? -1] ?? "PENDING"), keys.length - 1),
+    [rec.match.done, rec.match.statuses, keys, tokenOfKey]);
   useEffect(() => {
-    if (!rec.listening || !rec.match.done || page >= TOTAL_PAGES) return;
+    if (!rec.listening || !pageComplete || page >= TOTAL_PAGES) return;
     const timer = setTimeout(() => {
       pageTurn.current = true;
       onSessionEnd(latestMatch.current);
@@ -278,11 +331,11 @@ export function MushafReader({ surahId, focusAyah, onPractice, onNavigate, onSet
       turn(1);
     }, 700);
     return () => clearTimeout(timer);
-  }, [rec.listening, rec.match.done, page]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rec.listening, pageComplete, page]); // eslint-disable-line react-hooks/exhaustive-deps
   const player = usePagePlayer({
     reciterId: settings.reciterId,
     verses: useMemo(() => verses.map((v) => ({ surah: v.surah, ayah: v.ayah })), [verses]),
-    onPageEnd: page < TOTAL_PAGES ? () => turn(1) : undefined,
+    onFollow: useCallback((v: { surah: number; ayah: number }) => { if (mushaf) setPage(mushaf.pageOf(v.surah, v.ayah)); }, [mushaf]),
   });
   const playingKey = player.current ? `${player.current.surah}:${player.current.ayah}` : null;
 
@@ -305,7 +358,6 @@ export function MushafReader({ surahId, focusAyah, onPractice, onNavigate, onSet
   const startVerse = practice[0];
   const mine = startVerse ? recordingForVerse(recordings, startVerse.surah, startVerse.ayah) : null;
   const showMine = rec.listening || !!mine;
-  const verseActions = !!selected && !rec.listening && !wordFix;
   const firstSurah = verses[0]?.surah ?? surahId;
   const juz = mushaf?.juzOfPage(page) ?? 1;
 
@@ -338,12 +390,21 @@ export function MushafReader({ surahId, focusAyah, onPractice, onNavigate, onSet
     // landscape (15 lines can't fit) the page scrolls and its end is never hidden behind the bar.
     <div style={{ paddingBottom: barH + PAGE_GAP_PX }}>
       {/* slim top row: burger menu (top right) · where am I */}
-      <div className="mb-1 flex items-center gap-2" dir="rtl">
+      <div className="mb-1 flex items-center gap-1.5" dir="rtl">
         <BurgerButton onClick={() => setMenuOpen(true)} label={t("menu")} />
-        <p className="min-w-0 flex-1 truncate text-center font-arabic text-sm" style={{ color: GOLD_B }}>
-          سُورَةُ {getSurahMeta(firstSurah)?.nameArabic} · {t("pageLabel")} {num(page)}
-        </p>
-        <span className="w-10" />
+        <button type="button" onClick={() => setGoToOpen(true)} aria-label={t("goTo")} title={t("goTo")}
+          className="min-w-0 flex-1 truncate rounded-xl px-1 py-1 text-center font-arabic text-sm" style={{ color: GOLD_B }}>
+          سُورَةُ {getSurahMeta(firstSurah)?.nameArabic} · {num(page)}
+        </button>
+        <button type="button" onClick={() => setGoToOpen(true)} aria-label={t("goTo")}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-amber-200"
+          style={{ background: alpha("var(--mf-page-deep)", 0.85), boxShadow: `inset 0 0 0 1px ${alpha(GOLD_LIGHT, 0.5)}` }}>
+          <Milestone className="h-5 w-5" aria-hidden="true" />
+        </button>
+        {onSearch && <SearchButton onClick={onSearch} label={t("searchTitle")} />}
+        {/* Sheikh: play / pause and reciter, always at the top */}
+        <SheikhControls compact reciterId={reciter.id} playing={player.playing} loading={player.loading} failed={player.failed}
+          onToggle={() => { if (rec.listening) return; player.toggle(); }} onReciter={() => setReciterOpen(true)} />
       </div>
 
       {/* the page — swipe right for the next page (Arabic books open to the left) */}
@@ -357,52 +418,66 @@ export function MushafReader({ surahId, focusAyah, onPractice, onNavigate, onSet
           if (Math.abs(dx) > 60 && Math.abs(dy) < 50) turn(dx > 0 ? 1 : -1);
         }}>
         <div key={page} className="animate-in fade-in duration-300">
-          <MushafPage mushaf={mushaf} page={page} maxTextHeight={textHeight} statuses={statuses} hidden={hidden} hinted={hints} cursor={cursor}
+          <MushafPage mushaf={mushaf} page={page} maxTextHeight={textHeight} statuses={statuses} hidden={hidden} hinted={hints} cursor={cursor} marked={marked ?? undefined}
             highlight={playingKey ?? (rec.listening ? null : selected)}
             verseStatus={(s, a) => verseStatus(progress, s, a)}
             recorded={(s, a) => recordings.some((r) => covers(r, s, a))}
             onWordTap={rec.listening ? undefined : (k) => {
               const i = keys.indexOf(k);
               const t = i >= 0 ? tokenOfKey[i] ?? -1 : -1;
-              const heard = t >= 0 ? rec.match.heard[t] : null;
+              const heard = (t >= 0 ? rec.match.heard[t] : null) ?? colors.get(k)?.heard ?? null;
               const [s, a, w] = k.split(":").map(Number);
               const word = mushaf.words(s!, a!)[w! - 1] ?? "";
               const phonemes = rec.engine === "phonemes" ? refs?.[t] ?? undefined : undefined;
-              const st = t >= 0 ? rec.match.statuses[t] : undefined;
+              const st = statuses.get(k);
               setWordFix(word ? { id: k, word, heard: heard ?? null, surah: s, ayah: a, phonemes, status: st === "WARNING" ? "WARNING" : "ERROR" } : null);
             }}
-            onVerseTap={(s, a) => { if (rec.listening) return; const k = `${s}:${a}`; setSelected((cur) => (cur === k ? null : k)); }} />
+            onVerseTap={(s, a, at) => { if (rec.listening) return; setSelected(`${s}:${a}`); setVerseMenu({ surah: s, ayah: a, at }); }} />
         </div>
       </div>
 
       <ReciteBar docked mode={mode} onMode={(m) => { setMode(m); }} listening={rec.listening} busy={rec.processing}
         hint={mode === "MEMORIZATION_MODE" ? { onClick: giveHint, used: hints.size, disabled: !nextHint() } : undefined}
-        onMic={() => { player.pause(); rec.toggle(); }} getLevel={rec.getLevel} status={status}
+        onMic={() => { player.pause(); rec.toggle(); }} getLevel={rec.getLevel} status={rec.paused ? t("recitePausedStatus") : status}
+        paused={rec.paused} onPause={rec.canPause ? () => { if (rec.paused) rec.resume(); else { rec.pause(); } } : undefined}
         onHeight={setBarH}
-        extra={verseActions || showMine || wordFix ? (
+        extra={showMine || wordFix ? (
           <div className="space-y-1.5">
             {wordFix && <VoiceWordFix fix={wordFix} onClose={() => setWordFix(null)} />}
-            {verseActions && (
-              <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs">
-                <button type="button" onClick={() => { const [s, a] = selected!.split(":").map(Number); player.playFrom({ surah: s!, ayah: a! }); }} className={chip}>{t("listenFromHere")}</button>
-                {onPractice && <button type="button" onClick={() => { const [s, a] = selected!.split(":").map(Number); onPractice({ surahId: s!, fromAyah: a!, toAyah: a! + 2, mode }); }} className={chip}>{t("openInPractice")}</button>}
-                <button type="button" onClick={() => setSelected(null)} className={chip}>{t("close")}</button>
-              </div>
-            )}
             {showMine && (
               <RecitationPlayerBar compact showRecord={false} recording={rec.listening} elapsed={rec.elapsed} onRecord={rec.toggle}
                 saved={mine} canKeep={rec.useWhisper} />
             )}
           </div>
         ) : undefined}
-        player={{ playing: player.playing, loading: player.loading, reciter, onToggle: player.toggle, onReciter: () => setReciterOpen(true) }}
         nextPage={rec.match.done && !rec.listening && page < TOTAL_PAGES ? () => { setSelected(null); turn(1); } : undefined} />
 
       <MushafMenu open={menuOpen} onClose={() => setMenuOpen(false)} page={page} surah={firstSurah} juz={juz}
         onPage={(p) => { setSelected(null); setPage(Math.min(TOTAL_PAGES, Math.max(1, p))); }}
         onSurah={(s2) => { setPage(mushaf.surahStartPage(s2)); setSelected(`${s2}:1`); }}
         onJuz={(j) => { setSelected(null); setPage(mushaf.juzStartPage(j)); }}
-        onNavigate={(tab) => onNavigate?.(tab)} onSettings={() => onSettings?.()} onInvite={() => onInvite?.()} />
+        onNavigate={(tab) => onNavigate?.(tab)} onSettings={() => onSettings?.()} onInvite={() => onInvite?.()} onSearch={onSearch} />
+
+      {verseMenu && (
+        <AyahActionMenu surah={verseMenu.surah} ayah={verseMenu.ayah} at={verseMenu.at}
+          markedFrom={markedFrom && markedFrom.surah === verseMenu.surah ? markedFrom.ayah : null}
+          onClose={() => setVerseMenu(null)}
+          onAction={(action: AyahAction) => {
+            const { surah: s2, ayah: a2 } = verseMenu;
+            setVerseMenu(null);
+            if (action === "listen") player.playFrom({ surah: s2, ayah: a2 });
+            else if (action === "translation" || action === "tafsir") setInfo({ surah: s2, ayah: a2, tab: action });
+            else if (action === "mark") { setMarkedFrom({ surah: s2, ayah: a2 }); setSelected(`${s2}:${a2}`); }
+            else if (action === "practiceRange" && markedFrom) { onPractice?.({ surahId: s2, fromAyah: markedFrom.ayah, toAyah: a2, mode }); setMarkedFrom(null); }
+          }} />
+      )}
+      <TafsirModal open={!!info} surah={info?.surah ?? 1} ayah={info?.ayah ?? 1} tab={info?.tab ?? "translation"}
+        onClose={() => setInfo(null)} onAyah={(a2) => setInfo((cur) => (cur ? { ...cur, ayah: a2 } : cur))} />
+      <GoToModal open={goToOpen} page={page} surah={firstSurah} onClose={() => setGoToOpen(false)}
+        onGo={(g: GoToTarget) => {
+          if ("page" in g) { setSelected(null); setPage(g.page); }
+          else { setPage(mushaf.pageOf(g.surah, g.ayah)); setSelected(`${g.surah}:${g.ayah}`); }
+        }} />
 
       <ReciterSelectModal open={reciterOpen} onOpenChange={setReciterOpen} selectedId={settings.reciterId} surah={firstSurah}
         onSelect={(id) => { void updateSettings({ reciterId: id }); }} />

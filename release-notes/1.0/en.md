@@ -6,6 +6,7 @@ Free forever: no ads, no subscription, no account. Everything stays on your devi
 **The Mushaf**
 • The Madani Mushaf in Uthmani script: all 604 pages with 15 lines, laid out like the printed copy
 • Swipe to turn pages; jump to any surah, juz or page from the menu
+• Quran search: find a surah by name or number, a verse (2:255) or Arabic words anywhere in the text – offline
 
 **Recitation & Hifz with on-device AI**
 • Recite on the page: words turn green (correct), orange (almost right) or red (missed or misread) as you go
@@ -13,6 +14,7 @@ Free forever: no ads, no subscription, no account. Everything stays on your devi
 • "Show word" reveals the next word whenever you get stuck, as often as you need
 • Quran phoneme engine trained on Ḥafṣ recitation; it works offline and your voice is never uploaded
 • Pages turn automatically while you recite, and correct and wrong words are counted across pages
+• Your colours stay: green, orange and red words remain on every page – after turning pages, switching to the Recite screen, toggling Hifz or restarting; a verse is only re-coloured when you recite it again
 • Surah complete: the microphone stops with a soft chime and a vibration
 • A light vibration marks a mistake without interrupting you
 

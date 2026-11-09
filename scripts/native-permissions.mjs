@@ -8,9 +8,10 @@
  *   iOS     UIBackgroundModes audio (recitation keeps playing with the screen locked)
  *   Android android/app/src/main/AndroidManifest.xml   RECORD_AUDIO, INTERNET, ACCESS_FINE/COARSE_LOCATION, ...,
  *           background audio: foreground service (native/android/BackgroundAudio*.java, registered in MainActivity),
- *           no advertising ID, versionCode/versionName from package.json
+ *           no advertising ID, versionCode/versionName from package.json,
+ *           Adhan sounds public/adhan/*.mp3 → res/raw/adhan_*.mp3 (notification channel sounds)
  */
-import { copyFileSync, existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 
 const env = (name) => {
   if (process.env[name]) return process.env[name];
@@ -41,6 +42,9 @@ const ANDROID_PERMISSIONS = [
   "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
   "android.permission.WAKE_LOCK",
   "android.permission.POST_NOTIFICATIONS",
+  // Adhan notifications at the exact prayer time (@capacitor/local-notifications, src/lib/prayerNotifications.ts)
+  "android.permission.SCHEDULE_EXACT_ALARM",
+  "android.permission.RECEIVE_BOOT_COMPLETED",
 ];
 
 const escapeXml = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -175,6 +179,13 @@ if (existsSync(res)) {
   const bg = `${res}/values/ic_launcher_background.xml`;
   if (existsSync(bg)) writeFileSync(bg, readFileSync(bg, "utf8").replace(/(<color name="ic_launcher_background">)[^<]*(<\/color>)/, "$1#0B3A2D$2"));
   console.log(`✓ Android: app name „${APP_NAME}“ + icons`);
+  // Adhan notification sounds: a channel's sound must be a raw resource (src/lib/prayerNotifications.ts).
+  if (existsSync("public/adhan")) {
+    mkdirSync(`${res}/raw`, { recursive: true });
+    const sounds = readdirSync("public/adhan").filter((f) => f.endsWith(".mp3"));
+    for (const f of sounds) copyFileSync(`public/adhan/${f}`, `${res}/raw/adhan_${f.toLowerCase().replace(/[^a-z0-9_.]/g, "_")}`);
+    console.log(`✓ Android: ${sounds.length} Adhan sounds in res/raw`);
+  }
 }
 
 console.log(changed ? "Native permissions updated." : "Native permissions already up to date.");

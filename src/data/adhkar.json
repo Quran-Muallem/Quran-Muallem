@@ -528,6 +528,592 @@
           "benefitEn": "If you die that night, you die upon the fiṭrah; make these your last words."
         }
       ]
+    },
+    {
+      "id": "dua",
+      "items": [
+        {
+          "id": "d-q-dunya",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 2,
+              "from": 201,
+              "to": 201,
+              "fromWord": 4
+            }
+          ],
+          "sourceAr": "البقرة: ٢٠١",
+          "sourceEn": "al-Baqarah 2:201",
+          "benefitAr": "أكثر دعاء كان يدعو به النبي ﷺ (متفق عليه)",
+          "benefitEn": "The supplication the Prophet ﷺ made most often (al-Bukhārī and Muslim)."
+        },
+        {
+          "id": "d-q-baqarah-end",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 2,
+              "from": 286,
+              "to": 286,
+              "fromWord": 13
+            }
+          ],
+          "sourceAr": "البقرة: ٢٨٦",
+          "sourceEn": "al-Baqarah 2:286"
+        },
+        {
+          "id": "d-q-taqabbal",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 2,
+              "from": 127,
+              "to": 127,
+              "fromWord": 8
+            }
+          ],
+          "sourceAr": "البقرة: ١٢٧",
+          "sourceEn": "al-Baqarah 2:127",
+          "benefitAr": "دعاء إبراهيم وإسماعيل عليهما السلام",
+          "benefitEn": "The supplication of Ibrāhīm and Ismāʿīl (peace be upon them)."
+        },
+        {
+          "id": "d-q-la-tuzigh",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 3,
+              "from": 8,
+              "to": 8
+            }
+          ],
+          "sourceAr": "آل عمران: ٨",
+          "sourceEn": "Āl ʿImrān 3:8",
+          "benefitAr": "سؤال الثبات على الهداية",
+          "benefitEn": "Asking for steadfastness on guidance."
+        },
+        {
+          "id": "d-q-abrar",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 3,
+              "from": 193,
+              "to": 193
+            }
+          ],
+          "sourceAr": "آل عمران: ١٩٣",
+          "sourceEn": "Āl ʿImrān 3:193"
+        },
+        {
+          "id": "d-q-zalamna",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 7,
+              "from": 23,
+              "to": 23,
+              "fromWord": 2
+            }
+          ],
+          "sourceAr": "الأعراف: ٢٣",
+          "sourceEn": "al-Aʿrāf 7:23",
+          "benefitAr": "دعاء آدم وحواء عليهما السلام بالتوبة",
+          "benefitEn": "The repentance of Ādam and Ḥawwāʾ."
+        },
+        {
+          "id": "d-q-muqim-salah",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 14,
+              "from": 40,
+              "to": 41
+            }
+          ],
+          "sourceAr": "إبراهيم: ٤٠–٤١",
+          "sourceEn": "Ibrāhīm 14:40–41",
+          "benefitAr": "للنفس والذرية والوالدين والمؤمنين",
+          "benefitEn": "For oneself, one’s children, parents and the believers."
+        },
+        {
+          "id": "d-q-walidayn",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 17,
+              "from": 24,
+              "to": 24,
+              "fromWord": 8
+            }
+          ],
+          "sourceAr": "الإسراء: ٢٤",
+          "sourceEn": "al-Isrāʾ 17:24",
+          "benefitAr": "الدعاء للوالدين",
+          "benefitEn": "For one’s parents."
+        },
+        {
+          "id": "d-q-rashada",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 18,
+              "from": 10,
+              "to": 10,
+              "fromWord": 7
+            }
+          ],
+          "sourceAr": "الكهف: ١٠",
+          "sourceEn": "al-Kahf 18:10",
+          "benefitAr": "دعاء أصحاب الكهف",
+          "benefitEn": "The supplication of the Companions of the Cave."
+        },
+        {
+          "id": "d-q-sharh-sadri",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 20,
+              "from": 25,
+              "to": 28,
+              "fromWord": 2
+            }
+          ],
+          "sourceAr": "طه: ٢٥–٢٨",
+          "sourceEn": "Ṭā Hā 20:25–28",
+          "benefitAr": "دعاء موسى عليه السلام لتيسير الأمر والكلام",
+          "benefitEn": "The supplication of Mūsā for ease and clear speech."
+        },
+        {
+          "id": "d-q-zidni-ilma",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 20,
+              "from": 114,
+              "to": 114,
+              "fromWord": 15
+            }
+          ],
+          "sourceAr": "طه: ١١٤",
+          "sourceEn": "Ṭā Hā 20:114",
+          "benefitAr": "طلب الزيادة من العلم",
+          "benefitEn": "Asking for more knowledge."
+        },
+        {
+          "id": "d-q-yunus",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 21,
+              "from": 87,
+              "to": 87,
+              "fromWord": 15
+            }
+          ],
+          "sourceAr": "الأنبياء: ٨٧",
+          "sourceEn": "al-Anbiyāʾ 21:87",
+          "benefitAr": "دعوة ذي النون: «لم يدعُ بها رجل مسلم في شيء قط إلا استجاب الله له» (رواه الترمذي)",
+          "benefitEn": "The supplication of Dhun-Nūn: no Muslim makes it for anything but Allah answers him (at-Tirmidhī)."
+        },
+        {
+          "id": "d-q-hamazat",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 23,
+              "from": 97,
+              "to": 98,
+              "fromWord": 2
+            }
+          ],
+          "sourceAr": "المؤمنون: ٩٧–٩٨",
+          "sourceEn": "al-Muʾminūn 23:97–98",
+          "benefitAr": "الاستعاذة من همزات الشياطين",
+          "benefitEn": "Seeking refuge from the whisperings of the devils."
+        },
+        {
+          "id": "d-q-qurrata-ayun",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 25,
+              "from": 74,
+              "to": 74,
+              "fromWord": 3
+            }
+          ],
+          "sourceAr": "الفرقان: ٧٤",
+          "sourceEn": "al-Furqān 25:74",
+          "benefitAr": "للزوج والذرية",
+          "benefitEn": "For one’s spouse and children."
+        },
+        {
+          "id": "d-q-faqir",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 28,
+              "from": 24,
+              "to": 24,
+              "fromWord": 8
+            }
+          ],
+          "sourceAr": "القصص: ٢٤",
+          "sourceEn": "al-Qaṣaṣ 28:24",
+          "benefitAr": "دعاء موسى عليه السلام عند الحاجة",
+          "benefitEn": "The supplication of Mūsā in need."
+        },
+        {
+          "id": "d-q-awzini",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 46,
+              "from": 15,
+              "to": 15,
+              "fromWord": 22
+            }
+          ],
+          "sourceAr": "الأحقاف: ١٥",
+          "sourceEn": "al-Aḥqāf 46:15",
+          "benefitAr": "شكر النعمة وصلاح الذرية",
+          "benefitEn": "Gratitude for blessings and righteous offspring."
+        },
+        {
+          "id": "d-q-ikhwanina",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 59,
+              "from": 10,
+              "to": 10,
+              "fromWord": 6
+            }
+          ],
+          "sourceAr": "الحشر: ١٠",
+          "sourceEn": "al-Ḥashr 59:10",
+          "benefitAr": "للمؤمنين وسلامة القلب",
+          "benefitEn": "For the believers and a heart free of rancour."
+        },
+        {
+          "id": "d-q-tawakkalna",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 60,
+              "from": 4,
+              "to": 4,
+              "fromWord": 46
+            },
+            {
+              "surah": 60,
+              "from": 5,
+              "to": 5
+            }
+          ],
+          "sourceAr": "الممتحنة: ٤–٥",
+          "sourceEn": "al-Mumtaḥanah 60:4–5"
+        },
+        {
+          "id": "d-q-nuh",
+          "count": 1,
+          "group": "quran",
+          "quran": [
+            {
+              "surah": 71,
+              "from": 28,
+              "to": 28
+            }
+          ],
+          "sourceAr": "نوح: ٢٨",
+          "sourceEn": "Nūḥ 71:28",
+          "benefitAr": "دعاء نوح عليه السلام للوالدين والمؤمنين",
+          "benefitEn": "The supplication of Nūḥ for his parents and the believers."
+        },
+        {
+          "id": "d-hudah",
+          "count": 1,
+          "group": "sunnah",
+          "text": "اللهم إني أسألك الهدى والتقى والعفاف والغنى",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim"
+        },
+        {
+          "id": "d-muqallib",
+          "count": 1,
+          "group": "sunnah",
+          "text": "يا مقلب القلوب ثبت قلبي على دينك",
+          "sourceAr": "رواه الترمذي وحسنه",
+          "sourceEn": "at-Tirmidhī (ḥasan)",
+          "benefitAr": "كان أكثر دعاء النبي ﷺ",
+          "benefitEn": "Among the Prophet’s ﷺ most frequent supplications."
+        },
+        {
+          "id": "d-islah",
+          "count": 1,
+          "group": "sunnah",
+          "text": "اللهم أصلح لي ديني الذي هو عصمة أمري، وأصلح لي دنياي التي فيها معاشي، وأصلح لي آخرتي التي فيها معادي، واجعل الحياة زيادة لي في كل خير، واجعل الموت راحة لي من كل شر",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim"
+        },
+        {
+          "id": "d-ighfir-warhamni",
+          "count": 1,
+          "group": "sunnah",
+          "text": "اللهم اغفر لي، وارحمني، واهدني، وعافني، وارزقني",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim",
+          "benefitAr": "تجمع لك دنياك وآخرتك",
+          "benefitEn": "They gather for you this world and the Hereafter."
+        },
+        {
+          "id": "d-hamm",
+          "count": 1,
+          "group": "sunnah",
+          "text": "اللهم إني أعوذ بك من الهم والحزن، والعجز والكسل، والبخل والجبن، وضلع الدين وغلبة الرجال",
+          "sourceAr": "رواه البخاري",
+          "sourceEn": "al-Bukhārī",
+          "benefitAr": "من الهم والدَّين",
+          "benefitEn": "Against worry and debt."
+        },
+        {
+          "id": "d-zawal",
+          "count": 1,
+          "group": "sunnah",
+          "text": "اللهم إني أعوذ بك من زوال نعمتك، وتحول عافيتك، وفجاءة نقمتك، وجميع سخطك",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim"
+        },
+        {
+          "id": "d-zalamtu",
+          "count": 1,
+          "group": "sunnah",
+          "text": "اللهم إني ظلمت نفسي ظلمًا كثيرًا، ولا يغفر الذنوب إلا أنت، فاغفر لي مغفرة من عندك، وارحمني، إنك أنت الغفور الرحيم",
+          "sourceAr": "متفق عليه",
+          "sourceEn": "al-Bukhārī and Muslim",
+          "benefitAr": "علّمه النبي ﷺ أبا بكر ليدعو به في صلاته",
+          "benefitEn": "Taught by the Prophet ﷺ to Abū Bakr to say in his prayer."
+        },
+        {
+          "id": "d-afw",
+          "count": 1,
+          "group": "sunnah",
+          "text": "اللهم إنك عفو تحب العفو فاعف عني",
+          "sourceAr": "رواه الترمذي وابن ماجه، وصححه الألباني",
+          "sourceEn": "at-Tirmidhī and Ibn Mājah; authenticated by al-Albānī",
+          "benefitAr": "خاصة في ليلة القدر",
+          "benefitEn": "Especially in Laylat al-Qadr."
+        },
+        {
+          "id": "d-tub-alayya",
+          "count": 1,
+          "group": "sunnah",
+          "text": "رب اغفر لي وتب علي، إنك أنت التواب الرحيم",
+          "sourceAr": "رواه أبو داود والترمذي",
+          "sourceEn": "Abū Dāwūd and at-Tirmidhī",
+          "benefitAr": "كان يُعدّ للنبي ﷺ في المجلس الواحد مئة مرة",
+          "benefitEn": "It was counted a hundred times from the Prophet ﷺ in one sitting."
+        },
+        {
+          "id": "d-karb",
+          "count": 1,
+          "group": "sunnah",
+          "text": "لا إله إلا الله العظيم الحليم، لا إله إلا الله رب العرش العظيم، لا إله إلا الله رب السماوات ورب الأرض ورب العرش الكريم",
+          "sourceAr": "متفق عليه",
+          "sourceEn": "al-Bukhārī and Muslim",
+          "benefitAr": "دعاء الكرب",
+          "benefitEn": "In distress."
+        },
+        {
+          "id": "d-rahmataka",
+          "count": 1,
+          "group": "sunnah",
+          "text": "اللهم رحمتك أرجو فلا تكلني إلى نفسي طرفة عين، وأصلح لي شأني كله، لا إله إلا أنت",
+          "sourceAr": "رواه أبو داود وحسنه الألباني",
+          "sourceEn": "Abū Dāwūd; ḥasan per al-Albānī",
+          "benefitAr": "دعاء المكروب",
+          "benefitEn": "For the one in hardship."
+        },
+        {
+          "id": "d-istikhara",
+          "count": 1,
+          "group": "sunnah",
+          "text": "اللهم إني أستخيرك بعلمك، وأستقدرك بقدرتك، وأسألك من فضلك العظيم، فإنك تقدر ولا أقدر، وتعلم ولا أعلم، وأنت علام الغيوب، اللهم إن كنت تعلم أن هذا الأمر ـ ويسمي حاجته ـ خير لي في ديني ومعاشي وعاقبة أمري فاقدره لي ويسره لي ثم بارك لي فيه، وإن كنت تعلم أن هذا الأمر شر لي في ديني ومعاشي وعاقبة أمري فاصرفه عني واصرفني عنه، واقدر لي الخير حيث كان ثم أرضني به",
+          "sourceAr": "رواه البخاري",
+          "sourceEn": "al-Bukhārī",
+          "benefitAr": "دعاء الاستخارة بعد ركعتين من غير الفريضة",
+          "benefitEn": "Istikhārah, after two voluntary rakʿahs."
+        },
+        {
+          "id": "d-adhan",
+          "count": 1,
+          "group": "sunnah",
+          "text": "اللهم رب هذه الدعوة التامة، والصلاة القائمة، آت محمدًا الوسيلة والفضيلة، وابعثه مقامًا محمودًا الذي وعدته",
+          "sourceAr": "رواه البخاري",
+          "sourceEn": "al-Bukhārī",
+          "benefitAr": "بعد سماع الأذان: حلّت له شفاعة النبي ﷺ يوم القيامة",
+          "benefitEn": "After the Adhan: the Prophet’s ﷺ intercession becomes due for him."
+        },
+        {
+          "id": "d-wake",
+          "count": 1,
+          "group": "sunnah",
+          "text": "الحمد لله الذي أحيانا بعد ما أماتنا وإليه النشور",
+          "sourceAr": "رواه البخاري",
+          "sourceEn": "al-Bukhārī",
+          "benefitAr": "عند الاستيقاظ من النوم",
+          "benefitEn": "On waking up."
+        },
+        {
+          "id": "d-leave-home",
+          "count": 1,
+          "group": "sunnah",
+          "text": "بسم الله، توكلت على الله، ولا حول ولا قوة إلا بالله",
+          "sourceAr": "رواه أبو داود والترمذي",
+          "sourceEn": "Abū Dāwūd and at-Tirmidhī",
+          "benefitAr": "عند الخروج من المنزل: يقال له: هُديت وكُفيت ووُقيت",
+          "benefitEn": "On leaving home: it is said to him “you are guided, sufficed and protected”."
+        },
+        {
+          "id": "d-masjid-in",
+          "count": 1,
+          "group": "sunnah",
+          "text": "اللهم افتح لي أبواب رحمتك",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim",
+          "benefitAr": "عند دخول المسجد",
+          "benefitEn": "On entering the mosque."
+        },
+        {
+          "id": "d-masjid-out",
+          "count": 1,
+          "group": "sunnah",
+          "text": "اللهم إني أسألك من فضلك",
+          "sourceAr": "رواه مسلم",
+          "sourceEn": "Muslim",
+          "benefitAr": "عند الخروج من المسجد",
+          "benefitEn": "On leaving the mosque."
+        },
+        {
+          "id": "d-toilet-in",
+          "count": 1,
+          "group": "sunnah",
+          "text": "اللهم إني أعوذ بك من الخبث والخبائث",
+          "sourceAr": "متفق عليه",
+          "sourceEn": "al-Bukhārī and Muslim",
+          "benefitAr": "عند دخول الخلاء",
+          "benefitEn": "Before entering the toilet."
+        },
+        {
+          "id": "d-toilet-out",
+          "count": 1,
+          "group": "sunnah",
+          "text": "غفرانك",
+          "sourceAr": "رواه أبو داود والترمذي",
+          "sourceEn": "Abū Dāwūd and at-Tirmidhī",
+          "benefitAr": "عند الخروج من الخلاء",
+          "benefitEn": "On leaving the toilet."
+        },
+        {
+          "id": "d-eat-start",
+          "count": 1,
+          "group": "sunnah",
+          "text": "بسم الله",
+          "sourceAr": "رواه أبو داود والترمذي",
+          "sourceEn": "Abū Dāwūd and at-Tirmidhī",
+          "benefitAr": "قبل الطعام، فإن نسي في أوله فليقل: بسم الله أوله وآخره",
+          "benefitEn": "Before eating; if forgotten at the start, say: “Bismillāhi awwalahu wa ākhirah”."
+        },
+        {
+          "id": "d-eat-end",
+          "count": 1,
+          "group": "sunnah",
+          "text": "الحمد لله الذي أطعمني هذا، ورزقنيه من غير حول مني ولا قوة",
+          "sourceAr": "رواه أبو داود والترمذي",
+          "sourceEn": "Abū Dāwūd and at-Tirmidhī",
+          "benefitAr": "بعد الطعام: غُفر له ما تقدم من ذنبه",
+          "benefitEn": "After eating: his previous sins are forgiven."
+        },
+        {
+          "id": "d-clothes",
+          "count": 1,
+          "group": "sunnah",
+          "text": "الحمد لله الذي كساني هذا الثوب ورزقنيه من غير حول مني ولا قوة",
+          "sourceAr": "رواه أبو داود والترمذي",
+          "sourceEn": "Abū Dāwūd and at-Tirmidhī",
+          "benefitAr": "عند لبس الثوب",
+          "benefitEn": "When putting on clothes."
+        },
+        {
+          "id": "d-travel",
+          "count": 1,
+          "group": "sunnah",
+          "quran": [
+            {
+              "surah": 43,
+              "from": 13,
+              "to": 14,
+              "fromWord": 12
+            }
+          ],
+          "sourceAr": "رواه مسلم (والآيتان: الزخرف ١٣–١٤)",
+          "sourceEn": "Muslim (verses: az-Zukhruf 43:13–14)",
+          "preface": "الله أكبر، الله أكبر، الله أكبر",
+          "text": "اللهم إنا نسألك في سفرنا هذا البر والتقوى، ومن العمل ما ترضى، اللهم هون علينا سفرنا هذا واطو عنا بعده، اللهم أنت الصاحب في السفر والخليفة في الأهل، اللهم إني أعوذ بك من وعثاء السفر، وكآبة المنظر، وسوء المنقلب في المال والأهل",
+          "benefitAr": "دعاء السفر",
+          "benefitEn": "The supplication for travel."
+        },
+        {
+          "id": "d-rain",
+          "count": 1,
+          "group": "sunnah",
+          "text": "اللهم صيبًا نافعًا",
+          "sourceAr": "رواه البخاري",
+          "sourceEn": "al-Bukhārī",
+          "benefitAr": "عند نزول المطر",
+          "benefitEn": "When it rains."
+        },
+        {
+          "id": "d-sick",
+          "count": 1,
+          "group": "sunnah",
+          "text": "لا بأس، طهور إن شاء الله",
+          "sourceAr": "رواه البخاري",
+          "sourceEn": "al-Bukhārī",
+          "benefitAr": "عند عيادة المريض",
+          "benefitEn": "When visiting the sick."
+        },
+        {
+          "id": "d-anger",
+          "count": 1,
+          "group": "sunnah",
+          "text": "أعوذ بالله من الشيطان الرجيم",
+          "sourceAr": "متفق عليه",
+          "sourceEn": "al-Bukhārī and Muslim",
+          "benefitAr": "عند الغضب",
+          "benefitEn": "When angry."
+        }
+      ]
     }
   ]
 }

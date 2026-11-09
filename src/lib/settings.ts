@@ -25,6 +25,10 @@ export type AppSettings = {
    * are present and it runs on the device; otherwise Whisper). "whisper": always Whisper.
    */
   recognizer: "zipformer" | "whisper";
+  /** Chosen Quran translation per app language (ids of `TRANSLATIONS` in quranContent.ts). */
+  translations: Partial<Record<Language, string>>;
+  /** Chosen tafsir per app language (ids of `TAFSIRS`). */
+  tafsirs: Partial<Record<Language, string>>;
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -35,6 +39,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   whisperLive: false,
   whisperModel: "base",
   recognizer: "zipformer",
+  translations: {},
+  tafsirs: {},
 };
 
 const KEY = "hifz.settings";
@@ -59,6 +65,8 @@ export function cleanSettings(s: AppSettings & Record<string, unknown>): AppSett
   // "quran" (the removed experimental Whisper model) and anything unknown → base.
   if (out.whisperModel !== "tiny" && out.whisperModel !== "base") out.whisperModel = "base";
   if (out.recognizer !== "zipformer" && out.recognizer !== "whisper") out.recognizer = "zipformer";
+  if (!out.translations || typeof out.translations !== "object") out.translations = {};
+  if (!out.tafsirs || typeof out.tafsirs !== "object") out.tafsirs = {};
   delete out["chatProvider"]; delete out["chatModel"];
   return out;
 }

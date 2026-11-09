@@ -6,8 +6,9 @@
  *    and recitation practice can loop single verses. These are what gets downloaded for offline use.
  *  - full-surah MP3s from mp3quran.net: `fetchSurahAudioUrl()` for continuous listening / sharing.
  *
- * Downloads go to the app's data folder via @capacitor/filesystem on iOS/Android, and to the
- * browser's Cache Storage on the web (only works if the audio host allows CORS).
+ * Downloads go to the app's data folder on iOS/Android (native HTTP → @capacitor/filesystem writeFile;
+ * `Filesystem.downloadFile` no longer exists since Capacitor 7, which is what broke the downloads), and to
+ * the browser's Cache Storage on the web (everyayah.com sends `Access-Control-Allow-Origin: *`).
  */
 import { capacitorGlobal, isNativePlatform, kv, createSignal } from "@/lib/storage";
 import { getSurahMeta } from "@/lib/quranService";
@@ -51,6 +52,31 @@ const fileName = (surah: number, ayah: number) => `${pad3(surah)}${pad3(ayah)}.m
 /** Remote URL of one Ayah. */
 export const ayahRemoteUrl = (reciterId: string, surah: number, ayah: number) =>
   `https://everyayah.com/data/${getReciter(reciterId).everyAyahFolder}/${fileName(surah, ayah)}`;
+
+/** Verse audio on Quran.com's CDN for the Sheikhs it has (fallback when everyayah.com does not answer). */
+const QURAN_CDN: Record<string, string> = {
+  alafasy: "https://verses.quran.com/Alafasy/mp3/",
+  abdulbasit: "https://verses.quran.com/AbdulBaset/Murattal/mp3/",
+  minshawi: "https://verses.quran.com/Minshawi/Murattal/mp3/",
+  sudais: "https://verses.quran.com/Sudais/mp3/",
+  shuraym: "https://verses.quran.com/Shuraym/mp3/",
+  shatri: "https://verses.quran.com/Shatri/mp3/",
+};
+/** Mirrors of everyayah's folders (quranicaudio.com) — not every folder exists there. */
+const MIRROR_MISSING = new Set(["MaherAlMuaiqly128kbps"]);
+
+/**
+ * Every source of one verse, best first: everyayah.com → quranicaudio.com mirror → Quran.com CDN.
+ * All send CORS *, so the web app can download from each.
+ */
+export function ayahUrls(reciterId: string, surah: number, ayah: number): string[] {
+  const r = getReciter(reciterId), f = fileName(surah, ayah);
+  const list = [ayahRemoteUrl(reciterId, surah, ayah)];
+  if (!MIRROR_MISSING.has(r.everyAyahFolder)) list.push(`https://mirrors.quranicaudio.com/everyayah/${r.everyAyahFolder}/${f}`);
+  const qc = QURAN_CDN[r.id];
+  if (qc) list.push(`${qc}${f}`);
+  return list;
+}
 
 /** Remote URL of the whole surah as one MP3. */
 export const surahRemoteUrl = (reciterId: string, surah: number) => `${getReciter(reciterId).surahServer}${pad3(surah)}.mp3`;
@@ -122,22 +148,51 @@ type FilesystemModule = typeof import("@capacitor/filesystem");
 let fsModule: Promise<FilesystemModule> | null = null;
 const fs = () => (fsModule ??= import("@capacitor/filesystem"));
 
-/** Downloads one file; returns its size in bytes. */
-async function saveFile(url: string, reciterId: string, surah: number, ayah: number, signal: AbortSignal): Promise<number> {
-  if (isNativePlatform()) {
-    const { Filesystem, Directory } = await fs();
-    // Native HTTP: no CORS restrictions, streams to disk.
-    const res = await Filesystem.downloadFile({ url, path: nativePath(reciterId, surah, ayah), directory: Directory.Data, recursive: true });
-    if (signal.aborted) throw new DOMException("Aborted", "AbortError");
-    if (!res.path && !res.blob) throw new Error("Download failed");
-    try { return (await Filesystem.stat({ path: nativePath(reciterId, surah, ayah), directory: Directory.Data })).size; } catch { return 0; }
-  }
-  if (typeof caches === "undefined") throw new Error("Offline storage is not available in this browser");
+/** Native HTTP (no CORS in the app): the MP3 as base64. */
+async function nativeGetBase64(url: string): Promise<string> {
+  const { CapacitorHttp } = await import("@capacitor/core");
+  const res = await CapacitorHttp.get({ url, responseType: "blob", connectTimeout: 15000, readTimeout: 30000 });
+  if (res.status < 200 || res.status >= 300) throw new Error(`HTTP ${res.status}`);
+  const data = res.data as unknown;
+  if (typeof data !== "string" || !data) throw new Error("Empty download");
+  return data;
+}
+
+async function webGetBlob(url: string, signal: AbortSignal): Promise<Blob> {
   const res = await fetch(url, { signal, mode: "cors" });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const blob = await res.blob();
+  if (!blob.size) throw new Error("Empty download");
+  return blob;
+}
+
+/**
+ * Downloads one verse, trying every source (everyayah → mirror → Quran.com CDN); returns its size in bytes.
+ * Stored under the everyayah URL (what playback looks up).
+ */
+async function saveFile(primary: string, reciterId: string, surah: number, ayah: number, signal: AbortSignal): Promise<number> {
+  let last: unknown = null;
+  for (const url of ayahUrls(reciterId, surah, ayah)) {
+    try { return await saveFrom(url, primary, reciterId, surah, ayah, signal); } catch (e) {
+      if (signal.aborted) throw e;
+      last = e;
+    }
+  }
+  throw last ?? new Error("Download failed");
+}
+
+async function saveFrom(url: string, primary: string, reciterId: string, surah: number, ayah: number, signal: AbortSignal): Promise<number> {
+  if (isNativePlatform()) {
+    const { Filesystem, Directory } = await fs();
+    const data = await nativeGetBase64(url);
+    if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+    await Filesystem.writeFile({ path: nativePath(reciterId, surah, ayah), directory: Directory.Data, data, recursive: true });
+    return Math.floor((data.length * 3) / 4);
+  }
+  if (typeof caches === "undefined") throw new Error("Offline storage is not available in this browser");
+  const blob = await webGetBlob(url, signal);
   const cache = await caches.open(WEB_CACHE);
-  await cache.put(url, new Response(blob, { headers: { "Content-Type": "audio/mpeg", "Content-Length": String(blob.size) } }));
+  await cache.put(primary, new Response(blob, { headers: { "Content-Type": "audio/mpeg", "Content-Length": String(blob.size) } }));
   return blob.size;
 }
 
@@ -162,9 +217,11 @@ const objectUrls = new Map<string, string>();
 /**
  * URL to play one Ayah: the offline copy if the surah was downloaded, otherwise the stream.
  */
-export async function getAyahAudioUrl(reciterId: string, surah: number, ayah: number): Promise<string> {
+export async function getAyahAudioUrl(reciterId: string, surah: number, ayah: number, attempt = 0): Promise<string> {
   await loadDownloads();
-  const remote = ayahRemoteUrl(reciterId, surah, ayah);
+  const urls = ayahUrls(reciterId, surah, ayah);
+  // A retry after a failed stream goes to the next source.
+  const remote = urls[Math.min(attempt, urls.length - 1)]!;
   if (getDownloadState(reciterId, surah).status !== "complete") return remote;
   try {
     if (isNativePlatform()) {

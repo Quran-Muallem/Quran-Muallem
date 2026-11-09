@@ -6,10 +6,12 @@
  *    in the background).
  *  - Media Session API (web, iOS): title, Sheikh and play / pause / next / previous on the lock screen
  *    and in the notification shade.
- *  - Android app: the WebView has no Media Session API and Android would put a backgrounded app to
+ *  - Android app: the WebView has no usable Media Session and Android would put a backgrounded app to
  *    sleep, so the native BackgroundAudio plugin (native/android/, installed by
- *    scripts/native-permissions.mjs) runs a media-playback foreground service with a notification
- *    (play / pause, stop) while a recitation plays.
+ *    scripts/native-permissions.mjs) runs a media-playback foreground service with a real MediaSession
+ *    (lock screen: surah, «بصوت الشيخ …», artwork, seekable progress, play / pause, previous / next) and a
+ *    wake + Wi-Fi lock while a recitation plays. (v23/v24 used @capgo/capacitor-media-session instead,
+ *    which holds no wake lock — playback stopped with the screen off. Do not go back to it.)
  *  - iOS app: background audio is enabled in Info.plist (UIBackgroundModes audio) by the same script.
  *
  * Playback stops only when the user pauses / stops (in the app, on the lock screen, in the
@@ -18,10 +20,10 @@
 import { assetUrl } from "@/lib/assets";
 import { platform } from "@/lib/storage";
 
-type NativeAction = { action: "toggle" | "stop" };
+type NativeAction = { action: "toggle" | "play" | "pause" | "next" | "previous" | "stop" | "seekto"; seekTime?: number };
 type ListenerHandle = { remove: () => Promise<void> };
 interface BackgroundAudioPlugin {
-  update(options: { title: string; artist: string; playing: boolean }): Promise<void>;
+  update(options: { title: string; artist: string; album: string; playing: boolean; position: number; duration: number; canPrev: boolean; canNext: boolean }): Promise<void>;
   stop(): Promise<void>;
   addListener(event: "action", cb: (a: NativeAction) => void): Promise<ListenerHandle>;
 }
@@ -42,13 +44,24 @@ let element: HTMLAudioElement | null = null;
 export function sheikhAudio(src: string): HTMLAudioElement {
   element ??= new Audio();
   const a = element;
-  a.onended = null; a.onerror = null; a.ontimeupdate = null;
+  a.onended = null; a.onerror = null; a.ontimeupdate = null; a.onloadedmetadata = null;
   a.preload = "auto";
   a.setAttribute("playsinline", "");
   if (a.src !== src) a.src = src;
   else a.currentTime = 0;
   return a;
 }
+
+/**
+ * Who plays on the shared element (Mushaf / Recite verse player, the reciters library …). A new owner
+ * takes it over and the previous one is told to drop its "playing" state.
+ */
+let owner: { id: symbol; lost: () => void } | null = null;
+export function claimSheikhAudio(id: symbol, lost: () => void) {
+  if (owner && owner.id !== id) { const prev = owner; owner = null; prev.lost(); }
+  owner = { id, lost };
+}
+export function releaseSheikhAudio(id: symbol) { if (owner?.id === id) owner = null; }
 
 /** Stops whatever the shared element plays (keeps the element). */
 export function stopSheikhAudio() {
@@ -60,7 +73,12 @@ export function stopSheikhAudio() {
 /* ───────────── session: lock screen / notification ───────────── */
 
 export type SessionInfo = { title: string; artist: string; album?: string | undefined };
-export type SessionHandlers = { onPlay: () => void; onPause: () => void; onStop: () => void; onNext?: (() => void) | undefined; onPrevious?: (() => void) | undefined };
+export type SessionHandlers = {
+  onPlay: () => void; onPause: () => void; onStop: () => void;
+  onNext?: (() => void) | undefined; onPrevious?: (() => void) | undefined;
+  /** Seek inside the current verse (seconds), from the lock-screen progress bar. */
+  onSeek?: ((seconds: number) => void) | undefined;
+};
 
 let handlers: SessionHandlers | null = null;
 let nativeListener: Promise<ListenerHandle | null> | null = null;
@@ -73,12 +91,44 @@ function mediaSession(): MediaSession | null {
 function bindWebHandlers() {
   const ms = mediaSession();
   if (!ms) return;
-  const set = (action: MediaSessionAction, fn: (() => void) | null) => { try { ms.setActionHandler(action, fn); } catch { /* unsupported action */ } };
+  const set = (action: MediaSessionAction, fn: MediaSessionActionHandler | null) => { try { ms.setActionHandler(action, fn); } catch { /* unsupported action */ } };
   set("play", handlers ? () => handlers?.onPlay() : null);
   set("pause", handlers ? () => handlers?.onPause() : null);
   set("stop", handlers ? () => handlers?.onStop() : null);
   set("nexttrack", handlers?.onNext ? () => handlers?.onNext?.() : null);
   set("previoustrack", handlers?.onPrevious ? () => handlers?.onPrevious?.() : null);
+  set("seekto", handlers?.onSeek ? (d) => { if (d.seekTime != null) handlers?.onSeek?.(d.seekTime); } : null);
+}
+
+const position = () => {
+  const a = element;
+  const duration = a && Number.isFinite(a.duration) && a.duration > 0 ? a.duration : 0;
+  return { position: a ? (duration ? Math.min(a.currentTime, duration) : a.currentTime) : 0, duration, rate: a?.playbackRate || 1 };
+};
+
+/** Tells the native service (Android) the current state; this also renews its wake lock. */
+async function pushNative(native: BackgroundAudioPlugin) {
+  const c = current;
+  if (!c) return;
+  const p = position();
+  await native.update({
+    title: c.info.title, artist: c.info.artist, album: c.info.album ?? "Quran Muallem", playing: c.playing,
+    position: p.position, duration: p.duration, canPrev: !!handlers?.onPrevious, canNext: !!handlers?.onNext,
+  }).catch(() => {});
+}
+
+/** Progress bar of the lock-screen player: the position every few seconds (Android: renews the wake lock). */
+let progressTimer: ReturnType<typeof setInterval> | null = null;
+function trackProgress(native: BackgroundAudioPlugin | null, playing: boolean) {
+  if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
+  const report = () => {
+    if (native) { void pushNative(native); return; }
+    const p = position();
+    if (p.duration) { try { mediaSession()?.setPositionState?.({ duration: p.duration, position: p.position, playbackRate: p.rate }); } catch { /* unsupported */ } }
+  };
+  if (element) element.onloadedmetadata = report;
+  report();
+  if (playing) progressTimer = setInterval(report, native ? 5000 : 1000);
 }
 
 /**
@@ -88,22 +138,32 @@ function bindWebHandlers() {
 export function updateSession(info: SessionInfo, playing: boolean, h: SessionHandlers) {
   handlers = h;
   current = { info, playing };
-  const ms = mediaSession();
-  if (ms) {
+  void backgroundAudio().then(async (native) => {
+    if (native) {
+      nativeListener ??= native.addListener("action", ({ action, seekTime }) => {
+        if (action === "stop") handlers?.onStop();
+        else if (action === "play") handlers?.onPlay();
+        else if (action === "pause") handlers?.onPause();
+        else if (action === "next") handlers?.onNext?.();
+        else if (action === "previous") handlers?.onPrevious?.();
+        else if (action === "seekto") { if (seekTime != null) handlers?.onSeek?.(seekTime); }
+        else if (current?.playing) handlers?.onPause(); else handlers?.onPlay();
+      }).catch(() => null);
+      await pushNative(native);
+      trackProgress(native, playing);
+      return;
+    }
+    const ms = mediaSession();
+    if (!ms) return;
     try {
-      const icon = new URL(assetUrl("icon-512.png"), location.href).href;
-      ms.metadata = new MediaMetadata({ title: info.title, artist: info.artist, album: info.album ?? "Quran Muallem", artwork: [{ src: icon, sizes: "512x512", type: "image/png" }] });
+      ms.metadata = new MediaMetadata({
+        title: info.title, artist: info.artist, album: info.album ?? "Quran Muallem",
+        artwork: [192, 512].map((s) => ({ src: new URL(assetUrl(`icon-${s}.png`), location.href).href, sizes: `${s}x${s}`, type: "image/png" })),
+      });
       ms.playbackState = playing ? "playing" : "paused";
     } catch { /* MediaMetadata missing */ }
     bindWebHandlers();
-  }
-  void backgroundAudio().then((native) => {
-    if (!native) return;
-    nativeListener ??= native.addListener("action", ({ action }) => {
-      if (action === "stop") handlers?.onStop();
-      else if (current?.playing) handlers?.onPause(); else handlers?.onPlay();
-    }).catch(() => null);
-    return native.update({ title: info.title, artist: info.artist, playing });
+    trackProgress(null, playing);
   }).catch(() => {});
 }
 
@@ -111,9 +171,27 @@ export function updateSession(info: SessionInfo, playing: boolean, h: SessionHan
 export function endSession() {
   handlers = null;
   current = null;
-  const ms = mediaSession();
-  if (ms) { try { ms.metadata = null; ms.playbackState = "none"; } catch { /* ignore */ } bindWebHandlers(); }
-  void backgroundAudio().then((native) => native?.stop()).catch(() => {});
+  if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
+  void backgroundAudio().then(async (native) => {
+    if (native) { await native.stop().catch(() => {}); return; }
+    const ms = mediaSession();
+    if (ms) { try { ms.metadata = null; ms.playbackState = "none"; } catch { /* ignore */ } bindWebHandlers(); }
+  }).catch(() => {});
+}
+
+/**
+ * Lock-screen texts in the app language: title «سورة الفاتحة» (with «· الآية ٣» while playing verse by
+ * verse), artist «بصوت الشيخ مشاري العفاسي».
+ */
+export type MediaTextKey = "mediaByReciter" | "mediaSurah" | "mediaAyah";
+export function sessionTexts(t: (k: MediaTextKey) => string, o: { language: string; surahArabic: string; surahSimple: string; ayah?: number | null; reciterArabic: string; reciterEnglish: string }) {
+  const ar = o.language === "ar" || o.language === "ur";
+  const digits = (n: number) => (o.language === "ar" ? String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)]!) : String(n));
+  const surah = t("mediaSurah").replace("{surah}", ar ? o.surahArabic : o.surahSimple);
+  return {
+    title: o.ayah ? `${surah} · ${t("mediaAyah").replace("{ayah}", digits(o.ayah))}` : surah,
+    artist: t("mediaByReciter").replace("{name}", ar ? o.reciterArabic : o.reciterEnglish),
+  };
 }
 
 /* ───────────── one word in the Sheikh's voice ───────────── */

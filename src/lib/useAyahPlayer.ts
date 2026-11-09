@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { getAyahAudioUrl, getReciter } from "@/lib/reciterManager";
-import { endSession, sheikhAudio, stopSheikhAudio, updateSession } from "@/lib/audioPlayback";
+import { claimSheikhAudio, endSession, sessionTexts, sheikhAudio, stopSheikhAudio, updateSession } from "@/lib/audioPlayback";
+import { LanguageContext, translate } from "@/lib/i18n";
 import { getSurahMeta } from "@/lib/quranService";
 
 export type AyahPlayer = {
@@ -17,11 +18,16 @@ export type AyahPlayer = {
 
 /**
  * Plays a surah Ayah by Ayah (offline copy when downloaded), so the current Ayah can be highlighted.
- * Plays from `from` to `to`; with `repeat`, the range loops (useful for memorization).
+ * Plays from `from` on and keeps going verse after verse up to `to` (normally the surah's last verse) until
+ * paused / stopped. With `repeat`, only `from`…`repeatTo` is played, in a loop (memorization).
  */
-export function useAyahPlayer({ reciterId, surah, from, to, repeat = false, onAyahChange }: {
-  reciterId: string; surah: number; from: number; to: number; repeat?: boolean; onAyahChange?: (ayah: number) => void;
+export function useAyahPlayer({ reciterId, surah, from, to, repeat = false, repeatTo, onAyahChange }: {
+  reciterId: string; surah: number; from: number; to: number; repeat?: boolean;
+  /** Last verse of the loop when `repeat` is on (default: `to`). */
+  repeatTo?: number | undefined;
+  onAyahChange?: (ayah: number) => void;
 }): AyahPlayer {
+  const language = useContext(LanguageContext);
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ayah, setAyah] = useState(from);
@@ -29,31 +35,35 @@ export function useAyahPlayer({ reciterId, surah, from, to, repeat = false, onAy
   const audio = useRef<HTMLAudioElement | null>(null);
   const preload = useRef<HTMLAudioElement | null>(null);
   const token = useRef(0);
-  const cfg = useRef({ reciterId, surah, from, to, repeat, onAyahChange });
-  cfg.current = { reciterId, surah, from, to, repeat, onAyahChange };
+  const me = useRef(Symbol("player")).current;
+  const cfg = useRef({ reciterId, surah, from, to, repeat, repeatTo: repeatTo ?? to, onAyahChange, language });
+  cfg.current = { reciterId, surah, from, to, repeat, repeatTo: Math.min(repeatTo ?? to, to), onAyahChange, language };
 
   /** Lock screen / notification: "Al-Fatiha · 3" by the Sheikh, with play / pause / stop / next / previous. */
   const announce = (n: number, isPlaying: boolean) => {
     const c = cfg.current;
     const meta = getSurahMeta(c.surah), r = getReciter(c.reciterId);
-    updateSession({ title: `${meta?.nameArabic ?? ""} · ${n}`, artist: r.nameArabic, album: meta?.nameSimple }, isPlaying, {
+    const texts = sessionTexts((k) => translate(c.language, k), { language: c.language, surahArabic: meta?.nameArabic ?? "", surahSimple: meta?.nameSimple ?? "", ayah: n, reciterArabic: r.nameArabic, reciterEnglish: r.nameEnglish });
+    updateSession({ ...texts, album: "Quran Muallem · معلم القرآن" }, isPlaying, {
       onPlay: () => { const el = audio.current; if (el && el.paused && el.src) void el.play().then(() => { setPlaying(true); announce(ayahRef.current, true); }).catch(() => {}); else void playAyah(ayahRef.current); },
       onPause: () => { audio.current?.pause(); setPlaying(false); announce(ayahRef.current, false); },
       onStop: () => { token.current++; stopAudio(); setPlaying(false); setLoading(false); endSession(); },
       onNext: () => { if (ayahRef.current < cfg.current.to) void playAyah(ayahRef.current + 1); },
       onPrevious: () => { if (ayahRef.current > cfg.current.from) void playAyah(ayahRef.current - 1); },
+      onSeek: (t) => { if (audio.current) audio.current.currentTime = t; },
     });
   };
   const stopAudio = () => { if (audio.current) stopSheikhAudio(); audio.current = null; };
 
-  const playAyah = useCallback(async (n: number) => {
+  const playAyah = useCallback(async (n: number, retried = false) => {
     const my = ++token.current;
+    claimSheikhAudio(me, () => { token.current++; audio.current = null; setPlaying(false); setLoading(false); });
     stopAudio();
     const { reciterId: r, surah: s, to: end } = cfg.current;
     setAyah(n); setFailed(false); setLoading(true);
     cfg.current.onAyahChange?.(n);
     try {
-      const url = await getAyahAudioUrl(r, s, n);
+      const url = await getAyahAudioUrl(r, s, n, retried ? 1 : 0);
       if (my !== token.current) return;
       // The shared element keeps playing with the screen off / app in the background (audioPlayback.ts).
       const a = sheikhAudio(url);
@@ -61,11 +71,13 @@ export function useAyahPlayer({ reciterId, surah, from, to, repeat = false, onAy
       a.onended = () => {
         if (my !== token.current) return;
         const c = cfg.current;
-        if (n < c.to) void playAyah(n + 1);
+        if (c.repeat && n >= c.repeatTo) void playAyah(c.from);
+        else if (n < c.to) void playAyah(n + 1);
         else if (c.repeat) void playAyah(c.from);
         else { setPlaying(false); audio.current = null; endSession(); }
       };
-      a.onerror = () => { if (my === token.current) { setPlaying(false); setLoading(false); setFailed(true); } };
+      // A failed verse is tried once more (e.g. a dropped download) before playback stops.
+      a.onerror = () => { if (my === token.current) { if (!retried) void playAyah(n, true); else { setPlaying(false); setLoading(false); setFailed(true); } } };
       await a.play();
       if (my !== token.current) { a.pause(); return; }
       setPlaying(true); setLoading(false);
@@ -73,7 +85,9 @@ export function useAyahPlayer({ reciterId, surah, from, to, repeat = false, onAy
       // Warm up the next Ayah to keep the gap short.
       if (n < end) void getAyahAudioUrl(r, s, n + 1).then((u) => { const p = new Audio(u); p.preload = "auto"; preload.current = p; });
     } catch {
-      if (my === token.current) { setPlaying(false); setLoading(false); setFailed(true); }
+      if (my !== token.current) return;
+      if (!retried) { void playAyah(n, true); return; }
+      setPlaying(false); setLoading(false); setFailed(true);
     }
   }, []);
 

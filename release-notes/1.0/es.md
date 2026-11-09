@@ -6,6 +6,7 @@ Gratis para siempre: sin anuncios, sin suscripción, sin cuenta. Todo se queda e
 **El Mushaf**
 • El Mushaf de Medina en escritura uthmani: las 604 páginas de 15 líneas, como el ejemplar impreso
 • Desliza para pasar página; ve a cualquier sura, yuz o página desde el menú
+• Buscador del Corán: una sura por nombre o número, una aleya (2:255) o palabras árabes en todo el texto, sin conexión
 
 **Recitación y hifz con IA en el dispositivo**
 • Recita sobre la página: las palabras se vuelven verdes (correctas), naranjas (casi correctas) o rojas (omitidas o mal leídas)
@@ -13,6 +14,7 @@ Gratis para siempre: sin anuncios, sin suscripción, sin cuenta. Todo se queda e
 • «Mostrar palabra» revela la siguiente palabra cuando te atascas, sin límite
 • Motor fonético coránico entrenado con la recitación de Ḥafṣ; funciona sin conexión y tu voz nunca se sube
 • Las páginas pasan solas mientras recitas, y las palabras correctas e incorrectas se cuentan a lo largo de las páginas
+• Tus colores se quedan: las palabras verdes, naranjas y rojas permanecen en cada página, al pasar página, al ir a la pantalla de recitación, al cambiar a hifz o al reiniciar; una aleya solo cambia de color cuando la vuelves a recitar
 • Sura completada: el micrófono se detiene con un tono suave y una vibración
 • Una vibración ligera marca un error sin interrumpirte
 

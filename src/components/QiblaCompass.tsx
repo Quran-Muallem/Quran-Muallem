@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Compass, LocateFixed, Loader2, MapPin, RotateCw } from "lucide-react";
+import { Compass, Info as InfoIcon, LocateFixed, Loader2, MapPin, RotateCw } from "lucide-react";
 import { GoldFrame, GOLD, GOLD_GRADIENT, GOLD_LIGHT, EMERALD_DEEP, alpha } from "@/components/ornaments";
 import { angleDiff, compassPoint, distanceToKaaba, normalizeDeg, qiblaBearing, smoothHeading } from "@/lib/qibla";
 import { isNativePlatform, kv } from "@/lib/storage";
@@ -7,7 +7,7 @@ import { toArabicDigits } from "@/lib/quranService";
 import { useI18n, type CopyKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-type Position = { lat: number; lon: number; accuracy: number | null; at: string };
+import { getPosition, type Position } from "@/lib/location";
 const POS_KEY = "hifz.qibla.lastPosition";
 /** Within ± this many degrees counts as facing the Qibla. */
 const ALIGN_TOLERANCE = 5;
@@ -18,24 +18,6 @@ type PermissionRequester = { requestPermission?: () => Promise<"granted" | "deni
 /* ------------------------------------------------------------------ */
 /* Sensors                                                             */
 /* ------------------------------------------------------------------ */
-
-async function getPosition(): Promise<Position> {
-  if (isNativePlatform()) {
-    const { Geolocation } = await import("@capacitor/geolocation");
-    const perm = await Geolocation.checkPermissions().catch(() => null);
-    if (perm && perm.location !== "granted") await Geolocation.requestPermissions({ permissions: ["location"] });
-    const p = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 });
-    return { lat: p.coords.latitude, lon: p.coords.longitude, accuracy: p.coords.accuracy ?? null, at: new Date().toISOString() };
-  }
-  if (!("geolocation" in navigator)) throw new Error("unsupported");
-  return new Promise((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(
-      (p) => resolve({ lat: p.coords.latitude, lon: p.coords.longitude, accuracy: p.coords.accuracy, at: new Date().toISOString() }),
-      (e) => reject(new Error(e.code === e.PERMISSION_DENIED ? "denied" : "unavailable")),
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 },
-    );
-  });
-}
 
 const screenAngle = () => (typeof screen !== "undefined" && screen.orientation ? screen.orientation.angle : (window as unknown as { orientation?: number }).orientation ?? 0) || 0;
 
@@ -151,6 +133,7 @@ export function QiblaCompass() {
 
   const n = (x: number, digits = 0) => { const s = x.toFixed(digits); return language === "ar" ? toArabicDigits(s).replace(".", "٫") : s; };
   const dialRotation = heading != null ? -heading : 0;
+  const native = isNativePlatform();
 
   return (
     <div className="space-y-5 pb-8">
@@ -158,6 +141,13 @@ export function QiblaCompass() {
         <h1 className="font-arabic text-3xl" style={{ color: GOLD_LIGHT }}>{t("qiblaTitle")}</h1>
         <p className="mt-1 text-sm text-emerald-100/70">{t("qiblaSub")}</p>
       </header>
+
+      {/* Web / PWA: browsers pass compass data on with limits (iOS Safari, desktop) — the Android app reads the sensor directly. */}
+      {!native && (
+        <p role="note" data-qibla-web-notice className="flex items-start gap-2 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3 text-sm leading-relaxed text-amber-100">
+          <InfoIcon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />{t("qiblaWebNotice")}
+        </p>
+      )}
 
       <GoldFrame className={cn("transition-shadow duration-500", aligned ? "shadow-[0_0_70px_-5px_rgba(52,211,153,.75)]" : "shadow-[0_0_50px_-15px_rgba(251,191,36,.5)]")}>
         <div className="flex flex-col items-center px-4 py-6">

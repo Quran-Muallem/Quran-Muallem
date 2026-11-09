@@ -84,6 +84,8 @@ export type KeptAudio = { blob: Blob; seconds: number };
 export type TranscriptKind = "text" | "phonemes";
 export function useTranscribingRecorder(onTranscript: (text: string, final: boolean, kind: TranscriptKind) => void, { live = false, keepAudio = false, engine = "whisper" }: { live?: boolean; keepAudio?: boolean; engine?: "whisper" | "zipformer" } = {}) {
   const [recording, setRecording] = useState(false);
+  /** Recording paused by the user: the session (transcript, word states, phoneme stream) is kept. */
+  const [paused, setPaused] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<RecorderError | null>(null);
@@ -165,7 +167,7 @@ export function useTranscribingRecorder(onTranscript: (text: string, final: bool
     const active = handle.current;
     if (!active) return;
     handle.current = null;
-    setRecording(false);
+    setRecording(false); setPaused(false);
     liveAbort.current?.abort();
     let samples: Float32Array;
     // Final result: generous limit (whole duration counts), so a soft voice never loses real words.
@@ -242,13 +244,16 @@ export function useTranscribingRecorder(onTranscript: (text: string, final: bool
     stopStream()?.session.cancel();
     handle.current?.cancel(); handle.current = null; kept.current = null;
     abort.current?.abort(); liveAbort.current?.abort();
-    setRecording(false); setTranscribing(false); setTranscript(""); setError(null);
+    setRecording(false); setPaused(false); setTranscribing(false); setTranscript(""); setError(null);
   }, []);
+  /** Pause / resume the running recitation without ending it. */
+  const pause = useCallback(() => { const h = handle.current; if (!h) return; h.pause(); setPaused(true); }, []);
+  const resume = useCallback(() => { const h = handle.current; if (!h) return; h.resume(); setPaused(false); }, []);
 
   const getLevel = useCallback(() => handle.current?.level() ?? 0, []);
   /** Seconds recorded so far (for a live timer). */
   const elapsed = useCallback(() => handle.current?.duration() ?? 0, []);
   /** The finished recording (once); null if none was kept. */
   const takeAudio = useCallback(async (): Promise<KeptAudio | null> => { const k = kept.current; kept.current = null; return k ? await k : null; }, []);
-  return { recording, transcribing, transcript, error, getLevel, elapsed, takeAudio, cancel, toggle: () => { void toggle(); } };
+  return { recording, paused, pause, resume, transcribing, transcript, error, getLevel, elapsed, takeAudio, cancel, toggle: () => { void toggle(); } };
 }

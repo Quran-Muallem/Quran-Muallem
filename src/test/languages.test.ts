@@ -80,7 +80,7 @@ describe("RecitationContext store", () => {
     s.addPart({ correct: 5, near: 1, wrong: 0 }, false);
     s.surahDone(2); s.surahDone(2);
     s.endSession();
-    expect(s.session.get()).toEqual({ active: false, correct: 75, near: 3, wrong: 4, pages: 2, surahsDone: [2] });
+    expect(s.session.get()).toEqual({ active: false, correct: 75, near: 3, wrong: 4, pages: 2, surahsDone: [2], range: null });
     s.startSession();
     expect(s.session.get().correct).toBe(0);
   });

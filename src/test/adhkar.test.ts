@@ -7,7 +7,7 @@ import { SURAH_META } from "@/lib/quranService";
 const day = (date: string, counts: Record<string, number> = {}): AdhkarDay => ({ version: 1, date, counts });
 
 describe("adhkar data", () => {
-  it("has the four categories with valid, unique entries", () => {
+  it("has the five categories (incl. duas) with valid, unique entries", () => {
     expect(ADHKAR.map((c) => c.id)).toEqual(ADHKAR_CATEGORIES);
     const ids = ADHKAR.flatMap((c) => c.items.map((d) => d.id));
     expect(new Set(ids).size).toBe(ids.length);

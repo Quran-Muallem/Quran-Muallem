@@ -6,6 +6,7 @@ Für immer kostenlos: keine Werbung, kein Abo, kein Konto. Alles bleibt auf dein
 **Der Mushaf**
 • Der Madani-Mushaf in uthmanischer Schrift: alle 604 Seiten mit 15 Zeilen, wie im gedruckten Exemplar
 • Wischen zum Umblättern; über das Menü direkt zu jeder Sure, jedem Juz oder jeder Seite
+• Quran-Suche: Sure nach Name oder Nummer, Vers (2:255) oder arabische Wörter im ganzen Text – offline
 
 **Rezitation & Hifz mit KI auf dem Gerät**
 • Direkt auf der Seite rezitieren: Wörter werden grün (richtig), orange (fast richtig) oder rot (ausgelassen oder falsch gelesen)
@@ -13,6 +14,7 @@ Für immer kostenlos: keine Werbung, kein Abo, kein Konto. Alles bleibt auf dein
 • „Wort zeigen“ deckt das nächste Wort auf, wenn du hängen bleibst – so oft du willst
 • Koranische Phonem-Engine, trainiert auf die Ḥafṣ-Rezitation; sie arbeitet offline, deine Stimme wird nie hochgeladen
 • Beim Rezitieren wird automatisch umgeblättert; richtige und falsche Wörter werden seitenübergreifend gezählt
+• Deine Farben bleiben: grüne, orange und rote Wörter bleiben auf jeder Seite – nach dem Umblättern, beim Wechsel zum Rezitieren-Bildschirm, beim Hifz-Umschalten und nach einem Neustart; ein Vers wird erst neu gefärbt, wenn du ihn wieder rezitierst
 • Sure abgeschlossen: Das Mikrofon stoppt mit einem leisen Gong und einer Vibration
 • Eine leichte Vibration zeigt einen Fehler an, ohne dich zu unterbrechen
 

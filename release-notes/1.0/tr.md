@@ -6,6 +6,7 @@ Her zaman ücretsiz: reklam yok, abonelik yok, hesap yok. Her şey cihazında ka
 **Mushaf**
 • Osmanlı hattıyla Medine Mushafı: 15 satırlı 604 sayfanın tamamı, basılı nüsha gibi
 • Sayfa çevirmek için kaydır; menüden istediğin sureye, cüze veya sayfaya git
+• Kur'an'da arama: adı veya numarasıyla sure, ayet (2:255) ya da tüm metinde Arapça kelimeler – internetsiz
 
 **Cihaz üzerinde yapay zekâ ile tilavet ve hıfz**
 • Doğrudan sayfa üzerinde oku: kelimeler yeşil (doğru), turuncu (neredeyse doğru) veya kırmızı (atlanmış ya da yanlış okunmuş) olur
@@ -13,6 +14,7 @@ Her zaman ücretsiz: reklam yok, abonelik yok, hesap yok. Her şey cihazında ka
 • "Kelimeyi göster" takıldığında sıradaki kelimeyi açar, sınırsız
 • Hafs kıraatiyle eğitilmiş Kur'an fonem motoru; çevrimdışı çalışır, sesin asla yüklenmez
 • Okurken sayfalar otomatik çevrilir; doğru ve yanlış kelimeler sayfalar boyunca sayılır
+• Renklerin kalır: yeşil, turuncu ve kırmızı kelimeler her sayfada kalır – sayfa çevirince, okuma ekranına geçince, hıfz modunu açıp kapatınca ve yeniden başlatınca; bir ayet ancak tekrar okuduğunda yeniden renklenir
 • Sure tamamlandı: mikrofon yumuşak bir zil sesi ve titreşimle durur
 • Hafif bir titreşim seni durdurmadan hatayı gösterir
 

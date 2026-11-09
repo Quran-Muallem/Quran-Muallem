@@ -15,10 +15,13 @@ describe("recording index", () => {
     expect(recordingForRange(list, 1, 2, 5)?.id).toBe("b");
     expect(recordingForRange(list, 1, 1, 7)?.id).toBe("a"); // same start verse
   });
-  it("replaces a recording of the same verses and keeps at most the limit", () => {
+  it("keeps every attempt (up to the limits per range and in all)", () => {
     const [next, removed] = addToIndex([rec("a", 1, 1, 3, "2026-01-01")], rec("b", 1, 1, 3, "2026-02-01"));
-    expect(next.map((r) => r.id)).toEqual(["b"]);
-    expect(removed.map((r) => r.id)).toEqual(["a"]);
+    expect(next.map((r) => r.id)).toEqual(["b", "a"]);
+    expect(removed).toEqual([]);
+    const [two, gone] = addToIndex([rec("a", 1, 1, 3, "2026-01-01"), rec("b", 1, 1, 3, "2026-02-01")], rec("c", 1, 1, 3, "2026-03-01"), 200, 2);
+    expect(two.map((r) => r.id)).toEqual(["c", "b"]);
+    expect(gone.map((r) => r.id)).toEqual(["a"]);
     const [capped, dropped] = addToIndex([rec("x", 1, 1, 1, "2026-01-01"), rec("y", 1, 2, 2, "2026-01-02")], rec("z", 1, 3, 3, "2026-01-03"), 2);
     expect(capped.map((r) => r.id)).toEqual(["z", "y"]);
     expect(dropped.map((r) => r.id)).toEqual(["x"]);
