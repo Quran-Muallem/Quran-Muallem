@@ -140,7 +140,7 @@ async function streamDownload(url: string, signal: AbortSignal, onProgress: (rec
     arm();
     const res = await fetch(url, { signal: ctl.signal, mode: "cors", cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const total = Number(res.headers.get("Content-Length")) || 0;
+    const total = Number(res.headers.get("Content-Length")) || (await contentLength(url));
     onProgress(0, total);
     if (!res.body) { // very old WebViews: no streaming
       const buf = new Uint8Array(await res.arrayBuffer());
@@ -179,15 +179,35 @@ const toBase64 = (bytes: Uint8Array) => {
 type Stored = { bytes: number; store: Store };
 export type Store = "file" | "cache" | "idb";
 
-/** App: the file-transfer plugin writes straight to a file; watched for stalls. */
+let activeNative = 0;
+/** Size of a file from a HEAD request (Content-Length is CORS-safelisted), 0 when unknown. */
+export async function contentLength(url: string): Promise<number> {
+  try {
+    const ctl = new AbortController();
+    const id = setTimeout(() => ctl.abort(), 8000);
+    const r = await fetch(url, { method: "HEAD", mode: "cors", signal: ctl.signal });
+    clearTimeout(id);
+    return Number(r.headers.get("Content-Length")) || 0;
+  } catch { return 0; }
+}
+
+/**
+ * App: the file-transfer plugin writes straight to a file; watched for stalls. Android often reports
+ * progress without a length ("lengthComputable: false") — then the size from a HEAD request is used, so the
+ * surah row shows a real percentage and MB like the web app.
+ */
 async function nativeFileTransfer(url: string, key: string, surah: number, signal: AbortSignal, progress: (r: number, t: number) => void): Promise<Stored> {
   const ft = await fileTransfer();
   if (!ft) throw new Error("no file-transfer");
   const { Filesystem, Directory } = await import("@capacitor/filesystem");
   await Filesystem.mkdir({ path: nativeDir(key), directory: Directory.Data, recursive: true }).catch(() => {});
   const { uri } = await Filesystem.getUri({ path: nativeFile(key, surah), directory: Directory.Data });
+  const known = await contentLength(url);
+  progress(0, known);
   let last = Date.now();
-  const sub = await ft.addListener("progress", (p) => { if (p.url === url) { last = Date.now(); progress(p.bytes, p.lengthComputable ? p.contentLength : 0); } });
+  // The event's url can differ from ours after a redirect: with a single transfer running, take every event.
+  activeNative++;
+  const sub = await ft.addListener("progress", (p) => { if (p.url === url || activeNative === 1) { last = Date.now(); progress(p.bytes, p.lengthComputable && p.contentLength > 0 ? p.contentLength : known); } });
   try {
     await new Promise<void>((resolve, reject) => {
       const watch = setInterval(() => {
@@ -196,7 +216,7 @@ async function nativeFileTransfer(url: string, key: string, surah: number, signa
       }, 1000);
       ft.downloadFile({ url, path: uri, progress: true }).then(() => { clearInterval(watch); resolve(); }, (e: unknown) => { clearInterval(watch); reject(e); });
     });
-  } finally { void sub.remove(); }
+  } finally { activeNative--; void sub.remove(); }
   const st = await Filesystem.stat({ path: nativeFile(key, surah), directory: Directory.Data });
   if (!st.size) throw new Error("Empty download");
   return { bytes: st.size, store: "file" };

@@ -82,6 +82,21 @@ if (existsSync(pbxPath)) {
   if (next !== pbx) { writeFileSync(pbxPath, next); console.log("✓ iOS: iPhone only (TARGETED_DEVICE_FAMILY = 1)"); }
 } else console.log("• iOS project not found (run `npx cap add ios` on a Mac) – skipped");
 
+// Audio session: recitations and the in-app Adhan use the "playback" category (they play with the screen
+// locked and with the silent switch on) and duck other apps' audio while they play.
+const delegatePath = "ios/App/App/AppDelegate.swift";
+if (existsSync(delegatePath)) {
+  let d = readFileSync(delegatePath, "utf8");
+  if (!d.includes("QuranMuallemAudioSession")) {
+    if (!/import AVFoundation/.test(d)) d = d.replace(/import UIKit\n/, "import UIKit\nimport AVFoundation\n");
+    d = d.replace(/(didFinishLaunchingWithOptions[^{]*\{\n)/, `$1        // QuranMuallemAudioSession: playback category (screen locked / silent switch), ducking other audio.
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.duckOthers])
+`);
+    writeFileSync(delegatePath, d);
+    console.log(d.includes("QuranMuallemAudioSession") ? "✓ iOS: AVAudioSession playback + duckOthers" : "• iOS: AppDelegate not patched (unexpected layout)");
+  }
+}
+
 /* ---------------- Android ---------------- */
 const manifestPath = "android/app/src/main/AndroidManifest.xml";
 if (existsSync(manifestPath)) {

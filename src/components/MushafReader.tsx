@@ -30,7 +30,7 @@ import { useI18n } from "@/lib/i18n";
 import { VoiceWordFix, type WordFix } from "@/components/VoiceWordFix";
 import { unifiedMode, useRecitationStore, useSessionStats, useWordColors, wordDone, type RecitedWord, type WordResult } from "@/context/RecitationContext";
 import { colorsFor, mergeLive, reachedVerses } from "@/lib/wordColors";
-import { finishedSurah, passageFinished, surahEndIndices, tally } from "@/lib/surahCompletion";
+import { finishedSurah, pageReadyToTurn, surahEndIndices, tally } from "@/lib/surahCompletion";
 
 function useMushaf() {
   const [state, setState] = useState<{ data: Mushaf | null; error: boolean }>({ data: null, error: false });
@@ -278,7 +278,7 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
   }, [store, surahId, focusAyah, jumpId, page, mode, selected, hints]);
 
   /* ---------------- surah completed ---------------- */
-  // The reciter reached the last word of a surah → microphone off, success vibration, soft chime.
+  // The reciter reached the last word of a surah → success vibration, soft chime (recording continues).
   const surahEnds = useMemo(() => (mushaf ? surahEndIndices(keys, mushaf.versesCount, (s, a) => mushaf.words(s, a).length) : new Map<number, { start: number; end: number }>()), [keys, mushaf]);
   useEffect(() => {
     if (!rec.listening) return;
@@ -286,10 +286,17 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
     if (s == null) return;
     doneSurahs.current.add(s);
     setCompleted(s);
-    rec.toggle();
+    // v26: the microphone stays on — the recording goes on into the next surah / page until the reader
+    // stops it (before, every finished surah switched it off, e.g. after each short surah of Juz' 'Amma).
     // Same engine call as the Recite screen: vibration + chime, then silver/gold if the whole surah is done.
     void store.finishSurah(unifiedMode(mode), s, wordResults(rec.match.statuses));
   }, [rec.listening, rec.match.statuses, surahEnds]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The "surah completed" line shows for a moment while the recording goes on.
+  useEffect(() => {
+    if (completed == null || !rec.listening) return;
+    const id = setTimeout(() => setCompleted(null), 5000);
+    return () => clearTimeout(id);
+  }, [completed, rec.listening]);
   const hidden = useMemo(() => (mode === "MEMORIZATION_MODE" ? new Set(keys.filter((k) => !hints.has(k))) : undefined), [mode, keys, hints]);
 
   /* ---------------- one-tap hint: reveal exactly one more word, no limit ---------------- */
@@ -318,10 +325,13 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
   // "Reached" alone is not enough: a single word heard far ahead can make the matcher jump to the
   // page's last word (marking everything before it red). Turn only when the last word was said and
   // most of the page was said — otherwise one stray word would flip page after page.
-  const pageComplete = useMemo(() => rec.match.done && passageFinished(keys.map((_, i) => rec.match.statuses[tokenOfKey[i] ?? -1] ?? "PENDING"), keys.length - 1),
+  const pageComplete = useMemo(() => rec.match.done && pageReadyToTurn(keys.map((_, i) => rec.match.statuses[tokenOfKey[i] ?? -1] ?? "PENDING"), keys.length - 1),
     [rec.match.done, rec.match.statuses, keys, tokenOfKey]);
+  // The end of the page is reached → next page (0.7 s). If the matcher reached the end without enough of
+  // the page said (e.g. a stray word), wait a little longer, then turn as well: the recording never stops
+  // on its own at a page end — only the reader stops it (or the last page / a finished surah).
   useEffect(() => {
-    if (!rec.listening || !pageComplete || page >= TOTAL_PAGES) return;
+    if (!rec.listening || !rec.match.done || page >= TOTAL_PAGES) return;
     const timer = setTimeout(() => {
       pageTurn.current = true;
       onSessionEnd(latestMatch.current);
@@ -329,9 +339,9 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
       rec.rebase(); rec.forgetMistakes();
       setSelected(null);
       turn(1);
-    }, 700);
+    }, pageComplete ? 700 : 4000);
     return () => clearTimeout(timer);
-  }, [rec.listening, pageComplete, page]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rec.listening, rec.match.done, pageComplete, page]); // eslint-disable-line react-hooks/exhaustive-deps
   const player = usePagePlayer({
     reciterId: settings.reciterId,
     verses: useMemo(() => verses.map((v) => ({ surah: v.surah, ayah: v.ayah })), [verses]),
@@ -380,7 +390,8 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
     : completed ? t("surahComplete").replace("{name}", surahName(completed))
     : active && session.pages > 0 ? sessionLine
     : saved ? `${t("attemptSaved")} · ${num(saved)} ${t("verses")}`
-    : rec.listening && rec.match.done ? t("doneTapStop")
+    : rec.listening && rec.match.done && page >= TOTAL_PAGES ? t("doneTapStop")
+    : rec.listening && pageComplete ? t("pageTurning")
     : active ? `${num(rec.match.accuracy)}% · ${num(rec.match.recited)}/${num(rec.match.total)}`
     : selected ? `${t("startsAt")} ${num(Number(selected.split(":")[1]))}`
     : t(mode === "MEMORIZATION_MODE" ? "pageHintHifz" : "pageHintRecite");

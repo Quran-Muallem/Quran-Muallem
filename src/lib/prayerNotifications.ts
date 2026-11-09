@@ -141,16 +141,33 @@ export function onPrayerArrival(l: (a: PrayerArrival) => void): () => void { arr
 export function announcePrayer(a: PrayerArrival) { arrivalListeners.forEach((l) => l(a)); }
 
 let nativeArrivalBound = false;
-/** App: a prayer notification that arrives while the app is open also shows the banner (sound comes from the channel). */
+/**
+ * App open (any screen, also the prayer screen): the notification arrives → its short notification sound
+ * is replaced by the FULL Adhan played in the app (the notification is removed from the shade, which stops
+ * its sound on Android), plus the banner with "Stop". Closed / background / Doze: the scheduled
+ * notification itself rings (Android: channel sound in full; iOS: 30 s clip).
+ */
 export async function bindNativeArrivals() {
   if (nativeArrivalBound) return;
   const ln = await localNotifications();
   if (!ln) return;
   nativeArrivalBound = true;
   await ln.addListener("localNotificationReceived", (n) => {
-    const extra = (n.extra ?? {}) as { prayer?: NotifyPrayer; mode?: "adhan" | "vibrate" };
-    if (extra.prayer) announcePrayer({ prayer: extra.prayer, mode: extra.mode === "vibrate" ? "vibrate" : "adhan", at: new Date() });
+    const extra = (n.extra ?? {}) as { prayer?: NotifyPrayer; mode?: "adhan" | "vibrate"; file?: string };
+    if (!extra.prayer) return;
+    const mode = extra.mode === "vibrate" ? "vibrate" : "adhan";
+    if (mode === "adhan" && extra.file) {
+      void ln.removeDeliveredNotifications({ notifications: [n] }).catch(() => {});
+      playAdhan(extra.file);
+    } else if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(VIBRATE_PATTERN);
+    announcePrayer({ prayer: extra.prayer, mode, at: new Date(), ...(extra.file ? { file: extra.file } : {}) });
   }).catch(() => { nativeArrivalBound = false; });
+}
+
+/** Android: create every muezzin's channel at app start (before any plan). */
+export async function prepareAdhanChannels(names: { adhan: string; vibrate: string }) {
+  const ln = await localNotifications();
+  if (ln) await ensureChannels(ln, names);
 }
 
 /** Vibration pattern of "vibration only" (long – short – long). */
@@ -200,7 +217,7 @@ export async function schedulePrayerNotifications(settings: PrayerSettings, lang
         schedule: { at: it.at, allowWhileIdle: true },
         channelId: it.mode === "adhan" ? channelFor(it.file) : VIBRATE_CHANNEL,
         ...(sound ? { sound } : {}),
-        extra: { prayer: it.p, mode: it.mode },
+        extra: { prayer: it.p, mode: it.mode, file: it.file },
       });
     }
     await ln.schedule({ notifications }).catch(() => {});

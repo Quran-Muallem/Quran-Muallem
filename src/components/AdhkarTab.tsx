@@ -161,7 +161,7 @@ function DhikrCard({ dhikr, count, mushaf, onCount, cardRef }: {
   );
 }
 
-function QuranText({ refs, mushaf, clamp }: { refs: QuranRef[]; mushaf: Mushaf | null; clamp: boolean }) {
+export function QuranText({ refs, mushaf, clamp }: { refs: QuranRef[]; mushaf: Mushaf | null; clamp: boolean }) {
   if (!mushaf) return <div className="h-20 animate-pulse rounded-xl bg-black/20" />;
   const basmala = mushaf.words(1, 1).join(" ");
   return (
@@ -178,7 +178,7 @@ function QuranText({ refs, mushaf, clamp }: { refs: QuranRef[]; mushaf: Mushaf |
   );
 }
 
-function useMushafData(): Mushaf | null {
+export function useMushafData(): Mushaf | null {
   const [m, setM] = useState<Mushaf | null>(null);
   useEffect(() => { let alive = true; loadMushaf().then((d) => alive && setM(d)).catch(() => {}); return () => { alive = false; }; }, []);
   return m;

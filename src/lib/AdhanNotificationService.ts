@@ -9,7 +9,7 @@
  * after three days without opening it the Adhan stopped.)
  */
 import { NOTIFY_PRAYERS, loadPrayerSettings, modeOf, prayerSettings, type NotifyPrayer } from "@/lib/PrayerTimesEngine";
-import { bindNativeArrivals, exactAlarmStatus, notificationPermission, openExactAlarmSetting, schedulePrayerNotifications } from "@/lib/prayerNotifications";
+import { bindNativeArrivals, prepareAdhanChannels, exactAlarmStatus, notificationPermission, openExactAlarmSetting, schedulePrayerNotifications } from "@/lib/prayerNotifications";
 import { isNativePlatform, kv } from "@/lib/storage";
 import { translate, type CopyKey } from "@/lib/i18n";
 import type { Language } from "@/i18n";
@@ -85,6 +85,7 @@ export function startAdhanService(lang: Language): () => void {
   if (typeof document !== "undefined") document.addEventListener("visibilitychange", onVisible);
   armMidnight();
   void bindNativeArrivals();
+  void prepareAdhanChannels({ adhan: adhanLabels(lang).channelAdhan, vibrate: adhanLabels(lang).channelVibrate });
   void replanAdhan();
   return stopAdhanService;
 }

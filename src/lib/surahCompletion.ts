@@ -89,6 +89,21 @@ export function passageFinished(statuses: readonly LiveStatus[], last: number, m
   return said >= minShare * (last + 1);
 }
 
+/**
+ * Mushaf page while recording: may the next page slide in? The last word has been reached and judged (also
+ * when it was said wrongly — before v26 a mispronounced last word or a page with many red words left the
+ * reader stuck on "page finished – tap the microphone"), and a fair part of the page was really said, so a
+ * single stray word that makes the matcher jump to the end still does not flip the page.
+ */
+export function pageReadyToTurn(statuses: readonly LiveStatus[], last: number, minShare = 0.35): boolean {
+  if (last < 0) return false;
+  const end = statuses[last];
+  if (end == null || end === "PENDING") return false;
+  let said = 0;
+  for (let i = 0; i <= last; i++) if (isSaid(statuses[i])) said++;
+  return said >= minShare * (last + 1);
+}
+
 /** Counts of judged words (PENDING ignored). */
 export function tally(statuses: readonly LiveStatus[]): { correct: number; near: number; wrong: number } {
   let correct = 0, near = 0, wrong = 0;

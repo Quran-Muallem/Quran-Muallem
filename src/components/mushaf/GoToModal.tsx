@@ -13,6 +13,7 @@ export { parseGoTo, type GoToTarget };
 export function GoToModal({ open, page, surah, onClose, onGo }: { open: boolean; page: number; surah: number; onClose: () => void; onGo: (t: GoToTarget) => void }) {
   const { t, language } = useI18n();
   const [quick, setQuick] = useState("");
+  const nameInput = useRef<HTMLInputElement>(null);
   const [s, setS] = useState(surah);
   const [a, setA] = useState(1);
   const [p, setP] = useState(String(page));
@@ -21,7 +22,7 @@ export function GoToModal({ open, page, surah, onClose, onGo }: { open: boolean;
   useEffect(() => {
     if (!open) return;
     setQuick(""); setName(""); setS(surah); setA(1); setP(String(page));
-    const id = setTimeout(() => input.current?.focus(), 60);
+    const id = setTimeout(() => nameInput.current?.focus(), 60);
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => { clearTimeout(id); window.removeEventListener("keydown", onKey); };
@@ -47,22 +48,10 @@ export function GoToModal({ open, page, surah, onClose, onGo }: { open: boolean;
           <button type="button" onClick={onClose} aria-label={t("close")} className="text-amber-200"><X className="h-5 w-5" /></button>
         </div>
 
-        <form onSubmit={submitQuick} className="flex items-center gap-2">
-          <input ref={input} value={quick} onChange={(e) => setQuick(e.target.value)} inputMode="text" enterKeyHint="go" autoComplete="off"
-            placeholder={t("goToPlaceholder")} aria-label={t("goToPlaceholder")}
-            className="h-11 min-w-0 flex-1 rounded-xl border border-amber-400/50 bg-black/25 px-3 text-base text-emerald-50 placeholder:text-emerald-100/45 focus:outline-none" />
-          <button type="submit" disabled={!parsed} aria-label={t("goTo")} className="flex h-11 w-11 items-center justify-center rounded-xl text-emerald-950 disabled:opacity-40" style={{ background: GOLD_GRADIENT }}>
-            <CornerDownLeft className="h-5 w-5" />
-          </button>
-        </form>
-        <p className={cn("mt-1 min-h-[1rem] text-xs", quick.trim() && !parsed ? "text-red-200" : "text-emerald-100/60")}>
-          {!quick.trim() ? t("goToExample") : parsed ? ("page" in parsed ? `${t("pageLabel")} ${num(parsed.page)}` : `${getSurahMeta(parsed.surah)?.nameSimple ?? ""} ${num(parsed.surah)}:${num(parsed.ayah)}`) : t("goToInvalid")}
-        </p>
-
-        <div className="my-3 h-px" style={{ background: alpha(GOLD, 0.35) }} />
+        {/* v26: the surah search comes first, the page / verse jump below it. */}
         {/* Surah by name: autocomplete; choosing one opens the first page of the surah */}
-        <label className="block text-xs text-emerald-100/70">{t("goToSurahName")}
-          <input value={name} onChange={(e) => setName(e.target.value)} type="search" autoComplete="off" enterKeyHint="go" data-goto-surah-search=""
+        <label className="block text-xs font-semibold text-amber-200/90"><span aria-hidden="true">🔍 </span>{t("goToSurahName")}
+          <input ref={nameInput} value={name} onChange={(e) => setName(e.target.value)} type="search" autoComplete="off" enterKeyHint="go" data-goto-surah-search=""
             onKeyDown={(e) => { if (e.key === "Enter" && hits[0]) { e.preventDefault(); go({ surah: hits[0], ayah: 1 }); } }}
             placeholder={t("goToSurahPlaceholder")} className={cn(field, "text-base placeholder:text-emerald-100/40")} />
         </label>
@@ -85,6 +74,20 @@ export function GoToModal({ open, page, surah, onClose, onGo }: { open: boolean;
             })}
           </ul>
         )}
+        <div className="my-3 h-px" style={{ background: alpha(GOLD, 0.35) }} />
+        <p className="mb-1.5 text-xs font-semibold text-amber-200/90" data-goto-section="page"><span aria-hidden="true">📄 </span>{t("goToPageAyah")}</p>
+        <form onSubmit={submitQuick} className="flex items-center gap-2">
+          <input ref={input} value={quick} onChange={(e) => setQuick(e.target.value)} inputMode="text" enterKeyHint="go" autoComplete="off"
+            placeholder={t("goToPlaceholder")} aria-label={t("goToPlaceholder")}
+            className="h-11 min-w-0 flex-1 rounded-xl border border-amber-400/50 bg-black/25 px-3 text-base text-emerald-50 placeholder:text-emerald-100/45 focus:outline-none" />
+          <button type="submit" disabled={!parsed} aria-label={t("goTo")} className="flex h-11 w-11 items-center justify-center rounded-xl text-emerald-950 disabled:opacity-40" style={{ background: GOLD_GRADIENT }}>
+            <CornerDownLeft className="h-5 w-5" />
+          </button>
+        </form>
+        <p className={cn("mt-1 min-h-[1rem] text-xs", quick.trim() && !parsed ? "text-red-200" : "text-emerald-100/60")}>
+          {!quick.trim() ? t("goToExample") : parsed ? ("page" in parsed ? `${t("pageLabel")} ${num(parsed.page)}` : `${getSurahMeta(parsed.surah)?.nameSimple ?? ""} ${num(parsed.surah)}:${num(parsed.ayah)}`) : t("goToInvalid")}
+        </p>
+
         <div className="my-3 h-px" style={{ background: alpha(GOLD, 0.2) }} />
         <div className="grid grid-cols-[1fr_5rem_auto] items-end gap-2">
           <label className="text-xs text-emerald-100/70">{t("surah")}
