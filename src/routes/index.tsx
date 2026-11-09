@@ -7,7 +7,8 @@ import { useMistakeHaptics } from "@/lib/useMistakeHaptics";
 import { matchLive, normalizeArabic, type LiveMatch, type LiveStatus, type WordStatus } from "@/lib/quranMatcher";
 import { useSpeechRecognition, type SpeechErrorCode } from "@/lib/useSpeechRecognition";
 import { useTranscribingRecorder, type TranscriptKind } from "@/lib/use-transcribing-recorder";
-import { matchLivePhonemes, phonemeRefs, usePhonemeLexicon } from "@/lib/quranAlignment";
+import { loadQuranPhonemes, matchLivePhonemes, phonemeRefs, usePhonemeLexicon } from "@/lib/quranAlignment";
+import { locateRecitation, locatorIndex } from "@/lib/ayahLocator";
 import { loadMushaf, TOTAL_PAGES, type Mushaf } from "@/lib/mushafData";
 import { BurgerButton, MushafMenu, type AppTab } from "@/components/mushaf/MushafMenu";
 import { KhatmaView } from "@/components/KhatmaView";
@@ -321,7 +322,15 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
     { live, keepAudio: true, engine: recognizer === "zipformer" && refs ? "zipformer" : "whisper" });
   const { stopListening, resetTranscript, startListening } = speech;
 
-  const transcript = useWhisper ? whisperText : speech.liveTranscript;
+  const fullTranscript = useWhisper ? whisperText : speech.liveTranscript;
+  // After an automatic jump to the recited verse the recording goes on; the new passage is judged from
+  // where the matched recitation starts (phoneme characters / words of the transcript are skipped).
+  const [base, setBase] = useState<{ kind: "phonemes" | "text"; pos: number } | null>(null);
+  const transcript = useMemo(() => {
+    if (!base) return fullTranscript;
+    if (base.kind === "phonemes") return fullTranscript.slice(base.pos);
+    return fullTranscript.trim().split(/\s+/).slice(base.pos).join(" ");
+  }, [fullTranscript, base]);
   const profile = useVoiceProfile(); // re-judge when a word is added to the voice profile
   const match = useMemo(() => (useWhisper && textKind === "phonemes" && refs
     ? matchLivePhonemes(transcript, texts, refs, { final: !whisper.recording })
@@ -383,7 +392,7 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
   const passageKey = `${target.surahId}:${from}-${to}:${target.mode}`;
   const snap = useRef(store.practice?.key === passageKey ? store.practice : null);
   const [hints, setHints] = useState<Set<number>>(() => new Set(snap.current?.hints ?? []));
-  const reset = useCallback(() => { stopListening(); resetTranscript(); setWhisperText(""); whisper.cancel(); setSaved(null); setHints(new Set()); setWordFix(null); }, [stopListening, resetTranscript, whisper.cancel]);
+  const reset = useCallback(() => { stopListening(); resetTranscript(); setWhisperText(""); setBase(null); whisper.cancel(); setSaved(null); setHints(new Set()); setWordFix(null); }, [stopListening, resetTranscript, whisper.cancel]);
   // One-tap hint: each tap reveals exactly one more hidden word (the next one not yet recited or shown),
   // with no limit; recording and recognition keep running. A word shown by a hint counts as "almost right".
   const giveHint = () => {
@@ -405,8 +414,54 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
     }
     if (viewKey.current === key) return;
     viewKey.current = key;
+    // Jumped while reciting: keep recording. The passage settles in steps (new surah → its text loads →
+    // the verse range is clamped), so every change shortly after the jump is part of it.
+    if (Date.now() < autoJump.current) return;
     reset();
   }, [target.surahId, from, to, target.mode, useWhisper]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ---- auto-detect the recited verse anywhere in the Quran (like the Mushaf) ---- */
+  // The passage chosen above is only a start: when the reciter recites another place from memory, ≥ 5 words
+  // are matched against all 114 surahs (≥ 85 %, one unique place); the passage switches to that surah and
+  // verse, the recording goes on and is judged from there, and a short note says what was recognised.
+  const autoJump = useRef(0);
+  const [detected, setDetected] = useState<{ surah: number; ayah: number } | null>(null);
+  const locateAfter = useRef(0);
+  const liveRef = useRef({ transcript, match, target, from, kind: (useWhisper && textKind === "phonemes" ? "phonemes" : "text") as "phonemes" | "text" });
+  liveRef.current = { transcript, match, target, from, kind: useWhisper && textKind === "phonemes" ? "phonemes" : "text" };
+  useEffect(() => {
+    if (!listening || !transcript || !mushafWords) return;
+    if (match.recited >= 3 && match.accuracy >= 60) return; // on track in the chosen passage
+    const timer = setTimeout(() => {
+      if (Date.now() < locateAfter.current) return;
+      const kind = liveRef.current.kind;
+      const mw = mushafWords;
+      const source = kind === "phonemes"
+        ? () => loadQuranPhonemes().then((l) => l.surahs)
+        : async () => Array.from({ length: 114 }, (_, si) => Array.from({ length: mw.versesCount(si + 1) }, (_, ai) => mw.words(si + 1, ai + 1)));
+      void locatorIndex(kind, source).then((ix) => {
+        const live = liveRef.current;
+        if (live.kind !== kind || (live.match.recited >= 3 && live.match.accuracy >= 60)) return;
+        const hit = locateRecitation(ix, live.transcript);
+        if (!hit) return;
+        const same = hit.surah === live.target.surahId && hit.ayah === live.from;
+        if (same && hit.startRaw === 0) return;
+        locateAfter.current = Date.now() + 3000;
+        setBase((cur) => ({ kind, pos: (cur?.kind === kind ? cur.pos : 0) + hit.startRaw }));
+        if (!same) {
+          autoJump.current = Date.now() + 8000;
+          onTargetChange({ ...live.target, surahId: hit.surah, fromAyah: hit.ayah, toAyah: hit.ayah + MAX_RANGE - 1 });
+          setDetected({ surah: hit.surah, ayah: hit.ayah });
+        }
+      }).catch(() => {});
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [transcript, listening]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!detected) return;
+    const id = setTimeout(() => setDetected(null), 4000);
+    return () => clearTimeout(id);
+  }, [detected]);
   useEffect(() => {
     if (viewKey.current === null) return;
     store.practice = { key: passageKey, transcript: useWhisper ? whisperText : "", kind: textKind, hints: [...hints] };
@@ -480,9 +535,9 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
   toggleMicRef.current = () => toggleMic();
   const toggleMic = () => {
     if (text.status !== "ready") return;
-    if (useWhisper) { if (!whisper.recording) setWhisperText(""); whisper.toggle(); return; }
+    if (useWhisper) { if (!whisper.recording) { setWhisperText(""); setBase(null); } whisper.toggle(); return; }
     if (speech.isListening) stopListening();
-    else { if (match.done || match.recited) resetTranscript(); startListening(); }
+    else { if (match.done || match.recited) resetTranscript(); setBase(null); startListening(); }
   };
   const errorKey = useWhisper ? whisper.error : speechErrorKey(speech.error);
   const setRange = (f: number, tt: number) => onTargetChange({ ...target, fromAyah: f, toAyah: Math.min(Math.max(tt, f), f + MAX_RANGE - 1) });
@@ -490,6 +545,16 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
 
   return (
     <div className="flex min-h-[calc(100dvh-9rem)] flex-col gap-4">
+      {/* «تم التعرف على سورة الكهف - الآية ١» — after an automatic jump to the recited verse */}
+      {detected && (
+        <div role="status" aria-live="polite" data-auto-detected={`${detected.surah}:${detected.ayah}`}
+          className="pointer-events-none fixed inset-x-0 z-50 flex justify-center px-4 animate-in fade-in slide-in-from-top-2"
+          style={{ top: "calc(env(safe-area-inset-top) + 64px)" }}>
+          <span className="rounded-full px-4 py-2 text-sm font-semibold text-emerald-950 shadow-xl" style={{ background: GOLD_GRADIENT }}>
+            {t("autoDetected").replace("{surah}", (language === "ar" ? list[detected.surah - 1]?.nameArabic : list[detected.surah - 1]?.nameSimple) ?? String(detected.surah)).replace("{ayah}", num(detected.ayah))}
+          </span>
+        </div>
+      )}
       <div>
         <h1 className="text-2xl font-semibold">{masked ? t("hifzModeLong") : t("reciteModeLong")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{masked ? t("hifzSub") : t("reciteSub")}</p>

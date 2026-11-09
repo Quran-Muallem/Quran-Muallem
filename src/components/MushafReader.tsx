@@ -474,7 +474,7 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
           className="pointer-events-none fixed inset-x-0 z-50 flex justify-center px-4 animate-in fade-in slide-in-from-top-2"
           style={{ top: "calc(env(safe-area-inset-top) + 64px)" }}>
           <span className="rounded-full px-4 py-2 text-sm font-semibold text-emerald-950 shadow-xl" style={{ background: GOLD_GRADIENT }}>
-            🎯 {t("autoDetected").replace("{surah}", surahName(detected.surah)).replace("{ayah}", num(detected.ayah))}
+            {t("autoDetected").replace("{surah}", surahName(detected.surah)).replace("{ayah}", num(detected.ayah))}
           </span>
         </div>
       )}
