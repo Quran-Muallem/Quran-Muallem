@@ -554,5 +554,6 @@
   "duaCatHajj": "Haji & umrah",
   "recDownloadingOf": "Memuat turun {p}% ({a} / {b})",
   "recDownloadingTotal": "{n} daripada {t} surah · {mb}",
-  "goToPageAyah": "Ke halaman / ayat"
+  "goToPageAyah": "Ke halaman / ayat",
+  "autoDetected": "Dikesan: Surah {surah}, ayat {ayah}"
 }

@@ -10,12 +10,13 @@ import { TafsirModal, type AyahInfoTab } from "@/components/TafsirModal";
 import { useKeepAwake } from "@/lib/wakeLock";
 import { BurgerButton, MushafMenu, SearchButton, type AppTab } from "@/components/mushaf/MushafMenu";
 import { GOLD_B } from "@/components/mushaf/MushafOrnaments";
-import { GOLD_LIGHT, alpha } from "@/components/ornaments";
+import { GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import type { StudyTarget } from "@/components/Dashboard";
 import { TOTAL_PAGES, loadMushaf, type Mushaf } from "@/lib/mushafData";
 import { getSurahMeta, toArabicDigits } from "@/lib/quranService";
 import { useRecitation } from "@/lib/useRecitation";
-import { phonemeRefs, usePhonemeLexicon } from "@/lib/quranAlignment";
+import { loadQuranPhonemes, phonemeRefs, usePhonemeLexicon } from "@/lib/quranAlignment";
+import { locateRecitation, locatorIndex } from "@/lib/ayahLocator";
 import { useWhisperModel } from "@/lib/whisper";
 import { usePagePlayer } from "@/lib/usePagePlayer";
 import { getReciter } from "@/lib/reciterManager";
@@ -342,6 +343,55 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
     }, pageComplete ? 700 : 4000);
     return () => clearTimeout(timer);
   }, [rec.listening, rec.match.done, pageComplete, page]); // eslint-disable-line react-hooks/exhaustive-deps
+  /* ---------------- auto-detect the recited verse anywhere in the Quran ---------------- */
+  // Recording started on any page (e.g. page 1) but the reader recites Al-Kahf from memory: as soon as
+  // ≥ 5 words are heard and they match one place in the whole Quran with ≥ 85 % similarity (and no other
+  // place nearly as well), the Mushaf jumps there, the recitation is judged from that verse on (the
+  // microphone stays on) and a small badge says what was recognised. While the reader is on track on the
+  // current page nothing is looked up.
+  const [detected, setDetected] = useState<{ surah: number; ayah: number } | null>(null);
+  const locateAfter = useRef(0);
+  const liveRef = useRef({ transcript: rec.transcript, kind: rec.transcriptKind, practice, match: rec.match, page });
+  liveRef.current = { transcript: rec.transcript, kind: rec.transcriptKind, practice, match: rec.match, page };
+  useEffect(() => { if (rec.listening) locateAfter.current = 0; }, [rec.listening]);
+  useEffect(() => {
+    if (!rec.listening || !mushaf || !rec.transcript) return;
+    const m = rec.match;
+    if (m.recited >= 3 && m.accuracy >= 60) return; // on track here
+    const timer = setTimeout(() => {
+      if (Date.now() < locateAfter.current) return;
+      const kind = rec.transcriptKind;
+      const source = kind === "phonemes"
+        ? () => loadQuranPhonemes().then((l) => l.surahs)
+        : async () => Array.from({ length: 114 }, (_, si) => Array.from({ length: mushaf.versesCount(si + 1) }, (_, ai) => mushaf.words(si + 1, ai + 1)));
+      void locatorIndex(kind, source).then((ix) => {
+        const live = liveRef.current;
+        if (live.kind !== kind || (live.match.recited >= 3 && live.match.accuracy >= 60)) return;
+        const hit = locateRecitation(ix, live.transcript);
+        if (!hit) return;
+        const first = live.practice[0];
+        const target = mushaf.pageOf(hit.surah, hit.ayah);
+        const same = target === live.page && first?.surah === hit.surah && first.ayah === hit.ayah;
+        if (same && hit.startRaw === 0) return; // already judged from there
+        locateAfter.current = Date.now() + 3000;
+        if (!same) {
+          autoTurn.current = true; // keep the microphone and the recording through the view change
+          setPage(target);
+          setSelected(`${hit.surah}:${hit.ayah}`);
+          setDetected({ surah: hit.surah, ayah: hit.ayah });
+        }
+        rec.rebaseBy(hit.startRaw); // e.g. skip the isti'ādha / basmala said before the verse
+        rec.forgetMistakes();
+      }).catch(() => {});
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [rec.transcript, rec.listening]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!detected) return;
+    const id = setTimeout(() => setDetected(null), 4000);
+    return () => clearTimeout(id);
+  }, [detected]);
+
   const player = usePagePlayer({
     reciterId: settings.reciterId,
     verses: useMemo(() => verses.map((v) => ({ surah: v.surah, ayah: v.ayah })), [verses]),
@@ -417,6 +467,17 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
         <SheikhControls compact reciterId={reciter.id} playing={player.playing} loading={player.loading} failed={player.failed}
           onToggle={() => { if (rec.listening) return; player.toggle(); }} onReciter={() => setReciterOpen(true)} />
       </div>
+
+      {/* «تم التعرف على سورة الكهف - الآية ١» — after an automatic jump to the recited verse */}
+      {detected && (
+        <div role="status" aria-live="polite" data-auto-detected={`${detected.surah}:${detected.ayah}`}
+          className="pointer-events-none fixed inset-x-0 z-50 flex justify-center px-4 animate-in fade-in slide-in-from-top-2"
+          style={{ top: "calc(env(safe-area-inset-top) + 64px)" }}>
+          <span className="rounded-full px-4 py-2 text-sm font-semibold text-emerald-950 shadow-xl" style={{ background: GOLD_GRADIENT }}>
+            🎯 {t("autoDetected").replace("{surah}", surahName(detected.surah)).replace("{ayah}", num(detected.ayah))}
+          </span>
+        </div>
+      )}
 
       {/* the page — swipe right for the next page (Arabic books open to the left) */}
       <div ref={pageArea} className="touch-pan-y select-none"

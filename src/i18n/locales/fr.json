@@ -554,5 +554,6 @@
   "duaCatHajj": "Hajj et Omra",
   "recDownloadingOf": "Téléchargement {p} % ({a} / {b})",
   "recDownloadingTotal": "{n} sur {t} sourates · {mb}",
-  "goToPageAyah": "Aller à la page / au verset"
+  "goToPageAyah": "Aller à la page / au verset",
+  "autoDetected": "Reconnu : sourate {surah}, verset {ayah}"
 }

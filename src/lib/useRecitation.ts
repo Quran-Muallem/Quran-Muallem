@@ -61,6 +61,19 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
     setBase({ kind, chars: text.length, words: text.trim() ? text.trim().split(/\s+/).length : 0 });
   }, []);
 
+  /**
+   * Keep recording, but judge from `pos` of the current transcript on (raw phoneme characters / words) —
+   * used when the verse was detected elsewhere in the Quran and the Mushaf jumped there.
+   */
+  const rebaseBy = useCallback((pos: number) => {
+    const { text, kind } = latestFull.current;
+    setBase((cur) => {
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+      if (kind === "phonemes") { const chars = (cur?.kind === "phonemes" ? cur.chars : 0) + pos; return { kind, chars, words }; }
+      return { kind, chars: text.length, words: Math.min(words, (cur?.kind === "text" ? cur.words : 0) + pos) };
+    });
+  }, []);
+
   // Session end → callback with the final match.
   const session = useRef(false);
   const latest = useRef(match);
@@ -95,7 +108,9 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
   return {
     /** "phonemes" while the Zipformer engine judges this recitation. */
     engine: textEngine,
-    match, transcript, listening, rebase, forgetMistakes, processing, useWhisper, reset, toggle,
+    match, transcript, listening, rebase, rebaseBy, forgetMistakes,
+    /** What `transcript` holds: Zipformer phonemes or Arabic text (Whisper / browser recognizer). */
+    transcriptKind: (useWhisper && textEngine === "phonemes" ? "phonemes" : "text") as "phonemes" | "text", processing, useWhisper, reset, toggle,
     /** Paused recitation (on-device engines): state and colours kept, recognition goes on after `resume`. */
     paused: useWhisper && whisper.paused,
     canPause: useWhisper,

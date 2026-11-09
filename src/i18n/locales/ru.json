@@ -554,5 +554,6 @@
   "duaCatHajj": "Хадж и умра",
   "recDownloadingOf": "Загрузка {p}% ({a} / {b})",
   "recDownloadingTotal": "{n} из {t} сур · {mb}",
-  "goToPageAyah": "Перейти к странице / аяту"
+  "goToPageAyah": "Перейти к странице / аяту",
+  "autoDetected": "Распознано: сура {surah}, аят {ayah}"
 }

@@ -554,5 +554,6 @@
   "duaCatHajj": "Haxhi dhe umreja",
   "recDownloadingOf": "Po shkarkohet {p}% ({a} / {b})",
   "recDownloadingTotal": "{n} nga {t} sure · {mb}",
-  "goToPageAyah": "Shko te faqja / ajeti"
+  "goToPageAyah": "Shko te faqja / ajeti",
+  "autoDetected": "U njoh: sureja {surah}, ajeti {ayah}"
 }

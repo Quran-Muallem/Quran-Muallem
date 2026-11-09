@@ -465,6 +465,7 @@ export const copy = {
   recDownloadingOf: ["جارٍ التنزيل {p}% ({a} / {b})", "Downloading {p}% ({a} / {b})"],
   recDownloadingTotal: ["{n} من {t} سورة · {mb}", "{n} of {t} surahs · {mb}"],
   goToPageAyah: ["الانتقال إلى الصفحة أو الآية", "Jump to page / verse"],
+  autoDetected: ["تم التعرف على سورة {surah} - الآية {ayah}", "Detected: Surah {surah}, verse {ayah}"],
 } as const;
 export type CopyKey = keyof typeof copy;
 export function translate(language: Language, key: CopyKey): string {

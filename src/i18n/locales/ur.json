@@ -554,5 +554,6 @@
   "duaCatHajj": "حج اور عمرہ",
   "recDownloadingOf": "ڈاؤن لوڈ {p}% ({a} / {b})",
   "recDownloadingTotal": "{t} میں سے {n} سورتیں · {mb}",
-  "goToPageAyah": "صفحہ / آیت پر جائیں"
+  "goToPageAyah": "صفحہ / آیت پر جائیں",
+  "autoDetected": "پہچان لیا: سورۃ {surah}، آیت {ayah}"
 }

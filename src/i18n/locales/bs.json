@@ -554,5 +554,6 @@
   "duaCatHajj": "Hadž i umra",
   "recDownloadingOf": "Preuzimanje {p}% ({a} / {b})",
   "recDownloadingTotal": "{n} od {t} sura · {mb}",
-  "goToPageAyah": "Idi na stranicu / ajet"
+  "goToPageAyah": "Idi na stranicu / ajet",
+  "autoDetected": "Prepoznato: sura {surah}, ajet {ayah}"
 }

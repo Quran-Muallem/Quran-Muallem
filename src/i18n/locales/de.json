@@ -554,5 +554,6 @@
   "duaCatHajj": "Hadsch & Umra",
   "recDownloadingOf": "Lädt {p} % ({a} / {b})",
   "recDownloadingTotal": "{n} von {t} Suren · {mb}",
-  "goToPageAyah": "Zu Seite / Vers springen"
+  "goToPageAyah": "Zu Seite / Vers springen",
+  "autoDetected": "Erkannt: Sure {surah}, Vers {ayah}"
 }

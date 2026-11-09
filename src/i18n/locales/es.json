@@ -554,5 +554,6 @@
   "duaCatHajj": "Hach y umra",
   "recDownloadingOf": "Descargando {p} % ({a} / {b})",
   "recDownloadingTotal": "{n} de {t} suras · {mb}",
-  "goToPageAyah": "Ir a página / versículo"
+  "goToPageAyah": "Ir a página / versículo",
+  "autoDetected": "Detectado: sura {surah}, versículo {ayah}"
 }

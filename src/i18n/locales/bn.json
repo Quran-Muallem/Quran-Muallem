@@ -554,5 +554,6 @@
   "duaCatHajj": "হজ ও উমরা",
   "recDownloadingOf": "ডাউনলোড {p}% ({a} / {b})",
   "recDownloadingTotal": "{t}টির মধ্যে {n}টি সূরা · {mb}",
-  "goToPageAyah": "পৃষ্ঠা / আয়াতে যান"
+  "goToPageAyah": "পৃষ্ঠা / আয়াতে যান",
+  "autoDetected": "শনাক্ত: সূরা {surah}, আয়াত {ayah}"
 }

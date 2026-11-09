@@ -554,5 +554,6 @@
   "duaCatHajj": "Hac ve umre",
   "recDownloadingOf": "İndiriliyor %{p} ({a} / {b})",
   "recDownloadingTotal": "{t} surenin {n}’i · {mb}",
-  "goToPageAyah": "Sayfaya / ayete git"
+  "goToPageAyah": "Sayfaya / ayete git",
+  "autoDetected": "Tanındı: {surah} Suresi, {ayah}. ayet"
 }
