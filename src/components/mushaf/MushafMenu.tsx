@@ -39,7 +39,7 @@ export function SearchButton({ onClick, label }: { onClick: () => void; label: s
  * The app's side menu (burger), available on every screen: navigation, surah / juz / page selection
  * (opens the Mushaf there), settings and invite. `current` marks the screen that is open.
  */
-export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, onJuz, onNavigate, onSettings, onInvite, onSearch, current = "mushaf" }: {
+export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, onJuz, onNavigate, onSettings, onInvite, onSearch, onGoTo, current = "mushaf" }: {
   current?: AppTab;
   open: boolean;
   onClose: () => void;
@@ -54,6 +54,8 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
   onInvite: () => void;
   /** Opens the Quran search (surah, verse, words). */
   onSearch?: (() => void) | undefined;
+  /** v33: the Mushaf's own «اذهب إلى» dialog (all surahs, search, recently read) instead of the pickers. */
+  onGoTo?: (() => void) | undefined;
 }) {
   const { t, language } = useI18n();
   const num = (n: number) => (language === "ar" ? toArabicDigits(n) : String(n));
@@ -102,8 +104,13 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
             <Search className="h-5 w-5" style={{ color: GOLD_LIGHT }} />{t("searchTitle")}
           </button>
         )}
-        <h2 className="mb-2 text-xs font-medium text-emerald-100/70">{t("goTo")}</h2>
-        <div className="space-y-2">
+        {onGoTo && (
+          <button type="button" onClick={go(onGoTo)} data-menu-goto="" className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-emerald-950" style={{ background: GOLD_GRADIENT }}>
+            <BookOpen className="h-5 w-5" />{t("goTo")}
+          </button>
+        )}
+        {!onGoTo && <h2 className="mb-2 text-xs font-medium text-emerald-100/70">{t("goTo")}</h2>}
+        <div className={onGoTo ? "hidden" : "space-y-2"}>
           <label className="block text-xs text-emerald-100/70">{t("surah")}
             <select value={surah} onChange={(e) => { onSurah(Number(e.target.value)); onClose(); }} className={selectCls}>
               {SURAH_META.map((s) => <option key={s.id} value={s.id}>{language === "ar" ? `${toArabicDigits(s.id)}. ${s.nameArabic}` : `${s.id}. ${s.nameSimple}`}</option>)}

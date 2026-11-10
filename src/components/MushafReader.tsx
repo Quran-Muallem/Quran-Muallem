@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Bookmark, Loader2, RefreshCw, Search, Settings } from "lucide-react";
+import { Bookmark, ChevronDown, Loader2, RefreshCw, Settings } from "lucide-react";
 import { MushafPage, type WordKey } from "@/components/mushaf/MushafPage";
 import { ReciteBar, type BarMode } from "@/components/mushaf/ReciteBar";
 import { ReciterSelectModal } from "@/components/ReciterSelectModal";
@@ -546,7 +546,11 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
         <button type="button" onClick={() => setGoToOpen(true)} aria-label={t("goTo")} title={t("goTo")} data-mushaf-header-open=""
           className="group relative min-w-0 flex-1 rounded-2xl px-2 py-1.5 text-center"
           style={{ background: `radial-gradient(120% 140% at 50% 0%, ${alpha(GOLD, 0.22)}, transparent 60%), ${alpha("var(--mf-page-deep)", 0.9)}`, boxShadow: `inset 0 0 0 1px ${alpha(GOLD_LIGHT, 0.55)}, 0 4px 14px -8px rgba(0,0,0,.6)` }}>
-          <span className="block font-arabic text-[1.05rem] leading-snug" style={{ color: GOLD_B }}>سورة {getSurahMeta(firstSurah)?.nameArabic}</span>
+          {/* v33: clearly tappable — the surah name with an arrow opens «اذهب إلى» */}
+          <span className="flex items-center justify-center gap-1">
+            <span className="font-arabic text-[1.05rem] leading-snug" style={{ color: GOLD_B }}>سورة {getSurahMeta(firstSurah)?.nameArabic}</span>
+            <ChevronDown className="h-4 w-4 shrink-0 transition group-active:translate-y-0.5" style={{ color: GOLD_LIGHT }} aria-hidden="true" data-mushaf-header-chevron="" />
+          </span>
         </button>
         <div className="flex shrink-0 items-center rounded-2xl px-0.5" style={{ background: alpha("var(--mf-page-deep)", 0.9), boxShadow: `inset 0 0 0 1px ${alpha(GOLD_LIGHT, 0.45)}` }}>
           <button type="button" onClick={() => { const v = verses.find((x) => x.startsOnPage) ?? verses[0]; void toggleBookmark({ page, surah: v?.surah ?? firstSurah, ayah: v?.ayah ?? 1 }); }}
@@ -554,11 +558,6 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
             className="flex h-10 w-8 items-center justify-center text-amber-200">
             <Bookmark className={cn("h-[1.1rem] w-[1.1rem]", bookmarked && "fill-current text-amber-300")} aria-hidden="true" />
           </button>
-          {onSearch && (
-            <button type="button" onClick={onSearch} aria-label={t("searchTitle")} className="flex h-10 w-8 items-center justify-center text-amber-200" data-mushaf-search="">
-              <Search className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
-            </button>
-          )}
           {onSettings && (
             <button type="button" onClick={onSettings} aria-label={t("settingsTitle")} data-mushaf-settings="" className="flex h-10 w-8 items-center justify-center text-amber-200">
               <Settings className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
@@ -639,7 +638,7 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
         onPage={(p) => { setSelected(null); setPage(Math.min(TOTAL_PAGES, Math.max(1, p))); }}
         onSurah={(s2) => { setPage(mushaf.surahStartPage(s2)); setSelected(`${s2}:1`); }}
         onJuz={(j) => { setSelected(null); setPage(mushaf.juzStartPage(j)); }}
-        onNavigate={(tab) => onNavigate?.(tab)} onSettings={() => onSettings?.()} onInvite={() => onInvite?.()} onSearch={onSearch} />
+        onNavigate={(tab) => onNavigate?.(tab)} onSettings={() => onSettings?.()} onInvite={() => onInvite?.()} onSearch={onSearch} onGoTo={() => setGoToOpen(true)} />
 
       {verseMenu && (
         <AyahActionMenu surah={verseMenu.surah} ayah={verseMenu.ayah} at={verseMenu.at}
