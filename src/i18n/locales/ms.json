@@ -703,5 +703,11 @@
   "tajweedMurattal": "Murattal",
   "tajweedMujawwadGroup": "Mujawwad (Hafs)",
   "tajweedOtherVoices": "Suara lain",
-  "tajweedVerseOnly": "Qari ini hanya ada rakaman ayat: seluruh ayat yang mengandungi contoh dimainkan."
+  "tajweedVerseOnly": "Qari ini hanya ada rakaman ayat: seluruh ayat yang mengandungi contoh dimainkan.",
+  "tajweedMurattalGroup": "Murattal (Hafs)",
+  "tajweedFullVerseHint": "Setiap contoh dimainkan dalam ayat penuh; perkataan contoh diserlahkan.",
+  "tajweedSheikhExample": "Daripada bacaan {name}",
+  "tajweedSheikhPause": "Syeikh berhenti di sini (kira-kira {s} s)",
+  "tajweedVoiceFollow": "Ayat penuh, perkataan diikuti",
+  "tajweedFullVerse": "Ayat penuh"
 }

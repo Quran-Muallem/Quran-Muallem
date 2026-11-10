@@ -34,61 +34,67 @@ describe("v35 · every Tajweed example has its place in the Quran", async () => 
   });
 });
 
-describe("v35 · example playback falls back step by step", () => {
+describe("v39 · examples always play the WHOLE verse", () => {
   beforeEach(() => { vi.resetModules(); });
   afterEach(() => { vi.resetModules(); vi.doUnmock("@/lib/audioPlayback"); vi.unstubAllGlobals(); });
   const fakeAudio = () => {
-    const a = { paused: true, listeners: {} as Record<string, (() => void)[]>, addEventListener(n: string, f: () => void) { (this.listeners[n] ??= []).push(f); }, removeEventListener() {}, pause() { this.paused = true; (this.listeners["pause"] ?? []).forEach((f) => f()); }, play: async () => {} };
+    const a = { paused: true, currentTime: 0, listeners: {} as Record<string, (() => void)[]>, addEventListener(n: string, f: () => void) { (this.listeners[n] ??= []).push(f); }, removeEventListener() {}, pause() { this.paused = true; (this.listeners["pause"] ?? []).forEach((f) => f()); }, play: async () => {} };
     return a;
   };
-  it("uses the Sheikh's word timings when available", async () => {
+  it("default Al-Husary Mujawwad: the verse file from everyayah, no word cut, no word-by-word voice", async () => {
     const a = fakeAudio();
     const playClip = vi.fn(async () => { a.paused = false; setTimeout(() => a.pause(), 5); });
-    vi.stubGlobal("fetch", vi.fn(async (u: string) => { expect(u).toContain("?fields=segments"); return { ok: true, json: async () => ({ audio_files: [{ url: "Alafasy/mp3/001002.mp3", segments: [[0, 1, 0, 400], [1, 2, 400, 900], [2, 3, 900, 1500]] }] }) }; }));
-    vi.doMock("@/lib/audioPlayback", async (orig) => ({ normalizeSegments: (await orig<typeof import("@/lib/audioPlayback")>()).normalizeSegments, playClip, currentWordAudio: () => a, claimSheikhAudio: () => {}, stopWordAudio: () => {}, sheikhAudio: () => a }));
-    const { playExample } = await import("@/lib/tajweedAudio");
-    const started = vi.fn();
-    const v = await playExample({ ar: "x", ref: [1, 2, 2, 3] }, "alafasy", started, "selected");
-    expect(v).toBe("sheikh");
-    expect(playClip).toHaveBeenCalledWith("https://verses.quran.com/Alafasy/mp3/001002.mp3", 400, 1500);
-    expect(started).toHaveBeenCalledWith("sheikh");
-  });
-  it("v38: by default the Mujawwad of Al-Husary (whole verse from everyayah); «wbw» keeps the corrections' voice", async () => {
-    const a = fakeAudio();
-    const urls: string[] = [];
-    const playClip = vi.fn(async (url: string) => { urls.push(url); a.paused = false; setTimeout(() => a.pause(), 5); });
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
     vi.doMock("@/lib/audioPlayback", () => ({ normalizeSegments: () => [], playClip, currentWordAudio: () => a, claimSheikhAudio: () => {}, stopWordAudio: () => {}, sheikhAudio: () => a }));
-    const { playExample, getExampleSource } = await import("@/lib/tajweedAudio");
+    const { playExample, getExampleSource, TAJWEED_VOICES } = await import("@/lib/tajweedAudio");
     expect(getExampleSource()).toBe("husary-mj");
+    expect(TAJWEED_VOICES.map((v) => v.id)).toEqual(["husary-mj", "minshawi-mj", "abdulbasit-mj", "mustafa-mj", "hudhaifi", "alafasy"]);
     expect(await playExample({ ar: "x", ref: [2, 2, 1, 1] }, "alafasy")).toBe("verse");
-    expect(urls).toEqual(["https://everyayah.com/data/Husary_128kbps_Mujawwad/002002.mp3"]);
+    expect(playClip).toHaveBeenCalledTimes(1);
+    expect(playClip).toHaveBeenCalledWith("https://everyayah.com/data/Husary_128kbps_Mujawwad/002002.mp3");
     expect(fetchSpy).not.toHaveBeenCalled();
-    urls.length = 0;
-    expect(await playExample({ ar: "x", ref: [1, 1, 1, 1] }, "alafasy", undefined, "wbw")).toBe("wordByWord");
-    expect(urls).toEqual(["https://audio.qurancdn.com/wbw/001_001_001.mp3"]);
+    expect(JSON.stringify(playClip.mock.calls)).not.toContain("wbw");
   });
-  it("v38: Abdul-Basit Mujawwad is cut to the example's words (Quran.com word timings)", async () => {
+  it("Abdul-Basit: the whole verse with Quran.com timings, the word being recited is reported", async () => {
     const a = fakeAudio();
-    const playClip = vi.fn(async () => { a.paused = false; setTimeout(() => a.pause(), 5); });
+    const playClip = vi.fn(async () => { a.paused = false; a.currentTime = 3; setTimeout(() => a.pause(), 250); });
     vi.stubGlobal("fetch", vi.fn(async (u: string) => { expect(u).toContain("/recitations/1/by_ayah/2:2?fields=segments"); return { ok: true, json: async () => ({ audio_files: [{ url: "AbdulBaset/Mujawwad/mp3/002002.mp3", segments: [[0, 1, 1600, 2800], [1, 2, 2810, 4330]] }] }) }; }));
     vi.doMock("@/lib/audioPlayback", async (orig) => ({ normalizeSegments: (await orig<typeof import("@/lib/audioPlayback")>()).normalizeSegments, playClip, currentWordAudio: () => a, claimSheikhAudio: () => {}, stopWordAudio: () => {}, sheikhAudio: () => a }));
     const { playExample } = await import("@/lib/tajweedAudio");
-    expect(await playExample({ ar: "x", ref: [2, 2, 2, 2] }, "alafasy", undefined, "abdulbasit-mj")).toBe("sheikh");
-    expect(playClip).toHaveBeenCalledWith("https://verses.quran.com/AbdulBaset/Mujawwad/mp3/002002.mp3", 2810, 4330);
+    const words: (number | null)[] = [];
+    expect(await playExample({ ar: "x", ref: [2, 2, 2, 2] }, "alafasy", undefined, "abdulbasit-mj", (w) => words.push(w))).toBe("sheikh");
+    expect(playClip).toHaveBeenCalledWith("https://verses.quran.com/AbdulBaset/Mujawwad/mp3/002002.mp3");
+    expect(words).toContain(2);
   });
-  it("falls back to word-by-word files, then to the whole verse", async () => {
-    const a = fakeAudio();
-    const urls: string[] = [];
-    let wbwOk = true;
-    const playClip = vi.fn(async (url: string) => { urls.push(url); if (!wbwOk) throw new Error("404"); a.paused = false; setTimeout(() => a.pause(), 5); });
-    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, json: async () => null })));
-    vi.doMock("@/lib/audioPlayback", () => ({ normalizeSegments: () => [], playClip, currentWordAudio: () => a, claimSheikhAudio: () => {}, stopWordAudio: () => {}, sheikhAudio: () => a }));
-    const { playExample } = await import("@/lib/tajweedAudio");
-    expect(await playExample({ ar: "x", ref: [2, 2, 3, 4] }, "alafasy", undefined, "selected")).toBe("wordByWord");
-    expect(urls).toEqual(["https://audio.qurancdn.com/wbw/002_002_003.mp3", "https://audio.qurancdn.com/wbw/002_002_004.mp3"]);
-    wbwOk = false;
-    expect(await playExample({ ar: "x", ref: [2, 2, 3, 3] }, "alafasy", undefined, "selected")).toBe("verse");
+  it("old choices: «sheikh» → Al-Afasy, word-by-word → default", async () => {
+    const { getExampleSource } = await import("@/lib/tajweedAudio");
+    localStorage.setItem("qm.tajweed.voice", "sheikh"); expect(getExampleSource()).toBe("alafasy");
+    localStorage.setItem("qm.tajweed.voice", "wordByWord"); expect(getExampleSource()).toBe("husary-mj");
+    localStorage.setItem("qm.tajweed.voice", "wbw"); expect(getExampleSource()).toBe("husary-mj");
+    localStorage.removeItem("qm.tajweed.voice");
+  });
+});
+
+describe("v39 · waqf examples", async () => {
+  const { TAJWEED } = await import("@/data/tajweedData");
+  const VOICE = (await import("@/data/tajweedVoiceRefs.json")).default as Record<string, Record<string, { ref: number[]; word: string; gap: number }>>;
+  const rule = (id: string) => TAJWEED.flatMap((c) => c.rules).find((r) => r.id === id)!;
+  it("stopping on sukūn: every example is the last word of its verse (1:2, 2:5 …)", () => {
+    const ex = rule("waqf-sukoon").examples;
+    expect(ex.map((e) => e.ref!.slice(0, 2).join(":"))).toEqual(expect.arrayContaining(["1:2", "2:5"]));
+    for (const e of ex) expect(e.ref![3], e.ar).toBe(words[e.ref![0] - 1]![e.ref![1] - 1]!.length);
+  });
+  it("reciter-matched pauses point to real Mushaf words with the right stop mark", () => {
+    const MARK: Record<string, string> = { "sign-mim": "ۘ", "sign-la": "ۙ", "sign-jim": "ۚ", "sign-sila": "ۖ", "sign-qila": "ۗ", "sign-muanaqah": "ۛ" };
+    for (const [voice, rules] of Object.entries(VOICE)) {
+      for (const [r, v] of Object.entries(rules)) {
+        const [s, a, w] = v.ref as [number, number, number];
+        const word = words[s - 1]![a - 1]![w - 1]!;
+        expect(word, `${voice} ${r}`).toBe(v.word);
+        if (MARK[r]) expect(word, `${voice} ${r}`).toContain(MARK[r]);
+        expect(v.gap).toBeGreaterThanOrEqual(1200);
+      }
+    }
   });
 });

@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { BookOpenCheck, ChevronDown, Loader2, Search, Star, Volume2, X } from "lucide-react";
 import { GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import { TAJWEED, searchTajweed, type TajweedCategory, type TajweedExample, type TajweedRule } from "@/data/tajweedData";
-import { toArabicDigits } from "@/lib/quranService";
+import VOICE_REFS from "@/data/tajweedVoiceRefs.json";
+import { loadMushaf, type Mushaf } from "@/lib/mushafData";
+import { getSurahMeta, toArabicDigits } from "@/lib/quranService";
 import { useI18n } from "@/lib/i18n";
-import { getReciter } from "@/lib/reciterManager";
 import { useSettings } from "@/lib/settings";
-import { TAJWEED_VOICES, exampleRef, getExampleSource, playExample, setExampleSource, stopExample, tajweedVoice, type ExampleVoice, type TajweedVoice, type TajweedVoiceId } from "@/lib/tajweedAudio";
+import { TAJWEED_VOICES, exampleRef, getExampleSource, playExample, setExampleSource, stopExample, tajweedVoice, type ExampleRef, type ExampleVoice, type TajweedVoice, type TajweedVoiceId } from "@/lib/tajweedAudio";
 import { cn } from "@/lib/utils";
 
 type Filter = "all" | "favorites" | TajweedCategory["id"];
@@ -21,7 +22,7 @@ function saveFavorites(f: ReadonlySet<string>) {
 }
 
 /** One example plays at a time in the whole guide; every chip shows whether it is the one. */
-type PlayState = { key: string; phase: "loading" | "playing"; voice?: ExampleVoice } | { key: string; phase: "failed" } | null;
+type PlayState = { key: string; phase: "loading" | "playing"; voice?: ExampleVoice; ref?: ExampleRef | undefined; word?: number | null } | { key: string; phase: "failed"; ref?: ExampleRef | undefined } | null;
 let playState: PlayState = null;
 const listeners = new Set<(s: PlayState) => void>();
 const setPlayState = (s: PlayState) => { playState = s; listeners.forEach((l) => l(s)); };
@@ -32,11 +33,15 @@ function usePlayState() {
 }
 const exampleKey = (ruleId: string, e: TajweedExample) => `${ruleId}|${e.ar}`;
 
-async function play(key: string, e: TajweedExample, reciterId: string): Promise<ExampleVoice | undefined> {
+async function play(key: string, e: TajweedExample, reciterId: string, source: TajweedVoiceId): Promise<ExampleVoice | undefined> {
   if (playState && playState.key === key && playState.phase !== "failed") { stopExample(); setPlayState(null); return undefined; }
-  setPlayState({ key, phase: "loading" });
+  const ref = exampleRef(e) ?? undefined;
+  setPlayState({ key, phase: "loading", ref });
   try {
-    const voice = await playExample(e, reciterId, (v) => { if (playState?.key === key) setPlayState({ key, phase: "playing", voice: v }); });
+    const voice = await playExample(e, reciterId,
+      (v) => { if (playState?.key === key) setPlayState({ key, phase: "playing", voice: v, ref }); },
+      source,
+      (w) => { if (playState?.key === key && playState.phase === "playing") setPlayState({ ...playState, word: w }); });
     if (playState?.key === key) setPlayState(null);
     return voice;
   } catch {
@@ -56,6 +61,8 @@ export function TajweedGuide() {
   const [filter, setFilter] = useState<Filter>("all");
   const [open, setOpen] = useState<Set<string>>(() => new Set());
   const [favorites, setFavorites] = useState<Set<string>>(loadFavorites);
+  const [source, setSource] = useState<TajweedVoiceId>(getExampleSource);
+  const pickVoice = (v: TajweedVoiceId) => { setExampleSource(v); setSource(v); stopExample(); setPlayState(null); };
   const toggleFavorite = (id: string) => setFavorites((f) => { const n = new Set(f); if (n.has(id)) n.delete(id); else n.add(id); saveFavorites(n); return n; });
   // Leaving the guide stops an example that is still playing.
   useEffect(() => () => { stopExample(); setPlayState(null); }, []);
@@ -112,7 +119,7 @@ export function TajweedGuide() {
         })}
       </div>
 
-      <VoicePicker />
+      <VoicePicker source={source} onPick={pickVoice} />
 
       {searching && <p className="text-xs text-emerald-100/65" aria-live="polite">{hits ? `${num(hits)} ${t("tajweedResults")}` : t("tajweedNone")}</p>}
       {filter === "favorites" && !searching && hits === 0 && <p className="rounded-2xl bg-black/20 p-4 text-center text-sm text-emerald-100/70">{t("tajweedFavNone")}</p>}
@@ -126,7 +133,7 @@ export function TajweedGuide() {
           </div>
           <ul className="space-y-2">
             {rules.map((r) => (
-              <li key={r.id}><RuleCard rule={r} open={searching || open.has(r.id)} onToggle={() => toggle(r.id)}
+              <li key={r.id}><RuleCard rule={r} source={source} open={searching || open.has(r.id)} onToggle={() => toggle(r.id)}
                 favorite={favorites.has(r.id)} onFavorite={() => toggleFavorite(r.id)} /></li>
             ))}
           </ul>
@@ -149,43 +156,45 @@ export function ScholarNotice() {
 }
 
 /**
- * Which voice the examples start with: the word-by-word voice of the mistake corrections (default) or the
- * Sheikh chosen in the settings. The other one is the fallback.
+ * The Sheikh of the examples (v38/v39): Mujawwad Sheikhs, Al-Hudhaifi and Al-Afasy (Murattal). An example
+ * always plays its whole verse; the word-by-word voice is only in the Mushaf's corrections.
  */
-function VoicePicker() {
+function VoicePicker({ source, onPick }: { source: TajweedVoiceId; onPick: (v: TajweedVoiceId) => void }) {
   const { t, language } = useI18n();
-  const r = getReciter(useSettings().reciterId);
-  const [source, setSource] = useState<TajweedVoiceId>(getExampleSource);
-  const pick = (v: TajweedVoiceId) => { setExampleSource(v); setSource(v); stopExample(); setPlayState(null); };
-  const name = (v: TajweedVoice) => (language === "ar" ? v.ar : v.en);
-  const label = (v: TajweedVoice) =>
-    v.style === "wbw" ? t("tajweedVoiceWbwChoice")
-    : v.style === "selected" ? `${language === "ar" ? r.nameArabic : r.nameEnglish} (${t("tajweedVoiceSettings")})`
-    : `${name(v)} — ${t(v.style === "mujawwad" ? "tajweedMujawwad" : "tajweedMurattal")}`;
-  const current = tajweedVoice(source);
-  const wordExact = current.style === "wbw" || current.style === "selected" || current.quranComId != null;
+  const label = (v: TajweedVoice) => `${language === "ar" ? v.ar : v.en} — ${t(v.style === "mujawwad" ? "tajweedMujawwad" : "tajweedMurattal")}`;
   return (
     <div className="space-y-1 px-1 text-xs text-emerald-100/70" data-tajweed-voice={source}>
       <label className="flex items-center gap-2">
         <span className="flex shrink-0 items-center gap-1.5"><Volume2 className="h-3.5 w-3.5 shrink-0 text-amber-200/80" />{t("tajweedVoiceOf")}:</span>
-        <select value={source} onChange={(e) => pick(e.target.value as TajweedVoiceId)} aria-label={t("tajweedVoiceOf")} data-tajweed-voice-select=""
+        <select value={source} onChange={(e) => onPick(e.target.value as TajweedVoiceId)} aria-label={t("tajweedVoiceOf")} data-tajweed-voice-select=""
           className={cn("min-w-0 flex-1 rounded-full bg-black/30 px-3 py-1.5 text-emerald-50 focus:outline-none", language === "ar" && "font-arabic text-sm")}
           style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.55)}` }}>
           <optgroup label={t("tajweedMujawwadGroup")}>
-            {TAJWEED_VOICES.filter((v) => v.style === "mujawwad" || v.style === "murattal").map((v) => <option key={v.id} value={v.id}>{label(v)}</option>)}
+            {TAJWEED_VOICES.filter((v) => v.style === "mujawwad").map((v) => <option key={v.id} value={v.id}>{label(v)}</option>)}
           </optgroup>
-          <optgroup label={t("tajweedOtherVoices")}>
-            {TAJWEED_VOICES.filter((v) => v.style === "wbw" || v.style === "selected").map((v) => <option key={v.id} value={v.id}>{label(v)}</option>)}
+          <optgroup label={t("tajweedMurattalGroup")}>
+            {TAJWEED_VOICES.filter((v) => v.style === "murattal").map((v) => <option key={v.id} value={v.id}>{label(v)}</option>)}
           </optgroup>
         </select>
       </label>
-      {!wordExact && <p className="ps-6 text-[0.68rem] text-amber-200/70" data-tajweed-verse-only="">{t("tajweedVerseOnly")}</p>}
+      <p className="ps-6 text-[0.68rem] text-amber-200/70" data-tajweed-full-verse="">{t("tajweedFullVerseHint")}</p>
     </div>
   );
 }
 
-function RuleCard({ rule, open, onToggle, favorite, onFavorite }: { rule: TajweedRule; open: boolean; onToggle: () => void; favorite: boolean; onFavorite: () => void }) {
+/** Where the chosen Sheikh himself pauses for this rule (from Quran.com's word timings; v39). */
+function voiceExample(ruleId: string, source: TajweedVoiceId): { example: TajweedExample; gap: number } | null {
+  const v = (VOICE_REFS as unknown as Record<string, Record<string, { ref: ExampleRef; gap: number; word: string } | undefined> | undefined>)[source]?.[ruleId];
+  if (!v) return null;
+  return { example: { ar: v.word.replace(/[\s\u06D6-\u06DC]+$/u, ""), ref: v.ref }, gap: v.gap };
+}
+
+function RuleCard({ rule, source, open, onToggle, favorite, onFavorite }: { rule: TajweedRule; source: TajweedVoiceId; open: boolean; onToggle: () => void; favorite: boolean; onFavorite: () => void }) {
   const { t, language } = useI18n();
+  const state = usePlayState();
+  const playingHere = state && state.key.startsWith(`${rule.id}|`) && state.phase !== "failed" ? state : null;
+  const own = voiceExample(rule.id, source);
+  const voice = tajweedVoice(source);
   const ar = language === "ar";
   const points = (ar ? rule.pointsAr : rule.pointsEn) ?? [];
   const panel = `tajweed-${rule.id}`;
@@ -220,9 +229,16 @@ function RuleCard({ rule, open, onToggle, favorite, onFavorite }: { rule: Tajwee
           <div>
             <p className="mb-1.5 text-[0.7rem] font-medium uppercase tracking-wide text-amber-200/80">{t("tajweedExamples")}</p>
             <div className="flex flex-wrap gap-2">
-              {rule.examples.map((e) => <ExampleChip key={e.ar} ruleId={rule.id} example={e} />)}
+              {rule.examples.map((e) => <ExampleChip key={e.ar} ruleId={rule.id} example={e} source={source} />)}
             </div>
           </div>
+          {own && (
+            <div data-tajweed-voice-example={source}>
+              <p className="mb-1.5 text-[0.7rem] font-medium text-amber-200/80">{t("tajweedSheikhExample").replace("{name}", language === "ar" ? voice.ar : voice.en)}</p>
+              <ExampleChip ruleId={rule.id} example={{ ...own.example, noteAr: t("tajweedSheikhPause").replace("{s}", [...(own.gap / 1000).toFixed(1)].map((c) => (c === "." ? "٫" : toArabicDigits(Number(c)))).join("")), noteEn: t("tajweedSheikhPause").replace("{s}", (own.gap / 1000).toFixed(1)) }} source={source} />
+            </div>
+          )}
+          {playingHere?.ref && <VersePanel refAt={playingHere.ref} word={playingHere.phase === "playing" ? playingHere.word ?? null : null} source={source} />}
         </div>
       )}
     </div>
@@ -230,7 +246,7 @@ function RuleCard({ rule, open, onToggle, favorite, onFavorite }: { rule: Tajwee
 }
 
 /** An example: tap to hear it in the selected Sheikh's voice (tap again to stop). */
-function ExampleChip({ ruleId, example }: { ruleId: string; example: TajweedExample }) {
+function ExampleChip({ ruleId, example, source }: { ruleId: string; example: TajweedExample; source: TajweedVoiceId }) {
   const { t, language } = useI18n();
   const { reciterId } = useSettings();
   const state = usePlayState();
@@ -240,8 +256,8 @@ function ExampleChip({ ruleId, example }: { ruleId: string; example: TajweedExam
   const mine = state?.key === key ? state : null;
   const playable = exampleRef(example) != null;
   const busy = mine?.phase === "loading" || mine?.phase === "playing";
-  const onTap = async () => { const v = await play(key, example, reciterId); if (v) setVoice(v); };
-  const voiceLabel = voice === "sheikh" ? t("tajweedVoiceSheikh") : voice === "wordByWord" ? t("tajweedVoiceWbw") : voice === "verse" ? t("tajweedVoiceVerse") : null;
+  const onTap = async () => { const v = await play(key, example, reciterId, source); if (v) setVoice(v); };
+  const voiceLabel = voice === "sheikh" ? t("tajweedVoiceFollow") : voice === "verse" ? t("tajweedFullVerse") : null;
   return (
     <button type="button" onClick={() => void onTap()} disabled={!playable} data-tajweed-example={key} data-voice={voice ?? undefined}
       aria-label={`${t("tajweedListen")}: ${example.ar}`} aria-pressed={busy}
@@ -259,6 +275,45 @@ function ExampleChip({ ruleId, example }: { ruleId: string; example: TajweedExam
       {mine?.phase === "failed" && <span role="alert" className="text-[0.62rem] text-rose-300">{t("tajweedPlayFailed")}</span>}
       {!mine && voiceLabel && <span className="text-[0.6rem] text-amber-200/60">{voiceLabel}</span>}
     </button>
+  );
+}
+
+/**
+ * The whole verse of the example that is playing (v39): the example's words are lit up in gold; with word
+ * timings the word the Sheikh is reciting is followed live.
+ */
+let mushafP: Promise<Mushaf> | null = null;
+function VersePanel({ refAt, word, source }: { refAt: ExampleRef; word: number | null; source: TajweedVoiceId }) {
+  const { t, language } = useI18n();
+  const [words, setWords] = useState<string[] | null>(null);
+  const [s, a, w1, w2] = refAt;
+  useEffect(() => {
+    let alive = true;
+    (mushafP ??= loadMushaf()).then((m) => { if (alive) setWords(m.words(s, a)); }).catch(() => { mushafP = null; });
+    return () => { alive = false; };
+  }, [s, a]);
+  const meta = getSurahMeta(s);
+  const v = tajweedVoice(source);
+  const ar = language === "ar";
+  return (
+    <div className="rounded-2xl bg-black/25 p-3 animate-in fade-in duration-200" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.45)}` }} data-tajweed-verse={`${s}:${a}`} aria-live="polite">
+      <p className="mb-1 flex items-center gap-1.5 text-[0.68rem] text-amber-200/80">
+        <Volume2 className="h-3 w-3 animate-pulse" />
+        <span className="font-arabic text-xs">{ar ? meta?.nameArabic : meta?.nameSimple}</span> · {t("verse")} {ar ? toArabicDigits(a) : a} · {ar ? v.ar : v.en}
+      </p>
+      <p dir="rtl" lang="ar" className="font-quran text-[1.3rem] leading-[2.1] text-emerald-50/85">
+        {(words ?? []).map((w, i) => {
+          const n = i + 1, target = n >= w1 && n <= w2, now = word === n;
+          return (
+            <span key={n} data-verse-word={n} data-target={target ? "" : undefined} data-now={now ? "" : undefined}
+              className={cn("rounded-md px-0.5 transition-colors", now && "bg-amber-300/25")}
+              style={target ? { color: GOLD_LIGHT, textShadow: `0 0 10px ${alpha(GOLD_LIGHT, 0.55)}`, borderBottom: `2px solid ${alpha(GOLD_LIGHT, 0.7)}` } : undefined}>
+              {w}{" "}
+            </span>
+          );
+        })}
+      </p>
+    </div>
   );
 }
 

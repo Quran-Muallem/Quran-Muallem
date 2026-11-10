@@ -614,6 +614,12 @@ export const copy = {
   tajweedMujawwadGroup: ["المصحف المجوّد (حفص)", "Mujawwad (Hafs)"],
   tajweedOtherVoices: ["أصوات أخرى", "Other voices"],
   tajweedVerseOnly: ["لهذا القارئ تسجيل للآيات فقط: تُسمَع الآية كاملة التي فيها المثال.", "This reciter has verse recordings only: the whole verse with the example plays."],
+  tajweedMurattalGroup: ["مرتّل (حفص)", "Murattal (Hafs)"],
+  tajweedFullVerseHint: ["يُسمَع كل مثال في آيته كاملة، والكلمة المقصودة مضيئة.", "Every example plays its whole verse; the example word is lit up."],
+  tajweedSheikhExample: ["من تلاوة {name}", "From the recitation of {name}"],
+  tajweedSheikhPause: ["يقف الشيخ هنا (نحو {s} ث)", "The Sheikh pauses here (about {s} s)"],
+  tajweedVoiceFollow: ["الآية كاملة مع تتبّع الكلمات", "Whole verse, words followed"],
+  tajweedFullVerse: ["الآية كاملة", "Whole verse"],
 } as const;
 export type CopyKey = keyof typeof copy;
 export function translate(language: Language, key: CopyKey): string {

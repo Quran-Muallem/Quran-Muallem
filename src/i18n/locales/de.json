@@ -703,5 +703,11 @@
   "tajweedMurattal": "Murattal",
   "tajweedMujawwadGroup": "Mudschawwad (Hafs)",
   "tajweedOtherVoices": "Weitere Stimmen",
-  "tajweedVerseOnly": "Von diesem Rezitator gibt es nur ganze Verse: Es erklingt der Vers mit dem Beispiel."
+  "tajweedVerseOnly": "Von diesem Rezitator gibt es nur ganze Verse: Es erklingt der Vers mit dem Beispiel.",
+  "tajweedMurattalGroup": "Murattal (Hafs)",
+  "tajweedFullVerseHint": "Jedes Beispiel erklingt im ganzen Vers; das Beispielwort leuchtet auf.",
+  "tajweedSheikhExample": "Aus der Rezitation von {name}",
+  "tajweedSheikhPause": "Hier hält der Scheich inne (etwa {s} s)",
+  "tajweedVoiceFollow": "Ganzer Vers, Wörter mitverfolgt",
+  "tajweedFullVerse": "Ganzer Vers"
 }

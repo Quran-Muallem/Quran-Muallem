@@ -703,5 +703,11 @@
   "tajweedMurattal": "Мураттал",
   "tajweedMujawwadGroup": "Муджаввад (Хафс)",
   "tajweedOtherVoices": "Другие голоса",
-  "tajweedVerseOnly": "У этого чтеца есть только целые аяты: звучит аят с примером."
+  "tajweedVerseOnly": "У этого чтеца есть только целые аяты: звучит аят с примером.",
+  "tajweedMurattalGroup": "Мураттал (Хафс)",
+  "tajweedFullVerseHint": "Каждый пример звучит целым аятом; слово примера подсвечено.",
+  "tajweedSheikhExample": "Из чтения: {name}",
+  "tajweedSheikhPause": "Здесь шейх делает паузу (около {s} с)",
+  "tajweedVoiceFollow": "Весь аят, слова подсвечиваются",
+  "tajweedFullVerse": "Весь аят"
 }

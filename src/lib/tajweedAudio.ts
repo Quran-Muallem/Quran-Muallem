@@ -1,29 +1,25 @@
 /**
- * Tajweed examples in the selected Sheikh's voice (v35).
+ * Tajweed examples in a Sheikh's voice (v35 → v39).
  *
  * Each example has a place in the Quran ([surah, ayah, firstWord, lastWord]: `ref` in the data, else
- * src/data/tajweedRefs.json). Playback, like a word in the Mushaf:
- *  · «wordByWord» (default, v36) — Quran.com's word-by-word recording, the same voice as «استمع إلى الكلمة»
- *     in the mistake corrections, the words one after another;
- *  · «sheikh» — the selected Sheikh's verse recording from Quran.com with its word timings, played from the
- *     first word's start to the last word's end (one word or a phrase).
- *  The reader picks which comes first (`getExampleSource`); the other is the fallback, then:
- *  3. «verse» — last resort: the Sheikh's whole verse (the app's usual verse audio, also offline downloads).
+ * src/data/tajweedRefs.json). v39: the example's WHOLE verse is played in the voice chosen in the guide
+ * (`TAJWEED_VOICES`) — never a single cut-out word, never the word-by-word voice (that one belongs to the
+ * Mushaf's mistake corrections) — and the guide lights up the example's words in the verse.
  */
 import refs from "@/data/tajweedRefs.json";
 import type { TajweedExample } from "@/data/tajweedData";
 import { claimSheikhAudio, currentWordAudio, normalizeSegments, playClip, sheikhAudio, stopWordAudio } from "@/lib/audioPlayback";
-import { getAyahAudioUrl, getReciter } from "@/lib/reciterManager";
+import { getAyahAudioUrl } from "@/lib/reciterManager";
 import { getSettings } from "@/lib/settings";
 import { verseTiming, type Moshaf } from "@/lib/recitersHub";
 
 export type ExampleRef = [number, number, number, number];
-export type ExampleVoice = "sheikh" | "wordByWord" | "verse";
+/** How an example played: «sheikh» = the verse with word timings, «verse» = verse audio without them. */
+export type ExampleVoice = "sheikh" | "verse";
 
 const REFS = refs as unknown as Record<string, ExampleRef>;
 export const exampleRef = (e: TajweedExample): ExampleRef | null => e.ref ?? REFS[e.ar] ?? null;
 
-const WBW = "https://audio.qurancdn.com/wbw/";
 const pad3 = (n: number) => String(n).padStart(3, "0");
 const me = Symbol("tajweed-examples");
 let token = 0;
@@ -72,15 +68,14 @@ function untilStopped(a: HTMLAudioElement | null, my: number, maxMs = 60000): Pr
 }
 
 /* ------------------------------------------------------------------------------------------------------ */
-/* v38 · the voices of the Tajweed examples: Mujawwad Sheikhs (Hafs)                                        */
+/* v38/v39 · the voices of the Tajweed examples — always the WHOLE verse                                     */
 /* ------------------------------------------------------------------------------------------------------ */
 
-export type TajweedVoiceId = "husary-mj" | "minshawi-mj" | "abdulbasit-mj" | "mustafa-mj" | "hudhaifi" | "wbw" | "selected";
+export type TajweedVoiceId = "husary-mj" | "minshawi-mj" | "abdulbasit-mj" | "mustafa-mj" | "hudhaifi" | "alafasy";
 export type TajweedVoice = {
   id: TajweedVoiceId; ar: string; en: string;
-  /** mujawwad / murattal Sheikh, the word-by-word voice of the corrections, or the Sheikh chosen in the settings. */
-  style: "mujawwad" | "murattal" | "wbw" | "selected";
-  /** Quran.com recitation with word timings → one word / a phrase can be cut out. */
+  style: "mujawwad" | "murattal";
+  /** Quran.com recitation with word timings → the word being recited is highlighted while the verse plays. */
   quranComId?: number;
   /** everyayah.com folder (one file per verse). */
   everyAyah?: string;
@@ -88,9 +83,9 @@ export type TajweedVoice = {
   mp3quran?: { server: string; timing: number };
 };
 /**
- * Hafs ʿan ʿĀṣim only (the guide teaches Hafs). Word-exact for Abdul-Basit and Minshawi (Quran.com word timings);
- * Husary, Mustafa Ismail and Hudhaifi have verse recordings only, so their example plays the whole verse.
- * Al-Hudhaifi recorded no Mujawwad: his Murattal is offered.
+ * Hafs ʿan ʿĀṣim (the guide teaches Hafs). v39: an example always plays its whole verse, so the madd, ghunnah
+ * and the stop are heard in their flow. Abdul-Basit, Al-Minshawi and Al-Afasy have word timings (the word
+ * being recited lights up); the others light up the example's words for the whole verse.
  */
 export const TAJWEED_VOICES: readonly TajweedVoice[] = [
   { id: "husary-mj", ar: "محمود خليل الحصري", en: "Mahmoud Khalil Al-Husary", style: "mujawwad", everyAyah: "Husary_128kbps_Mujawwad" },
@@ -98,19 +93,17 @@ export const TAJWEED_VOICES: readonly TajweedVoice[] = [
   { id: "abdulbasit-mj", ar: "عبدالباسط عبدالصمد", en: "Abdul-Basit Abdul-Samad", style: "mujawwad", quranComId: 1, everyAyah: "Abdul_Basit_Mujawwad_128kbps" },
   { id: "mustafa-mj", ar: "مصطفى إسماعيل", en: "Mustafa Ismail", style: "mujawwad", mp3quran: { server: "https://cdn.mp3quran.net/audio/mustafa-ismail/r2/", timing: 288 } },
   { id: "hudhaifi", ar: "علي بن عبدالرحمن الحذيفي", en: "Ali Al-Huthaify", style: "murattal", everyAyah: "Hudhaify_128kbps" },
-  { id: "wbw", ar: "", en: "", style: "wbw" },
-  { id: "selected", ar: "", en: "", style: "selected" },
+  { id: "alafasy", ar: "مشاري راشد العفاسي", en: "Mishary Rashid Al-Afasy", style: "murattal", quranComId: 7, everyAyah: "Alafasy_128kbps" },
 ];
 export const DEFAULT_TAJWEED_VOICE: TajweedVoiceId = "husary-mj";
 export const tajweedVoice = (id: TajweedVoiceId): TajweedVoice => TAJWEED_VOICES.find((v) => v.id === id) ?? TAJWEED_VOICES[0]!;
 
 const SOURCE_KEY = "qm.tajweed.voice";
-/** The voice chosen in the guide (v36 values «wordByWord» / «sheikh» are carried over). */
+/** The voice chosen in the guide. Old choices: «sheikh» (v36) → Al-Afasy; word-by-word (removed in v39) → default. */
 export function getExampleSource(): TajweedVoiceId {
   try {
     const v = localStorage.getItem(SOURCE_KEY);
-    if (v === "wordByWord") return "wbw";
-    if (v === "sheikh") return "selected";
+    if (v === "sheikh" || v === "selected") return "alafasy";
     return TAJWEED_VOICES.some((x) => x.id === v) ? (v as TajweedVoiceId) : DEFAULT_TAJWEED_VOICE;
   } catch { return DEFAULT_TAJWEED_VOICE; }
 }
@@ -119,74 +112,65 @@ export function setExampleSource(v: TajweedVoiceId) {
 }
 
 /**
- * Plays an example; resolves with the voice used once it has finished (or was stopped / replaced),
- * rejects when nothing could play. Order: the chosen voice (word-exact where it has word timings, else its
- * whole verse) → the word-by-word voice → the Sheikh of the settings' whole verse.
+ * Plays the WHOLE verse of an example in the chosen voice; resolves once it has finished (or was stopped /
+ * replaced) with how it played — «sheikh»: with word timings (`onWord` reports the Mushaf word being recited),
+ * «verse»: verse audio without timings — and rejects when nothing could play. Fallback: the voice's verse file,
+ * then the verse of the Sheikh chosen in the settings (also offline downloads). No word-by-word voice here (v39).
  */
-export async function playExample(e: TajweedExample, reciterId = getSettings().reciterId, onStart?: (voice: ExampleVoice) => void, source: TajweedVoiceId = getExampleSource()): Promise<ExampleVoice> {
+export async function playExample(e: TajweedExample, reciterId = getSettings().reciterId, onStart?: (voice: ExampleVoice) => void, source: TajweedVoiceId = getExampleSource(), onWord?: (word: number | null) => void): Promise<ExampleVoice> {
   const ref = exampleRef(e);
   if (!ref) throw new Error("no reference");
-  const [s, a, w1, w2] = ref;
+  const [s, a] = ref;
   const my = ++token;
   // One Sheikh voice at a time: the Mushaf / Recite player stops.
   claimSheikhAudio(me, () => { if (my === token) stopWordAudio(); });
   const voice = tajweedVoice(source);
 
-  /** A Quran.com recitation cut to the example's words (false: no timings for them). */
-  const cut = async (quranComId: number | null | undefined): Promise<boolean> => {
-    if (quranComId == null) return false;
-    const t = await exampleTimings(quranComId, s, a);
-    const segs = t?.segments ?? [];
-    // Quran.com counts words from 1 (some files from 0).
-    const shift = segs[0]?.[0] === 0 ? 1 : 0;
-    const first = segs.find(([p]) => p + shift === w1), last = segs.find(([p]) => p + shift === w2);
-    if (!t || !first || !last || my !== token) return false;
-    try { await playClip(t.url, first[1], last[2]); } catch { return false; }
-    onStart?.("sheikh"); await untilStopped(currentWordAudio(), my);
+  /** The verse with Quran.com word timings; `onWord` follows the recitation. */
+  const timed = async (): Promise<boolean> => {
+    if (voice.quranComId == null) return false;
+    const t = await exampleTimings(voice.quranComId, s, a);
+    if (!t || my !== token) return false;
+    try { await playClip(t.url); } catch { return false; }
+    onStart?.("sheikh");
+    const shift = t.segments[0]?.[0] === 0 ? 1 : 0;
+    const el = currentWordAudio();
+    let last: number | null = null;
+    const follow = setInterval(() => {
+      if (!el || my !== token) return;
+      const ms = el.currentTime * 1000;
+      const seg = t.segments.find(([, from, to]) => ms >= from && ms < to);
+      const w = seg ? seg[0] + shift : null;
+      if (w !== last) { last = w; onWord?.(w); }
+    }, 80);
+    try { await untilStopped(el, my, 300000); } finally { clearInterval(follow); onWord?.(null); }
     return true;
   };
-  /** The word-by-word voice (the same as «استمع إلى الكلمة» in the mistake corrections), word after word. */
-  const wordByWord = async (): Promise<boolean> => {
+  /** The verse file of the voice (everyayah, or the verse cut out of the mp3quran surah file). */
+  const verse = async (): Promise<boolean> => {
     try {
-      for (let w = w1; w <= w2 && my === token; w++) {
-        await playClip(`${WBW}${pad3(s)}_${pad3(a)}_${pad3(w)}.mp3`);
-        if (w === w1) onStart?.("wordByWord");
-        await untilStopped(currentWordAudio(), my);
-      }
-      return true;
-    } catch { return false; }
-  };
-  /** The chosen Sheikh's whole verse (everyayah file, or the verse cut out of the mp3quran surah file). */
-  const verse = async (v: TajweedVoice): Promise<boolean> => {
-    try {
-      if (v.everyAyah) await playClip(`https://everyayah.com/data/${v.everyAyah}/${pad3(s)}${pad3(a)}.mp3`);
-      else if (v.mp3quran) {
-        const timing = await verseTiming({ timing: v.mp3quran.timing } as Moshaf, s);
+      if (voice.everyAyah) await playClip(`https://everyayah.com/data/${voice.everyAyah}/${pad3(s)}${pad3(a)}.mp3`);
+      else if (voice.mp3quran) {
+        const timing = await verseTiming({ timing: voice.mp3quran.timing } as Moshaf, s);
         const t = timing?.find((x) => x.ayah === a);
         if (!t || my !== token) return false;
-        await playClip(`${v.mp3quran.server}${pad3(s)}.mp3`, t.start, t.end);
+        await playClip(`${voice.mp3quran.server}${pad3(s)}.mp3`, t.start, t.end);
       } else return false;
     } catch { return false; }
-    onStart?.("verse"); await untilStopped(currentWordAudio(), my, 180000);
+    onStart?.("verse"); await untilStopped(currentWordAudio(), my, 300000);
     return true;
   };
-  const selected = getReciter(reciterId);
 
-  const order: [ExampleVoice, () => Promise<boolean>][] =
-    voice.style === "wbw" ? [["wordByWord", wordByWord], ["sheikh", () => cut(selected.quranComId)]]
-    : voice.style === "selected" ? [["sheikh", () => cut(selected.quranComId)], ["wordByWord", wordByWord]]
-    : [["sheikh", () => cut(voice.quranComId)], ["verse", () => verse(voice)], ["wordByWord", wordByWord]];
-  for (const [kind, play] of order) {
-    if (my !== token) return kind;
-    if (await play()) return kind;
-  }
-  // Last resort: the Sheikh of the settings, whole verse (also offline downloads).
+  if (await timed()) return "sheikh";
+  if (my !== token) return "sheikh";
+  if (await verse()) return "verse";
+  // Last resort: the Sheikh of the settings, whole verse.
   const url = await getAyahAudioUrl(reciterId, s, a);
   if (my !== token) return "verse";
   const el = sheikhAudio(url);
   await el.play();
   onStart?.("verse");
-  await untilStopped(el, my, 120000);
+  await untilStopped(el, my, 300000);
   if (my !== token) el.pause();
   return "verse";
 }

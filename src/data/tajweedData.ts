@@ -662,10 +662,13 @@ export const TAJWEED: TajweedCategory[] = [
         pointsAr: ["تنوين الفتح يُبدل ألفًا عند الوقف: «عَلِيمًا» ← «عَلِيمَا».", "تنوين الضم والكسر يُحذف ويُسكَّن الحرف: «عَذَابٌ» ← «عَذَابْ».", "التاء المربوطة تُقلب هاءً ساكنة: «الْجَنَّةَ» ← «الْجَنَّهْ».", "صلة هاء الضمير تُحذف: «لَهُۥ» ← «لَهْ».", "إذا سبق الحرفَ الموقوفَ عليه حرفُ مدّ جاز المدّ العارض للسكون (حركتان أو أربع أو ست)."],
         pointsEn: ["Tanwīn al-fatḥ becomes a long alif: ʿalīman → ʿalīmā.", "Tanwīn with ḍammah / kasrah is dropped: ʿadhābun → ʿadhāb.", "Tāʾ marbūṭah becomes a silent hāʾ: al-jannata → al-jannah.", "The lengthening of the pronoun hāʾ is dropped: lahū → lah.", "A madd letter before the stopped letter may be lengthened 2, 4 or 6 counts (madd ʿāriḍ)."],
         examples: [
-          { ar: "نَسْتَعِينُ", mark: ["نُ"], noteAr: "يُوقف: نَسْتَعِينْ", noteEn: "Stop: nastaʿīn" },
-          { ar: "عَلِيمًا", mark: ["مًا"], noteAr: "يُوقف: عَلِيمَا", noteEn: "Stop: ʿalīmā" },
-          { ar: "عَذَابٌ", mark: ["بٌ"], noteAr: "يُوقف: عَذَابْ", noteEn: "Stop: ʿadhāb" },
-          { ar: "الْجَنَّةَ", mark: ["ةَ"], noteAr: "يُوقف: الْجَنَّهْ", noteEn: "Stop: al-jannah" },
+          // v39: every example is the LAST word of its verse — the whole verse plays and the Sheikh stops on it.
+          { ar: "الْعَالَمِينَ", mark: ["نَ"], noteAr: "الفاتحة ٢ — يُوقف: الْعَالَمِينْ", noteEn: "1:2 — stop: al-ʿālamīn", ref: [1, 2, 4, 4] },
+          { ar: "الْمُفْلِحُونَ", mark: ["نَ"], noteAr: "البقرة ٥ — يُوقف: الْمُفْلِحُونْ", noteEn: "2:5 — stop: al-mufliḥūn", ref: [2, 5, 8, 8] },
+          { ar: "غَفَّارًا", mark: ["رًا"], noteAr: "نوح ١٠ — تنوين الفتح ألفًا: غَفَّارَا", noteEn: "71:10 — tanwīn al-fatḥ → alif: ghaffārā", ref: [71, 10, 6, 6] },
+          { ar: "أَحَدٌ", mark: ["دٌ"], noteAr: "الإخلاص ٤ — يُحذف التنوين: أَحَدْ", noteEn: "112:4 — tanwīn dropped: aḥad", ref: [112, 4, 5, 5] },
+          { ar: "الْقَارِعَةُ", mark: ["ةُ"], noteAr: "القارعة ١ — التاء هاءً: الْقَارِعَهْ", noteEn: "101:1 — tāʾ → hāʾ: al-qāriʿah", ref: [101, 1, 1, 1] },
+          { ar: "يَرَهُ", mark: ["هُ"], noteAr: "الزلزلة ٨ — تُحذف الصلة: يَرَهْ", noteEn: "99:8 — no ṣilah: yarah", ref: [99, 8, 6, 6] },
         ],
         keywords: ["waqf", "sukoon", "stop", "pause", "وقف", "سكون", "عارض"],
       },
@@ -678,8 +681,9 @@ export const TAJWEED: TajweedCategory[] = [
         pointsAr: ["لا تبدأ بكلمة تُغيّر المعنى، مثل البدء بـ«إِلَٰهَ» بعد «لَا».", "الوقف القبيح: ما لا يُفهم منه المعنى أو يُوهم معنى فاسدًا، فيلزم الرجوع والوصل."],
         pointsEn: ["Do not start at a word that changes the meaning (e.g. “ilāh” after “lā”).", "An ugly stop leaves the meaning broken or wrong — go back and join."],
         examples: [
-          { ar: "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ", mark: ["نَعْبُدُ"], noteAr: "وقف حسن على «نَعْبُدُ» ثم ابتداء", noteEn: "Good stop after naʿbudu, then restart" },
-          { ar: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ", mark: ["لِلَّهِ"] },
+          // v39: a breath stop inside the verse; with Al-Minshawi (Mujawwad) the pause is audible after «ءَامَنُوا۟».
+          { ar: "وَالَّذِينَ آمَنُوا", mark: ["آمَنُوا"], noteAr: "البقرة ٩ — وقف على «آمَنُوا» ثم ابتداء بـ«وَمَا يَخْدَعُونَ»", noteEn: "2:9 — stop on āmanū, restart at wa-mā yakhdaʿūn", ref: [2, 9, 3, 4] },
+          { ar: "إِيَّاكَ نَعْبُدُ", mark: ["نَعْبُدُ"], noteAr: "الفاتحة ٥ — وقف حسن على «نَعْبُدُ» ثم «وَإِيَّاكَ نَسْتَعِينُ»", noteEn: "1:5 — good stop after naʿbudu", ref: [1, 5, 1, 2] },
         ],
         keywords: ["idtirari", "breath", "ibtida", "repeat", "اضطراري", "ابتداء", "اعاده"],
       },

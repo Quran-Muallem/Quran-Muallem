@@ -703,5 +703,11 @@
   "tajweedMurattal": "Murattal",
   "tajweedMujawwadGroup": "Muyawwad (Hafs)",
   "tajweedOtherVoices": "Otras voces",
-  "tajweedVerseOnly": "Este recitador solo tiene aleyas completas: suena la aleya del ejemplo."
+  "tajweedVerseOnly": "Este recitador solo tiene aleyas completas: suena la aleya del ejemplo.",
+  "tajweedMurattalGroup": "Murattal (Hafs)",
+  "tajweedFullVerseHint": "Cada ejemplo suena en su aleya completa; la palabra se resalta.",
+  "tajweedSheikhExample": "De la recitación de {name}",
+  "tajweedSheikhPause": "El jeque se detiene aquí (unos {s} s)",
+  "tajweedVoiceFollow": "Aleya completa, palabras seguidas",
+  "tajweedFullVerse": "Aleya completa"
 }

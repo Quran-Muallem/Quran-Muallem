@@ -703,5 +703,11 @@
   "tajweedMurattal": "مرتّل",
   "tajweedMujawwadGroup": "مجوّد (حفص)",
   "tajweedOtherVoices": "دیگر آوازیں",
-  "tajweedVerseOnly": "اس قاری کی صرف آیات کی ریکارڈنگ ہے: مثال والی پوری آیت چلے گی۔"
+  "tajweedVerseOnly": "اس قاری کی صرف آیات کی ریکارڈنگ ہے: مثال والی پوری آیت چلے گی۔",
+  "tajweedMurattalGroup": "مرتّل (حفص)",
+  "tajweedFullVerseHint": "ہر مثال پوری آیت میں سنائی جاتی ہے؛ مثال والا لفظ نمایاں ہوتا ہے۔",
+  "tajweedSheikhExample": "{name} کی تلاوت سے",
+  "tajweedSheikhPause": "شیخ یہاں رکتے ہیں (تقریباً {s} سیکنڈ)",
+  "tajweedVoiceFollow": "پوری آیت، الفاظ کے ساتھ",
+  "tajweedFullVerse": "پوری آیت"
 }

@@ -703,5 +703,11 @@
   "tajweedMurattal": "Murattal",
   "tajweedMujawwadGroup": "Muxhevved (Hafs)",
   "tajweedOtherVoices": "Zëra të tjerë",
-  "tajweedVerseOnly": "Ky lexues ka vetëm regjistrime ajetesh: luhet i gjithë ajeti me shembullin."
+  "tajweedVerseOnly": "Ky lexues ka vetëm regjistrime ajetesh: luhet i gjithë ajeti me shembullin.",
+  "tajweedMurattalGroup": "Murattal (Hafs)",
+  "tajweedFullVerseHint": "Çdo shembull luhet në ajetin e plotë; fjala e shembullit ndriçohet.",
+  "tajweedSheikhExample": "Nga leximi i {name}",
+  "tajweedSheikhPause": "Shejhu ndalon këtu (rreth {s} s)",
+  "tajweedVoiceFollow": "Ajeti i plotë, fjalët ndiqen",
+  "tajweedFullVerse": "Ajeti i plotë"
 }

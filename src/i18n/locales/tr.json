@@ -703,5 +703,11 @@
   "tajweedMurattal": "Murattal",
   "tajweedMujawwadGroup": "Mücevved (Hafs)",
   "tajweedOtherVoices": "Diğer sesler",
-  "tajweedVerseOnly": "Bu karinin yalnızca ayet kayıtları var: örneği içeren ayetin tamamı çalınır."
+  "tajweedVerseOnly": "Bu karinin yalnızca ayet kayıtları var: örneği içeren ayetin tamamı çalınır.",
+  "tajweedMurattalGroup": "Murattal (Hafs)",
+  "tajweedFullVerseHint": "Her örnek ayetin tamamıyla çalınır; örnek kelime vurgulanır.",
+  "tajweedSheikhExample": "{name} tilavetinden",
+  "tajweedSheikhPause": "Şeyh burada durur (yaklaşık {s} sn)",
+  "tajweedVoiceFollow": "Ayetin tamamı, kelime takipli",
+  "tajweedFullVerse": "Ayetin tamamı"
 }

@@ -703,5 +703,11 @@
   "tajweedMurattal": "Murattal",
   "tajweedMujawwadGroup": "Mudževed (Hafs)",
   "tajweedOtherVoices": "Drugi glasovi",
-  "tajweedVerseOnly": "Ovaj učač ima samo snimke ajeta: pušta se cijeli ajet s primjerom."
+  "tajweedVerseOnly": "Ovaj učač ima samo snimke ajeta: pušta se cijeli ajet s primjerom.",
+  "tajweedMurattalGroup": "Murattal (Hafs)",
+  "tajweedFullVerseHint": "Svaki primjer se pušta u cijelom ajetu; riječ primjera je istaknuta.",
+  "tajweedSheikhExample": "Iz učenja: {name}",
+  "tajweedSheikhPause": "Šejh ovdje zastaje (oko {s} s)",
+  "tajweedVoiceFollow": "Cijeli ajet, riječi se prate",
+  "tajweedFullVerse": "Cijeli ajet"
 }

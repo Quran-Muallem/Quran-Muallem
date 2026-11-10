@@ -703,5 +703,11 @@
   "tajweedMurattal": "Murattal",
   "tajweedMujawwadGroup": "Mujawwad (Hafs)",
   "tajweedOtherVoices": "Suara lain",
-  "tajweedVerseOnly": "Qari ini hanya punya rekaman per ayat: seluruh ayat yang memuat contoh diputar."
+  "tajweedVerseOnly": "Qari ini hanya punya rekaman per ayat: seluruh ayat yang memuat contoh diputar.",
+  "tajweedMurattalGroup": "Murattal (Hafs)",
+  "tajweedFullVerseHint": "Setiap contoh diputar dalam ayat lengkapnya; kata contoh disorot.",
+  "tajweedSheikhExample": "Dari bacaan {name}",
+  "tajweedSheikhPause": "Syekh berhenti di sini (sekitar {s} dtk)",
+  "tajweedVoiceFollow": "Ayat lengkap, kata diikuti",
+  "tajweedFullVerse": "Ayat lengkap"
 }

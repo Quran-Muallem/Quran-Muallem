@@ -703,5 +703,11 @@
   "tajweedMurattal": "Murattal",
   "tajweedMujawwadGroup": "Mujawwad (Hafs)",
   "tajweedOtherVoices": "Autres voix",
-  "tajweedVerseOnly": "Ce récitateur n’a que des versets entiers : le verset contenant l’exemple est joué."
+  "tajweedVerseOnly": "Ce récitateur n’a que des versets entiers : le verset contenant l’exemple est joué.",
+  "tajweedMurattalGroup": "Murattal (Hafs)",
+  "tajweedFullVerseHint": "Chaque exemple est joué dans son verset entier ; le mot est mis en lumière.",
+  "tajweedSheikhExample": "Dans la récitation de {name}",
+  "tajweedSheikhPause": "Le cheikh s’arrête ici (environ {s} s)",
+  "tajweedVoiceFollow": "Verset entier, mots suivis",
+  "tajweedFullVerse": "Verset entier"
 }

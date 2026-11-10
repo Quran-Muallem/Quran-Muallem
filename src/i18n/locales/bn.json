@@ -703,5 +703,11 @@
   "tajweedMurattal": "মুরাত্তাল",
   "tajweedMujawwadGroup": "মুজাওয়াদ (হাফস)",
   "tajweedOtherVoices": "অন্যান্য কণ্ঠ",
-  "tajweedVerseOnly": "এই কারীর শুধু আয়াতভিত্তিক রেকর্ডিং: উদাহরণসহ পুরো আয়াত বাজবে।"
+  "tajweedVerseOnly": "এই কারীর শুধু আয়াতভিত্তিক রেকর্ডিং: উদাহরণসহ পুরো আয়াত বাজবে।",
+  "tajweedMurattalGroup": "মুরাত্তাল (হাফস)",
+  "tajweedFullVerseHint": "প্রতিটি উদাহরণ পুরো আয়াতে বাজে; উদাহরণের শব্দটি উজ্জ্বল থাকে।",
+  "tajweedSheikhExample": "{name}-এর তিলাওয়াত থেকে",
+  "tajweedSheikhPause": "শাইখ এখানে থামেন (প্রায় {s} সে.)",
+  "tajweedVoiceFollow": "পুরো আয়াত, শব্দ অনুসরণসহ",
+  "tajweedFullVerse": "পুরো আয়াত"
 }
