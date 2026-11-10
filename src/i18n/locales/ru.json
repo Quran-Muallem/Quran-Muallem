@@ -709,5 +709,8 @@
   "tajweedSheikhExample": "Из чтения: {name}",
   "tajweedSheikhPause": "Здесь шейх делает паузу (около {s} с)",
   "tajweedVoiceFollow": "Весь аят, слова подсвечиваются",
-  "tajweedFullVerse": "Весь аят"
+  "tajweedFullVerse": "Весь аят",
+  "tajweedMuallimGroup": "Муаллим – учебный Мусхаф (Хафс)",
+  "tajweedMuallim": "Муаллим",
+  "tajweedMuallimKids": "Муаллим, дети повторяют"
 }

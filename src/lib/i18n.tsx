@@ -620,6 +620,9 @@ export const copy = {
   tajweedSheikhPause: ["يقف الشيخ هنا (نحو {s} ث)", "The Sheikh pauses here (about {s} s)"],
   tajweedVoiceFollow: ["الآية كاملة مع تتبّع الكلمات", "Whole verse, words followed"],
   tajweedFullVerse: ["الآية كاملة", "Whole verse"],
+  tajweedMuallimGroup: ["المصحف المعلّم (حفص)", "Muallim – teaching Mushaf (Hafs)"],
+  tajweedMuallim: ["معلّم", "Muallim"],
+  tajweedMuallimKids: ["معلّم مع ترديد الأطفال", "Muallim, children repeat"],
 } as const;
 export type CopyKey = keyof typeof copy;
 export function translate(language: Language, key: CopyKey): string {

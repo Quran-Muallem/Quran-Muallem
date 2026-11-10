@@ -709,5 +709,8 @@
   "tajweedSheikhExample": "Iz učenja: {name}",
   "tajweedSheikhPause": "Šejh ovdje zastaje (oko {s} s)",
   "tajweedVoiceFollow": "Cijeli ajet, riječi se prate",
-  "tajweedFullVerse": "Cijeli ajet"
+  "tajweedFullVerse": "Cijeli ajet",
+  "tajweedMuallimGroup": "Muallim – mushaf za učenje (Hafs)",
+  "tajweedMuallim": "Muallim",
+  "tajweedMuallimKids": "Muallim, djeca ponavljaju"
 }

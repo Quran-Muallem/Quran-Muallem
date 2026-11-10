@@ -709,5 +709,8 @@
   "tajweedSheikhExample": "Dans la récitation de {name}",
   "tajweedSheikhPause": "Le cheikh s’arrête ici (environ {s} s)",
   "tajweedVoiceFollow": "Verset entier, mots suivis",
-  "tajweedFullVerse": "Verset entier"
+  "tajweedFullVerse": "Verset entier",
+  "tajweedMuallimGroup": "Muallim – Mushaf d’apprentissage (Hafs)",
+  "tajweedMuallim": "Muallim",
+  "tajweedMuallimKids": "Muallim, les enfants répètent"
 }

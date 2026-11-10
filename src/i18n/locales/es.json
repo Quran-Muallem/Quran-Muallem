@@ -709,5 +709,8 @@
   "tajweedSheikhExample": "De la recitación de {name}",
   "tajweedSheikhPause": "El jeque se detiene aquí (unos {s} s)",
   "tajweedVoiceFollow": "Aleya completa, palabras seguidas",
-  "tajweedFullVerse": "Aleya completa"
+  "tajweedFullVerse": "Aleya completa",
+  "tajweedMuallimGroup": "Muallim – Mushaf didáctico (Hafs)",
+  "tajweedMuallim": "Muallim",
+  "tajweedMuallimKids": "Muallim, los niños repiten"
 }

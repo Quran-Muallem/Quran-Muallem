@@ -709,5 +709,8 @@
   "tajweedSheikhExample": "Aus der Rezitation von {name}",
   "tajweedSheikhPause": "Hier hält der Scheich inne (etwa {s} s)",
   "tajweedVoiceFollow": "Ganzer Vers, Wörter mitverfolgt",
-  "tajweedFullVerse": "Ganzer Vers"
+  "tajweedFullVerse": "Ganzer Vers",
+  "tajweedMuallimGroup": "Muallim – Lehr-Mushaf (Hafs)",
+  "tajweedMuallim": "Muallim (Lehr-Rezitation)",
+  "tajweedMuallimKids": "Muallim, Kinder sprechen nach"
 }

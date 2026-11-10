@@ -709,5 +709,8 @@
   "tajweedSheikhExample": "{name} tilavetinden",
   "tajweedSheikhPause": "Şeyh burada durur (yaklaşık {s} sn)",
   "tajweedVoiceFollow": "Ayetin tamamı, kelime takipli",
-  "tajweedFullVerse": "Ayetin tamamı"
+  "tajweedFullVerse": "Ayetin tamamı",
+  "tajweedMuallimGroup": "Muallim – öğretici Mushaf (Hafs)",
+  "tajweedMuallim": "Muallim",
+  "tajweedMuallimKids": "Muallim, çocuklar tekrarlar"
 }

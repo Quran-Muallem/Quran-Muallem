@@ -709,5 +709,8 @@
   "tajweedSheikhExample": "{name} کی تلاوت سے",
   "tajweedSheikhPause": "شیخ یہاں رکتے ہیں (تقریباً {s} سیکنڈ)",
   "tajweedVoiceFollow": "پوری آیت، الفاظ کے ساتھ",
-  "tajweedFullVerse": "پوری آیت"
+  "tajweedFullVerse": "پوری آیت",
+  "tajweedMuallimGroup": "مصحفِ معلّم (حفص)",
+  "tajweedMuallim": "معلّم",
+  "tajweedMuallimKids": "معلّم، بچے دہراتے ہیں"
 }

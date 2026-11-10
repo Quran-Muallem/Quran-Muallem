@@ -709,5 +709,8 @@
   "tajweedSheikhExample": "Nga leximi i {name}",
   "tajweedSheikhPause": "Shejhu ndalon këtu (rreth {s} s)",
   "tajweedVoiceFollow": "Ajeti i plotë, fjalët ndiqen",
-  "tajweedFullVerse": "Ajeti i plotë"
+  "tajweedFullVerse": "Ajeti i plotë",
+  "tajweedMuallimGroup": "Muallim – Mus’haf mësimor (Hafs)",
+  "tajweedMuallim": "Muallim",
+  "tajweedMuallimKids": "Muallim, fëmijët përsërisin"
 }

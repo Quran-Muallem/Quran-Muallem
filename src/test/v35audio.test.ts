@@ -49,7 +49,7 @@ describe("v39 · examples always play the WHOLE verse", () => {
     vi.doMock("@/lib/audioPlayback", () => ({ normalizeSegments: () => [], playClip, currentWordAudio: () => a, claimSheikhAudio: () => {}, stopWordAudio: () => {}, sheikhAudio: () => a }));
     const { playExample, getExampleSource, TAJWEED_VOICES } = await import("@/lib/tajweedAudio");
     expect(getExampleSource()).toBe("husary-mj");
-    expect(TAJWEED_VOICES.map((v) => v.id)).toEqual(["husary-mj", "minshawi-mj", "abdulbasit-mj", "mustafa-mj", "hudhaifi", "alafasy"]);
+    expect(TAJWEED_VOICES.map((v) => v.id)).toEqual(["husary-mj", "minshawi-mj", "abdulbasit-mj", "mustafa-mj", "hudhaifi", "alafasy", "husary-muallim", "minshawi-muallim"]);
     expect(await playExample({ ar: "x", ref: [2, 2, 1, 1] }, "alafasy")).toBe("verse");
     expect(playClip).toHaveBeenCalledTimes(1);
     expect(playClip).toHaveBeenCalledWith("https://everyayah.com/data/Husary_128kbps_Mujawwad/002002.mp3");
@@ -66,6 +66,21 @@ describe("v39 · examples always play the WHOLE verse", () => {
     expect(await playExample({ ar: "x", ref: [2, 2, 2, 2] }, "alafasy", undefined, "abdulbasit-mj", (w) => words.push(w))).toBe("sheikh");
     expect(playClip).toHaveBeenCalledWith("https://verses.quran.com/AbdulBaset/Mujawwad/mp3/002002.mp3");
     expect(words).toContain(2);
+  });
+  it("v40 Muallim (Quran.com QDC): the verse cut out of the surah file, children's repetitions followed", async () => {
+    const a = fakeAudio();
+    const playClip = vi.fn(async () => { a.paused = false; a.currentTime = 12; setTimeout(() => a.pause(), 250); });
+    vi.stubGlobal("fetch", vi.fn(async (u: string) => {
+      expect(u).toBe("https://api.qurancdn.com/api/qdc/audio/reciters/168/audio_files?chapter=1&segments=true");
+      return { ok: true, json: async () => ({ audio_files: [{ audio_url: "https://download.quranicaudio.com/qdc/siddiq_minshawi/kids_repeat/1.mp3", verse_timings: [
+        { verse_key: "1:2", timestamp_from: 8037, timestamp_to: 17976, segments: [[1, 8037, 9614], [2, 9614, 10438], [1, 11640, 14445], [5, 17137]] }] }] }) };
+    }));
+    vi.doMock("@/lib/audioPlayback", () => ({ normalizeSegments: () => [], playClip, currentWordAudio: () => a, claimSheikhAudio: () => {}, stopWordAudio: () => {}, sheikhAudio: () => a }));
+    const { playExample } = await import("@/lib/tajweedAudio");
+    const words: (number | null)[] = [];
+    expect(await playExample({ ar: "x", ref: [1, 2, 1, 1] }, "alafasy", undefined, "minshawi-muallim", (w) => words.push(w))).toBe("sheikh");
+    expect(playClip).toHaveBeenCalledWith("https://download.quranicaudio.com/qdc/siddiq_minshawi/kids_repeat/1.mp3", 8037, 17976);
+    expect(words).toContain(1);
   });
   it("old choices: «sheikh» → Al-Afasy, word-by-word → default", async () => {
     const { getExampleSource } = await import("@/lib/tajweedAudio");

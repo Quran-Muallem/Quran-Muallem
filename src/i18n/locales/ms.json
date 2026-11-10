@@ -709,5 +709,8 @@
   "tajweedSheikhExample": "Daripada bacaan {name}",
   "tajweedSheikhPause": "Syeikh berhenti di sini (kira-kira {s} s)",
   "tajweedVoiceFollow": "Ayat penuh, perkataan diikuti",
-  "tajweedFullVerse": "Ayat penuh"
+  "tajweedFullVerse": "Ayat penuh",
+  "tajweedMuallimGroup": "Muallim – mushaf pengajaran (Hafs)",
+  "tajweedMuallim": "Muallim",
+  "tajweedMuallimKids": "Muallim, kanak-kanak mengulang"
 }

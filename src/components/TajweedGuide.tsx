@@ -161,7 +161,7 @@ export function ScholarNotice() {
  */
 function VoicePicker({ source, onPick }: { source: TajweedVoiceId; onPick: (v: TajweedVoiceId) => void }) {
   const { t, language } = useI18n();
-  const label = (v: TajweedVoice) => `${language === "ar" ? v.ar : v.en} — ${t(v.style === "mujawwad" ? "tajweedMujawwad" : "tajweedMurattal")}`;
+  const label = (v: TajweedVoice) => `${language === "ar" ? v.ar : v.en} — ${t(v.style === "mujawwad" ? "tajweedMujawwad" : v.style === "muallim" ? (v.id === "minshawi-muallim" ? "tajweedMuallimKids" : "tajweedMuallim") : "tajweedMurattal")}`;
   return (
     <div className="space-y-1 px-1 text-xs text-emerald-100/70" data-tajweed-voice={source}>
       <label className="flex items-center gap-2">
@@ -174,6 +174,9 @@ function VoicePicker({ source, onPick }: { source: TajweedVoiceId; onPick: (v: T
           </optgroup>
           <optgroup label={t("tajweedMurattalGroup")}>
             {TAJWEED_VOICES.filter((v) => v.style === "murattal").map((v) => <option key={v.id} value={v.id}>{label(v)}</option>)}
+          </optgroup>
+          <optgroup label={t("tajweedMuallimGroup")}>
+            {TAJWEED_VOICES.filter((v) => v.style === "muallim").map((v) => <option key={v.id} value={v.id}>{label(v)}</option>)}
           </optgroup>
         </select>
       </label>

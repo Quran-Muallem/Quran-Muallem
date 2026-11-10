@@ -53,6 +53,32 @@ export function exampleTimings(quranComId: number, surah: number, ayah: number):
   return p;
 }
 
+/** A verse inside a Quran.com (QDC) surah file: [from, to] and word segments [word, from, to] (absolute ms). */
+type QdcVerse = { url: string; from: number; to: number; segments: [number, number, number][] };
+const qdcCache = new Map<string, Promise<Map<string, QdcVerse> | null>>();
+export function qdcVerse(reciter: number, surah: number, ayah: number): Promise<QdcVerse | null> {
+  const key = `${reciter}/${surah}`;
+  let p = qdcCache.get(key);
+  if (!p) {
+    p = fetch(`https://api.qurancdn.com/api/qdc/audio/reciters/${reciter}/audio_files?chapter=${surah}&segments=true`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { audio_files?: { audio_url?: string; verse_timings?: { verse_key: string; timestamp_from: number; timestamp_to: number; segments?: unknown[] }[] }[] } | null) => {
+        const f = d?.audio_files?.[0];
+        if (!f?.audio_url) return null;
+        const out = new Map<string, QdcVerse>();
+        for (const v of f.verse_timings ?? []) {
+          const segments = (v.segments ?? []).filter((x): x is [number, number, number] => Array.isArray(x) && x.length >= 3 && x.every((n) => typeof n === "number"));
+          out.set(v.verse_key, { url: f.audio_url, from: v.timestamp_from, to: v.timestamp_to, segments });
+        }
+        return out;
+      })
+      .catch(() => null);
+    qdcCache.set(key, p);
+    void p.then((v) => { if (!v) qdcCache.delete(key); });
+  }
+  return p.then((m) => m?.get(`${surah}:${ayah}`) ?? null);
+}
+
 /** Stops an example that is playing. */
 export function stopExample() { token++; stopWordAudio(); }
 
@@ -71,10 +97,12 @@ function untilStopped(a: HTMLAudioElement | null, my: number, maxMs = 60000): Pr
 /* v38/v39 · the voices of the Tajweed examples — always the WHOLE verse                                     */
 /* ------------------------------------------------------------------------------------------------------ */
 
-export type TajweedVoiceId = "husary-mj" | "minshawi-mj" | "abdulbasit-mj" | "mustafa-mj" | "hudhaifi" | "alafasy";
+export type TajweedVoiceId = "husary-mj" | "minshawi-mj" | "abdulbasit-mj" | "mustafa-mj" | "hudhaifi" | "alafasy" | "husary-muallim" | "minshawi-muallim";
 export type TajweedVoice = {
   id: TajweedVoiceId; ar: string; en: string;
-  style: "mujawwad" | "murattal";
+  style: "mujawwad" | "murattal" | "muallim";
+  /** Quran.com (QDC) recitation: one file per surah with verse and word timings (v40, the Muallim Mushafs). */
+  qdc?: number;
   /** Quran.com recitation with word timings → the word being recited is highlighted while the verse plays. */
   quranComId?: number;
   /** everyayah.com folder (one file per verse). */
@@ -94,6 +122,10 @@ export const TAJWEED_VOICES: readonly TajweedVoice[] = [
   { id: "mustafa-mj", ar: "مصطفى إسماعيل", en: "Mustafa Ismail", style: "mujawwad", mp3quran: { server: "https://cdn.mp3quran.net/audio/mustafa-ismail/r2/", timing: 288 } },
   { id: "hudhaifi", ar: "علي بن عبدالرحمن الحذيفي", en: "Ali Al-Huthaify", style: "murattal", everyAyah: "Hudhaify_128kbps" },
   { id: "alafasy", ar: "مشاري راشد العفاسي", en: "Mishary Rashid Al-Afasy", style: "murattal", quranComId: 7, everyAyah: "Alafasy_128kbps" },
+  // v40 «المصحف المعلم» from Quran.com: the Sheikh recites slowly for learners; in Al-Minshawi's the children
+  // repeat after him (Quran.com «kids repeat») — both with word timings.
+  { id: "husary-muallim", ar: "محمود خليل الحصري", en: "Mahmoud Khalil Al-Husary", style: "muallim", qdc: 12, everyAyah: "Husary_Muallim_128kbps" },
+  { id: "minshawi-muallim", ar: "محمد صديق المنشاوي", en: "Muhammad Siddiq Al-Minshawi", style: "muallim", qdc: 168, everyAyah: "Minshawy_Teacher_128kbps" },
 ];
 export const DEFAULT_TAJWEED_VOICE: TajweedVoiceId = "husary-mj";
 export const tajweedVoice = (id: TajweedVoiceId): TajweedVoice => TAJWEED_VOICES.find((v) => v.id === id) ?? TAJWEED_VOICES[0]!;
@@ -161,6 +193,28 @@ export async function playExample(e: TajweedExample, reciterId = getSettings().r
     return true;
   };
 
+  /** A Muallim verse cut out of the Quran.com surah file; segments are absolute in that file. */
+  const qdc = async (): Promise<boolean> => {
+    if (voice.qdc == null) return false;
+    const v = await qdcVerse(voice.qdc, s, a);
+    if (!v || my !== token) return false;
+    try { await playClip(v.url, v.from, v.to); } catch { return false; }
+    onStart?.("sheikh");
+    const el = currentWordAudio();
+    let last: number | null = null;
+    const follow = setInterval(() => {
+      if (!el || my !== token) return;
+      const ms = el.currentTime * 1000;
+      const seg = v.segments.find(([, from, to]) => ms >= from && ms < to);
+      const w = seg ? seg[0] : null;
+      if (w !== last) { last = w; onWord?.(w); }
+    }, 80);
+    try { await untilStopped(el, my, 600000); } finally { clearInterval(follow); onWord?.(null); }
+    return true;
+  };
+
+  if (await qdc()) return "sheikh";
+  if (my !== token) return "sheikh";
   if (await timed()) return "sheikh";
   if (my !== token) return "sheikh";
   if (await verse()) return "verse";
