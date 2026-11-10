@@ -1,11 +1,19 @@
 import { speechEngineFor } from "@/lib/speechEngine";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { CheckCircle2, Download, ExternalLink, Eye, EyeOff, FileText, Languages, Loader2, ShieldCheck, Trash2, Upload, XCircle } from "lucide-react";
+import { AlertOctagon, BellRing, BookOpen, BookText, CheckCircle2, ChevronLeft, ChevronRight, Download, ExternalLink, Eye, EyeOff, FileText, Globe, Languages, Loader2, Lock, Mic, MinusCircle, Play, Podcast, ShieldCheck, Sun, Trash2, Upload, XCircle } from "lucide-react";
 import { GoldDialog, GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import { THEME_COLORS, updateSettings, useSettings, type ThemeId } from "@/lib/settings";
 import { BackupError, downloadBackup, importProgressJson } from "@/lib/progressStorage";
 import { cachedSurahIds, downloadWholeQuran } from "@/lib/quranService";
-import { useI18n, type CopyKey } from "@/lib/i18n";
+import { directionFor, useI18n, type CopyKey } from "@/lib/i18n";
+import { ReciterSelectModal } from "@/components/ReciterSelectModal";
+import { ContentSelectModal } from "@/components/ContentSelectModal";
+import { getReciter } from "@/lib/reciterManager";
+import { getTafsir, getTranslation } from "@/lib/quranContent";
+import { totalDownloadedBytes, useSurahDownloads } from "@/lib/recitersHub";
+import { deleteAllRecordings, useRecordings } from "@/lib/audioStorage";
+import { reminderSupported } from "@/lib/dailyReminder";
+import { notificationPermission } from "@/lib/prayerNotifications";
 import { LanguageList } from "@/components/LanguageSelector";
 import { cn } from "@/lib/utils";
 import { WhisperModelStatus } from "@/components/WhisperModelStatus";
@@ -16,24 +24,201 @@ import { VoiceProfilePanel } from "@/components/VoiceProfilePanel";
 import { retryZipformer, useZipformerState, zipformerAvailable, ZIPFORMER_MB } from "@/lib/zipformerEngine";
 
 
+type SettingsPage = "recitation" | "listening" | "mushafLook" | "hidden" | "language" | "theme" | "reminders" | "mistakes" | "session" | "reciters" | "translation" | "tafsir" | "offline" | "data" | "recordings";
+type Row = { id: SettingsPage; icon: ReactNode; label: CopyKey };
+const ic = "h-5 w-5";
+/** Grouped like Tarteel's settings: each row opens its own page inside the dialog. */
+const GROUPS: { title: CopyKey; rows: Row[] }[] = [
+  { title: "setGroupExperience", rows: [{ id: "recitation", icon: <Mic className={ic} />, label: "setRecitation" }, { id: "listening", icon: <Play className={ic} />, label: "setListening" }] },
+  { title: "setGroupQuranLook", rows: [{ id: "mushafLook", icon: <BookOpen className={ic} />, label: "setMushafLook" }, { id: "hidden", icon: <EyeOff className={ic} />, label: "setHidden" }] },
+  { title: "setGroupAppLook", rows: [{ id: "language", icon: <Globe className={ic} />, label: "languageTitle" }, { id: "theme", icon: <Sun className={ic} />, label: "themeTitle" }] },
+  { title: "setGroupNotifications", rows: [{ id: "reminders", icon: <BellRing className={ic} />, label: "setReminders" }] },
+  { title: "setGroupSounds", rows: [{ id: "mistakes", icon: <AlertOctagon className={ic} />, label: "setMistakes" }, { id: "session", icon: <Mic className={ic} />, label: "setSession" }] },
+  { title: "setGroupDownloads", rows: [{ id: "reciters", icon: <Podcast className={ic} />, label: "setReciters" }, { id: "translation", icon: <Languages className={ic} />, label: "setTranslation" }, { id: "tafsir", icon: <BookText className={ic} />, label: "setTafsir" }, { id: "offline", icon: <Download className={ic} />, label: "offlineTitle" }] },
+  { title: "setGroupPrivacy", rows: [{ id: "data", icon: <Lock className={ic} />, label: "setDataUse" }, { id: "recordings", icon: <MinusCircle className={ic} />, label: "setDeleteRecordings" }] },
+];
+
 /**
- * Settings: theme, speech recognition (always on the device), voice profile, progress backup,
- * offline Quran text and legal texts. No external AI services, no API keys.
+ * Settings (v29: grouped like Tarteel — التجربة, مظهر القرآن, مظهر التطبيق, إشعارات, الأصوات والتفاعل الحسي,
+ * التنزيلات, الخصوصية; a row opens its page, the arrow goes back). Everything stays on the device; no
+ * external AI services, no API keys.
  */
 export function SettingsModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+  const [page, setPage] = useState<SettingsPage | null>(null);
+  useEffect(() => { if (!open) setPage(null); }, [open]);
+  const row = page ? GROUPS.flatMap((g) => g.rows).find((r) => r.id === page) : null;
+  const Back = directionFor(language) === "rtl" ? ChevronRight : ChevronLeft;
+  const Next = directionFor(language) === "rtl" ? ChevronLeft : ChevronRight;
   return (
-    <GoldDialog open={open} onOpenChange={onOpenChange} title={t("settingsTitle")} description={t("settingsSub")} className="max-w-md">
-      <div className="space-y-6">
-        <LanguageSection />
-        <ThemeSection />
-        <SpeechSection />
-        <Section title={t("voiceTitle")}><VoiceProfilePanel /></Section>
-        <BackupSection />
-        <OfflineSection />
-        <LegalSection />
-      </div>
+    <GoldDialog open={open} onOpenChange={onOpenChange} title={row ? t(row.label) : t("settingsTitle")} description={row ? undefined : t("settingsSub")} className="max-w-md">
+      {!page ? (
+        <div className="space-y-4" data-settings-index="">
+          {GROUPS.map((g) => (
+            <section key={g.title} className="overflow-hidden rounded-2xl bg-black/15" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
+              <h3 className="border-b px-4 py-3 text-sm font-semibold" style={{ color: GOLD_LIGHT, borderColor: alpha(GOLD, 0.25) }}>{t(g.title)}</h3>
+              <ul>
+                {g.rows.map((r, i) => (
+                  <li key={r.id} className={cn(i > 0 && "border-t")} style={{ borderColor: alpha(GOLD, 0.12) }}>
+                    <button type="button" onClick={() => setPage(r.id)} data-settings-row={r.id}
+                      className="flex w-full items-center gap-3 px-4 py-3.5 text-start text-sm text-emerald-50 hover:bg-white/5">
+                      <span className="text-amber-200" aria-hidden="true">{r.icon}</span>
+                      <span className="flex-1">{t(r.label)}</span>
+                      <Next className="h-4 w-4 text-emerald-100/50" aria-hidden="true" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-4" data-settings-page={page}>
+          <button type="button" onClick={() => setPage(null)} data-settings-back=""
+            className="flex items-center gap-1 rounded-full px-3 py-1.5 text-sm text-amber-100" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.5)}` }}>
+            <Back className="h-4 w-4" aria-hidden="true" />{t("settingsTitle")}
+          </button>
+          {page === "recitation" && (<><SpeechSection /><Section title={t("voiceTitle")}><VoiceProfilePanel /></Section></>)}
+          {page === "listening" && <ListeningSection />}
+          {page === "mushafLook" && (<><p className="rounded-xl bg-black/15 p-3 text-xs leading-relaxed text-emerald-100/75">{t("setMushafLookDesc")}</p><ThemeSection /></>)}
+          {page === "hidden" && <Toggle k="hiddenFirstWord" label="setHiddenFirstWord" desc="setHiddenFirstWordDesc" />}
+          {page === "language" && <LanguageSection />}
+          {page === "theme" && <ThemeSection />}
+          {page === "reminders" && <ReminderSection />}
+          {page === "mistakes" && <Toggle k="mistakeVibration" label="setMistakeVibration" desc="setMistakeVibrationDesc" />}
+          {page === "session" && (<><Toggle k="autoStopSurahEnd" label="setAutoStop" desc="setAutoStopDesc" /><Toggle k="completionSound" label="setCompletionSound" desc="setCompletionSoundDesc" /></>)}
+          {page === "reciters" && <RecitersDownloadsSection />}
+          {(page === "translation" || page === "tafsir") && <ContentSection kind={page === "tafsir" ? "tf" : "tr"} />}
+          {page === "offline" && <OfflineSection />}
+          {page === "data" && (<><BackupSection /><LegalSection /></>)}
+          {page === "recordings" && <DeleteRecordingsSection />}
+        </div>
+      )}
     </GoldDialog>
+  );
+}
+
+type BoolKey = "mistakeVibration" | "completionSound" | "autoStopSurahEnd" | "hiddenFirstWord";
+function Toggle({ k, label, desc }: { k: BoolKey; label: CopyKey; desc: CopyKey }) {
+  const { t } = useI18n();
+  const s = useSettings();
+  const on = s[k];
+  return (
+    <label className="flex items-start gap-3 rounded-2xl bg-black/15 p-3.5" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }} data-settings-toggle={k}>
+      <span className="flex-1">
+        <span className="block text-sm text-emerald-50">{t(label)}</span>
+        <span className="mt-0.5 block text-xs leading-relaxed text-emerald-100/60">{t(desc)}</span>
+      </span>
+      <input type="checkbox" role="switch" checked={on} onChange={(e) => void updateSettings({ [k]: e.target.checked } as Partial<Record<BoolKey, boolean>>)} className="peer sr-only" />
+      <span aria-hidden="true" className={cn("relative mt-1 h-6 w-11 shrink-0 rounded-full transition", on ? "bg-amber-400" : "bg-white/20")}>
+        <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all", on ? "start-[1.375rem]" : "start-0.5")} />
+      </span>
+    </label>
+  );
+}
+
+function ListeningSection() {
+  const { t, language } = useI18n();
+  const s = useSettings();
+  const [open, setOpen] = useState(false);
+  const r = getReciter(s.reciterId);
+  return (
+    <Section title={t("setListeningSheikh")}>
+      <button type="button" onClick={() => setOpen(true)} className="flex w-full items-center gap-3 rounded-2xl bg-black/15 p-3.5 text-start" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
+        <Play className="h-4 w-4 text-amber-200" aria-hidden="true" />
+        <span className="flex-1 text-sm text-emerald-50">{language === "ar" ? r.nameArabic : r.nameEnglish}</span>
+        <span className="text-xs text-amber-200">{t("setChange")}</span>
+      </button>
+      <p className="text-xs leading-relaxed text-emerald-100/60">{t("setListeningDesc")}</p>
+      <ReciterSelectModal open={open} onOpenChange={setOpen} selectedId={s.reciterId} surah={1} onSelect={(id) => void updateSettings({ reciterId: id })} />
+    </Section>
+  );
+}
+
+function ReminderSection() {
+  const { t } = useI18n();
+  const s = useSettings();
+  const native = reminderSupported();
+  const [denied, setDenied] = useState(false);
+  const set = async (on: boolean, time = s.dailyReminderTime) => {
+    await updateSettings({ dailyReminder: on, dailyReminderTime: time });
+    if (on && native) setDenied((await notificationPermission(false)) === "denied");
+  };
+  return (
+    <div className="space-y-3">
+      <label className="flex items-center gap-3 rounded-2xl bg-black/15 p-3.5" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }} data-settings-toggle="dailyReminder">
+        <span className="flex-1 text-sm text-emerald-50">{t("reminderToggle")}</span>
+        <input type="checkbox" role="switch" checked={s.dailyReminder} disabled={!native} onChange={(e) => void set(e.target.checked)} className="sr-only" />
+        <span aria-hidden="true" className={cn("relative h-6 w-11 shrink-0 rounded-full transition", s.dailyReminder ? "bg-amber-400" : "bg-white/20", !native && "opacity-40")}>
+          <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all", s.dailyReminder ? "start-[1.375rem]" : "start-0.5")} />
+        </span>
+      </label>
+      {s.dailyReminder && native && (
+        <label className="flex items-center gap-3 px-1 text-sm text-emerald-100/80">{t("reminderTime")}
+          <input type="time" value={s.dailyReminderTime} onChange={(e) => void set(true, e.target.value)}
+            className="h-10 rounded-xl border border-amber-400/40 bg-[var(--mf-page-deep)] px-2 text-emerald-50" />
+        </label>
+      )}
+      {!native && <p className="text-xs leading-relaxed text-amber-100/80">{t("reminderAppOnly")}</p>}
+      {denied && <p className="text-xs leading-relaxed text-red-200">{t("reminderDenied")}</p>}
+    </div>
+  );
+}
+
+function RecitersDownloadsSection() {
+  const { t, language } = useI18n();
+  useSurahDownloads();
+  const mb = totalDownloadedBytes() / 1e6;
+  return (
+    <div className="space-y-2 rounded-2xl bg-black/15 p-3.5 text-sm text-emerald-50" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
+      <p>{t("setRecitersSize").replace("{mb}", mb.toLocaleString(language === "ar" ? "ar-EG" : language, { maximumFractionDigits: 1 }))}</p>
+      <p className="text-xs leading-relaxed text-emerald-100/60">{t("setRecitersDesc")}</p>
+    </div>
+  );
+}
+
+function ContentSection({ kind }: { kind: "tr" | "tf" }) {
+  const { t, language } = useI18n();
+  const s = useSettings();
+  const [open, setOpen] = useState(false);
+  const current = kind === "tf" ? getTafsir(s.tafsirs[language], language).option : getTranslation(s.translations[language], language);
+  return (
+    <div className="space-y-2">
+      <button type="button" onClick={() => setOpen(true)} className="flex w-full items-center gap-3 rounded-2xl bg-black/15 p-3.5 text-start" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
+        {kind === "tf" ? <BookText className="h-4 w-4 text-amber-200" aria-hidden="true" /> : <Languages className="h-4 w-4 text-amber-200" aria-hidden="true" />}
+        <span className="flex-1 text-sm text-emerald-50">{current.name}</span>
+        <span className="text-xs text-amber-200">{t("setChange")}</span>
+      </button>
+      <ContentSelectModal kind={kind} open={open} selectedId={current.id} onClose={() => setOpen(false)}
+        onSelect={(id) => void updateSettings(kind === "tf" ? { tafsirs: { ...s.tafsirs, [language]: id } } : { translations: { ...s.translations, [language]: id } })} />
+    </div>
+  );
+}
+
+function DeleteRecordingsSection() {
+  const { t, language } = useI18n();
+  const list = useRecordings();
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const n = list.length;
+  return (
+    <div className="space-y-3 rounded-2xl border border-red-300/30 bg-red-950/20 p-3.5">
+      <p className="text-xs leading-relaxed text-emerald-100/75">{t("setDeleteRecordingsDesc").replace("{n}", language === "ar" ? String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)] ?? d) : String(n))}</p>
+      {!confirm ? (
+        <button type="button" disabled={!n} onClick={() => setConfirm(true)} data-settings-delete-recordings=""
+          className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm text-red-100 hover:bg-red-900/40 disabled:opacity-50" style={{ boxShadow: "inset 0 0 0 1px rgba(252,165,165,.45)" }}>
+          <Trash2 className="h-4 w-4" />{t("setDeleteRecordings")}
+        </button>
+      ) : (
+        <div className="grid grid-cols-2 gap-2" role="alert">
+          <button type="button" disabled={busy} onClick={() => setConfirm(false)} className="rounded-xl px-3 py-2.5 text-sm text-emerald-50 hover:bg-white/10" style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,.25)" }}>{t("cancel")}</button>
+          <button type="button" disabled={busy} onClick={() => { setBusy(true); void deleteAllRecordings().finally(() => { setBusy(false); setConfirm(false); }); }}
+            className="flex items-center justify-center gap-2 rounded-xl bg-red-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-60">
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}{t("deleteAllYes")}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

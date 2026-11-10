@@ -6,9 +6,22 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -20,6 +33,15 @@ import com.getcapacitor.annotation.CapacitorPlugin;
  * media-playback foreground service (BackgroundAudioService) keeps the app awake (wake + Wi-Fi lock) and
  * runs a MediaSession — lock-screen player with surah, Sheikh, artwork, progress, play / pause,
  * previous / next and seek. The audio itself stays in the WebView (src/lib/audioPlayback.ts).
+ *
+ * v29 additions:
+ *  - `download`: surah files of the reciters library are fetched natively (HttpURLConnection on a worker
+ *    thread, redirects across http/https followed, 15 s connect / 25 s read timeout) straight into the app's
+ *    files folder, with "download" progress events {id, received, total} — the WebView / file-transfer path
+ *    could hang at «0.0 MB» on some phones.
+ *  - `playerLoad` / `playerControl` / `playerMarks`: the reciters library plays natively (MediaPlayer inside
+ *    the foreground service), so a surah keeps playing when the app is minimised or the screen is off;
+ *    "player" events report state and position back to the web layer.
  * Installed into the generated android/ project by scripts/native-permissions.mjs.
  */
 @CapacitorPlugin(name = "BackgroundAudio")
@@ -85,6 +107,151 @@ public class BackgroundAudioPlugin extends Plugin {
         } catch (Exception e) {
             call.reject("Could not start background audio: " + e.getMessage());
         }
+    }
+
+    /** Native player state → web layer (state, index, position, duration in seconds). */
+    static void emitPlayer(String state, int index, double position, double duration) {
+        BackgroundAudioPlugin p = instance;
+        if (p == null) return;
+        JSObject data = new JSObject();
+        data.put("state", state);
+        data.put("index", index);
+        data.put("position", position);
+        data.put("duration", duration);
+        p.notifyListeners("player", data, true);
+    }
+
+    /* ───────────── native downloads ───────────── */
+
+    private final ExecutorService downloads = Executors.newFixedThreadPool(3);
+    private final Map<String, Boolean> cancelled = new ConcurrentHashMap<>();
+
+    @PluginMethod
+    public void download(PluginCall call) {
+        final String id = call.getString("id", "");
+        final String url = call.getString("url", "");
+        final String path = call.getString("path", "");
+        if (url.isEmpty() || path.isEmpty() || path.contains("..")) { call.reject("bad arguments"); return; }
+        final File target = new File(getContext().getFilesDir(), path);
+        cancelled.remove(id);
+        downloads.execute(() -> {
+            File part = new File(target.getPath() + ".part");
+            HttpURLConnection conn = null;
+            try {
+                File dir = target.getParentFile();
+                if (dir != null && !dir.exists() && !dir.mkdirs() && !dir.exists()) throw new Exception("cannot create folder");
+                conn = open(url, 0);
+                long total = conn.getContentLength();
+                long received = 0, lastEmit = 0;
+                try (InputStream in = conn.getInputStream(); OutputStream out = new FileOutputStream(part)) {
+                    byte[] buf = new byte[64 * 1024];
+                    int n;
+                    emitDownload(id, 0, total);
+                    while ((n = in.read(buf)) != -1) {
+                        if (Boolean.TRUE.equals(cancelled.get(id))) throw new InterruptedException("cancelled");
+                        out.write(buf, 0, n);
+                        received += n;
+                        long now = System.currentTimeMillis();
+                        if (now - lastEmit > 250) { lastEmit = now; emitDownload(id, received, total); }
+                    }
+                }
+                if (received == 0) throw new Exception("empty download");
+                if (total > 0 && received < total) throw new Exception("incomplete download");
+                if (target.exists() && !target.delete()) throw new Exception("cannot replace file");
+                if (!part.renameTo(target)) throw new Exception("cannot save file");
+                emitDownload(id, received, total > 0 ? total : received);
+                JSObject res = new JSObject();
+                res.put("bytes", received);
+                call.resolve(res);
+            } catch (InterruptedException e) {
+                part.delete();
+                call.reject("cancelled");
+            } catch (Exception e) {
+                part.delete();
+                call.reject(e.getMessage() != null ? e.getMessage() : "download failed");
+            } finally {
+                if (conn != null) conn.disconnect();
+                cancelled.remove(id);
+            }
+        });
+    }
+
+    /** Opens the URL; follows up to 5 redirects, also between http and https (HttpURLConnection does not). */
+    private static HttpURLConnection open(String url, int hops) throws Exception {
+        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+        c.setConnectTimeout(15000);
+        c.setReadTimeout(25000);
+        c.setInstanceFollowRedirects(true);
+        c.setRequestProperty("User-Agent", "QuranMuallem/1.8 (Android)");
+        int code = c.getResponseCode();
+        if (code >= 300 && code < 400 && hops < 5) {
+            String next = c.getHeaderField("Location");
+            c.disconnect();
+            if (next == null) throw new Exception("HTTP " + code);
+            return open(new URL(new URL(url), next).toString(), hops + 1);
+        }
+        if (code != 200) { c.disconnect(); throw new Exception("HTTP " + code); }
+        return c;
+    }
+
+    private void emitDownload(String id, long received, long total) {
+        JSObject data = new JSObject();
+        data.put("id", id);
+        data.put("received", received);
+        data.put("total", Math.max(0, total));
+        notifyListeners("download", data, false);
+    }
+
+    @PluginMethod
+    public void cancelDownload(PluginCall call) {
+        cancelled.put(call.getString("id", ""), Boolean.TRUE);
+        call.resolve();
+    }
+
+    /* ───────────── native player (reciters library) ───────────── */
+
+    @PluginMethod
+    public void playerLoad(PluginCall call) {
+        JSArray items = call.getArray("items");
+        if (items == null || items.length() == 0) { call.reject("no items"); return; }
+        int index = call.getInt("index", 0);
+        long startMs = Math.round(call.getDouble("startMs", 0.0));
+        BackgroundAudioService.pendingLoad = new BackgroundAudioService.Load(items.toString(), index, startMs);
+        BackgroundAudioService running = BackgroundAudioService.instance;
+        if (running != null) { running.takePendingLoad(); call.resolve(); return; }
+        Context ctx = getContext();
+        if (Build.VERSION.SDK_INT >= 33 && !askedForNotifications && getActivity() != null
+                && ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            askedForNotifications = true;
+            ActivityCompat.requestPermissions(getActivity(), new String[] { Manifest.permission.POST_NOTIFICATIONS }, 7302);
+        }
+        try {
+            ContextCompat.startForegroundService(ctx, new Intent(ctx, BackgroundAudioService.class).setAction(BackgroundAudioService.ACTION_LOAD));
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("Could not start the player: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void playerControl(PluginCall call) {
+        BackgroundAudioService s = BackgroundAudioService.instance;
+        if (s == null) { call.resolve(); return; }
+        String action = call.getString("action", "");
+        s.control(action, Math.round(call.getDouble("ms", 0.0)), call.getInt("index", -1));
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void playerMarks(PluginCall call) {
+        BackgroundAudioService s = BackgroundAudioService.instance;
+        JSArray marks = call.getArray("marks");
+        if (s != null && marks != null) {
+            long[] m = new long[marks.length()];
+            for (int i = 0; i < m.length; i++) m[i] = marks.optLong(i);
+            s.setMarks(call.getInt("index", -1), m);
+        }
+        call.resolve();
     }
 
     @PluginMethod

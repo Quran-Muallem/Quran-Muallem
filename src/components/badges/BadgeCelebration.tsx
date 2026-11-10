@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { BadgeMedal } from "@/components/badges/BadgeMedal";
 import { GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import { onBadgeEarned, type BadgeEarned } from "@/lib/badges";
+import { useMicActive } from "@/lib/recordingActivity";
 import { successHaptic } from "@/lib/haptics";
 import { getSurahMeta, toArabicDigits } from "@/lib/quranService";
 import { surahBadge } from "@/lib/surahBadges";
@@ -9,15 +10,20 @@ import { directionFor, useI18n } from "@/lib/i18n";
 
 const SPARKS = Array.from({ length: 14 }, (_, i) => i);
 
-/** Full-screen celebration when a surah badge is earned (gold first if several arrive at once). */
+/**
+ * Full-screen celebration when a surah badge is earned (gold first if several arrive at once). Badges
+ * earned while the microphone is on are only queued; they show one after another once recording stops.
+ */
 export function BadgeCelebration({ onShowAll }: { onShowAll: (surah: number) => void }) {
   const { t, language } = useI18n();
   const [queue, setQueue] = useState<BadgeEarned[]>([]);
   useEffect(() => onBadgeEarned((earned) => {
     setQueue((q) => [...q, ...earned].sort((a, b) => (a.tier === b.tier ? 0 : a.tier === "gold" ? -1 : 1)));
-    void successHaptic();
   }), []);
-  const current = queue[0];
+  const recording = useMicActive();
+  const current = recording ? undefined : queue[0];
+  const shownKey = current ? `${current.surah}-${current.tier}` : "";
+  useEffect(() => { if (shownKey) void successHaptic(); }, [shownKey]);
   if (!current) return null;
   const more = queue.length - 1;
   const theme = surahBadge(current.surah);
@@ -27,7 +33,7 @@ export function BadgeCelebration({ onShowAll }: { onShowAll: (surah: number) => 
   const num = (n: number) => (language === "ar" ? toArabicDigits(n) : String(n));
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-6" role="dialog" aria-modal="true" aria-live="polite"
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-6" data-badge-celebration={shownKey} role="dialog" aria-modal="true" aria-live="polite"
       dir={directionFor(language)} lang={language} aria-label={t(gold ? "badgeNewGold" : "badgeNewSilver")}>
       <button type="button" aria-label={t("close")} onClick={close} className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300" />
       <div key={`${current.surah}-${current.tier}`} className="relative w-full max-w-xs text-center animate-in fade-in zoom-in-90 duration-500">

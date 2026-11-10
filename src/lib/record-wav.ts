@@ -226,7 +226,7 @@ export async function recordWav(onLimit: () => void, onInterrupted?: () => void,
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
   });
-  const keeper = keepAudio ? startKeeper(stream) : null;
+  let keeper = keepAudio ? startKeeper(stream) : null;
   let context: AudioContext | undefined;
   try {
     context = new AudioContext();
@@ -341,6 +341,20 @@ export async function recordWav(onLimit: () => void, onInterrupted?: () => void,
       },
       /** Stops and returns the whole recording as a WAV file. */
       stop(): File { return toFile(this.stopSamples()); },
+      /**
+       * Without stopping: closes the kept copy recorded so far (one finished page / surah) and starts a new
+       * one on the same microphone stream — the recognizer's samples go on without a gap. `fallback` is used
+       * when the device has no compressed recorder (then the samples are kept as WAV).
+       */
+      async rotateKept(fallback?: Float32Array): Promise<Blob | null> {
+        if (!keepAudio || stopped) return null;
+        const old = keeper;
+        keeper = startKeeper(stream);
+        if (paused) keeper?.pause();
+        old?.stop();
+        const blob = old ? await old.done : null;
+        return blob ?? (fallback?.length ? encodeWav([fallback], outRate) : null);
+      },
     };
   } catch (error) {
     keeper?.stop();

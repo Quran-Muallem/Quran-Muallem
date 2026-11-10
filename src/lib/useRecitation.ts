@@ -122,6 +122,10 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
     elapsed: whisper.elapsed,
     /** The last finished recording, once (null with the browser recognizer, which gives no audio). */
     takeAudio: whisper.takeAudio,
+    /** While recording: the audio since the previous cut, as its own recording (page / surah parts). */
+    cut: whisper.cut,
+    /** Seconds of voice in the last `seconds` (for the 2-second silence check at a surah end). */
+    voicedLast: whisper.voicedLast,
     supportChecked: speech.isSupportChecked,
   };
 }

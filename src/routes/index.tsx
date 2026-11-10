@@ -15,6 +15,7 @@ import { KhatmaView } from "@/components/KhatmaView";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { startAdhanService } from "@/lib/AdhanNotificationService";
+import { syncDailyReminder } from "@/lib/dailyReminder";
 import { AdhanAlert } from "@/components/hub/AdhanAlert";
 import { LanguageContext, directionFor, translate, useI18n, type CopyKey, type Language } from "@/lib/i18n";
 import { loadLanguage } from "@/i18n";
@@ -24,6 +25,8 @@ import { RecitationProvider, recitationStore, unifiedMode, useRecitationStore, u
 import { isJudged, passageTokenKeys } from "@/lib/wordColors";
 import { QuranSearchModal, type SearchTarget } from "@/components/QuranSearchModal";
 import { passageFinished, practiceWordResults, tally } from "@/lib/surahCompletion";
+import { SURAH_END_SILENCE_MS } from "@/lib/recordingParts";
+import { setMicActive } from "@/lib/recordingActivity";
 import { WelcomeModal } from "@/components/WelcomeModal";
 import { SplashScreen } from "@/components/SplashScreen";
 import { SettingsModal } from "@/components/SettingsModal";
@@ -42,7 +45,7 @@ import { WhisperModelStatus } from "@/components/WhisperModelStatus";
 import { GOLD_GRADIENT, GOLD_LIGHT } from "@/components/ornaments";
 import { useAuth } from "@/lib/useAuth";
 import { type UserSession } from "@/lib/authService";
-import { DEFAULT_SETTINGS, applyTheme, updateSettings, useSettings } from "@/lib/settings";
+import { DEFAULT_SETTINGS, applyTheme, getSettings, updateSettings, useSettings } from "@/lib/settings";
 import { loadProgress, recordAttempt } from "@/lib/progressStorage";
 import { accuracyOf, recordingForRange, saveRecording, useRecordings } from "@/lib/audioStorage";
 import { RecitationPlayerBar } from "@/components/RecitationPlayerBar";
@@ -85,6 +88,11 @@ export function App() {
   useEffect(() => { void loadLanguage(language); }, [language]);
   // Adhan notifications stay planned (7 days ahead) without opening the prayer screen.
   useEffect(() => { startAdhanService(language); }, [language]);
+  // «تذكيرات»: the daily wird reminder (app only), re-planned when it or the language changes.
+  useEffect(() => {
+    if (settings === DEFAULT_SETTINGS) return;
+    void syncDailyReminder(settings.dailyReminder, settings.dailyReminderTime, { title: translate(language, "reminderTitle"), body: translate(language, "reminderBody") }).catch(() => {});
+  }, [settings.dailyReminder, settings.dailyReminderTime, language]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { document.documentElement.lang = language; document.documentElement.dir = directionFor(language); }, [language]);
   // Apply the theme once the saved settings are loaded (until then app-main.tsx has set the saved one).
   useEffect(() => { if (settings !== DEFAULT_SETTINGS) applyTheme(settings.theme); }, [settings]);
@@ -476,14 +484,41 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
     for (let i = words.length - 1; i >= 0; i--) if (normalizeArabic(words[i] ?? "")) return i;
     return -1;
   }, [ayat, to, count]);
-  useEffect(() => { if (listening) setSurahDone(false); }, [listening]);
+  useEffect(() => { if (listening) setSurahDone(false); setMicActive(listening); }, [listening]);
+  useEffect(() => () => setMicActive(false), []);
+  // v29: at the surah end the microphone stays on for 2 s. Silence → the recording stops by itself (then
+  // the completion sound and any new badge). The reader goes on reciting → this surah is saved as its own
+  // recording and the passage moves on to the next surah, recording without a break.
+  const silenceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { if (!listening && silenceTimer.current) { clearTimeout(silenceTimer.current); silenceTimer.current = null; } }, [listening]);
   useEffect(() => {
     if (!listening || surahDone || !passageFinished(match.statuses, lastToken)) return;
     setSurahDone(true);
-    toggleMicRef.current();
-    // Same engine call as the Mushaf: vibration + chime, then silver/gold if the whole surah is done.
+    // Same engine call as the Mushaf: silver/gold if the whole surah is done (sound once the mic is off).
     void store.finishSurah(unifiedMode(target.mode), target.surahId, practiceWordResults(target.surahId, ayat, match.statuses, mushafWords ? (s, a) => mushafWords.words(s, a) : null, unifiedMode(target.mode), hints));
+    if (silenceTimer.current) clearTimeout(silenceTimer.current);
+    if (!useWhisper) { toggleMicRef.current(); return; } // browser recognizer: no audio level to wait on
+    silenceTimer.current = setTimeout(() => {
+      silenceTimer.current = null;
+      if (!whisperRef.current.recording) return;
+      if (whisperRef.current.voicedLast(SURAH_END_SILENCE_MS / 1000 - 0.2) < 0.3 || target.surahId >= 114) { if (getSettings().autoStopSurahEnd) toggleMicRef.current(); return; }
+      continueNextSurah();
+    }, SURAH_END_SILENCE_MS);
   }, [listening, match.statuses, lastToken, surahDone]); // eslint-disable-line react-hooks/exhaustive-deps
+  const whisperRef = useRef(whisper);
+  whisperRef.current = whisper;
+  /** The reader went on past the surah end: save this surah, then judge the next surah from here on. */
+  const continueNextSurah = () => {
+    const { match: m, ayat: a, from: f, to: tt } = latest.current;
+    savePassage(m, a, f, tt, whisper.cut);
+    const kind = useWhisper && textKind === "phonemes" ? "phonemes" : "text";
+    const full = fullTranscript;
+    setBase({ kind, pos: kind === "phonemes" ? full.length : (full.trim() ? full.trim().split(/\s+/).length : 0) });
+    autoJump.current = Date.now() + 8000;
+    setSurahDone(false);
+    onTargetChange({ ...target, surahId: target.surahId + 1, fromAyah: 1, toAyah: MAX_RANGE });
+    setDetected({ surah: target.surahId + 1, ayah: 1 });
+  };
 
   // Save the attempt to the progress tracker when a recitation ends.
   const session = useRef(false);
@@ -500,8 +535,19 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
     const timer = setTimeout(() => {
       session.current = false;
       const { match: m, ayat: a, from: f, to: tt } = latest.current;
-      // Keep the recording of this passage on the device (replaces an older one of the same verses).
-      void whisper.takeAudio().then((kept) => { if (kept) void saveRecording({ surah: target.surahId, fromAyah: f, toAyah: tt, ...kept, accuracy: accuracyOf(tally(m.statuses)) ?? undefined, mode: target.mode === "MEMORIZATION_MODE" ? "memorization" : "reading" }); });
+      savePassage(m, a, f, tt, whisper.takeAudio);
+    }, useWhisper ? 0 : 900);
+    return () => clearTimeout(timer);
+  }, [listening, processing, target.surahId, target.mode, useWhisper]);
+  /**
+   * Saves a recited passage: its own recording (`take`: the rest after the stop, or a cut while the
+   * microphone goes on into the next surah), progress, word colours for both views.
+   */
+  function savePassage(m: typeof match, a: Ayah[], f: number, tt: number, take: () => Promise<{ blob: Blob; seconds: number } | null>) {
+      // Only the verses actually reached (judged words), so a part never claims verses it did not cover.
+      let reachedTo = f;
+      { let o = 0; a.forEach((x) => { const n = x.text.split(" ").length; if (m.statuses.slice(o, o + n).some((st) => st && st !== "PENDING")) reachedTo = x.number; o += n; }); }
+      void take().then((kept) => { if (kept) void saveRecording({ surah: target.surahId, fromAyah: f, toAyah: Math.max(f, Math.min(tt, reachedTo)), ...kept, accuracy: accuracyOf(tally(m.statuses)) ?? undefined, mode: target.mode === "MEMORIZATION_MODE" ? "memorization" : "reading" }); });
       const mw = latestMushaf.current;
       store.recordWords(unifiedMode(target.mode), practiceWordResults(target.surahId, a, m.statuses, mw ? (s, x) => mw.words(s, x) : null, unifiedMode(target.mode), latestHints.current));
       // Same colours in the Mushaf; this passage becomes the one the Mushaf opens at.
@@ -518,9 +564,7 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
       void recordAttempt({ surahId: target.surahId, mode: target.mode, results });
       const words = results.reduce((s, r) => s + r.totalWords, 0);
       setSaved({ count: results.length, accuracy: Math.round(results.reduce((s, r) => s + r.accuracy * r.totalWords, 0) / Math.max(1, words)) });
-    }, useWhisper ? 0 : 900);
-    return () => clearTimeout(timer);
-  }, [listening, processing, target.surahId, target.mode, useWhisper]);
+  }
 
   // Stop automatically once the whole passage was recited: browser recognizer only, on final text after a
   // short calm. Whisper (live results can be wrong) never stops by itself.

@@ -21,7 +21,7 @@ import { createSignal, idb } from "@/lib/storage";
 import { applyRecitation, extendRange, parseColors, rangeOf, serializeColors, type ActiveRange, type RecitedWord, type WordColorMap } from "@/lib/wordColors";
 import type { LiveStatus } from "@/lib/quranMatcher";
 import { completeSurah, recordWords, type BadgeEarned, type RecitationMode, type WordResult } from "@/lib/badges";
-import { celebrateSurah } from "@/lib/surahCompletion";
+import { celebrateWhenStopped } from "@/lib/recordingActivity";
 export { wordDone } from "@/lib/surahCompletion";
 
 export type { RecitationMode, WordResult } from "@/lib/badges";
@@ -144,12 +144,13 @@ export function createRecitationStore({ persist = true }: { persist?: boolean } 
     recordWords(mode: RecitationMode, words: readonly WordResult[]) { void recordWords(mode, words); },
     /**
      * The last word of a surah was completed (strict end check done by the view). Both views call
-     * this: success vibration + chime, then the silver (READING) or gold (MEMORIZATION) badge if
+     * this: success vibration + chime (once the microphone is off), then the silver (READING) or gold (MEMORIZATION) badge if
      * every word of the surah has now been completed in that mode.
      */
     finishSurah(mode: RecitationMode, surah: number, words: readonly WordResult[]): Promise<BadgeEarned | null> {
       store.surahDone(surah);
-      celebrateSurah();
+      // v29: the sound comes when the recording ends (2 s of silence after the surah, or stop) — never mid-recitation.
+      celebrateWhenStopped();
       return completeSurah(mode, surah, words);
     },
   };

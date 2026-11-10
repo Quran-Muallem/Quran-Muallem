@@ -22,14 +22,27 @@ import { platform } from "@/lib/storage";
 
 type NativeAction = { action: "toggle" | "play" | "pause" | "next" | "previous" | "stop" | "seekto"; seekTime?: number };
 type ListenerHandle = { remove: () => Promise<void> };
-interface BackgroundAudioPlugin {
+/** v29 native player of the Android app: state reported by the service (seconds). */
+export type NativePlayerEvent = { state: "loading" | "playing" | "paused" | "ended" | "stopped" | "error"; index: number; position: number; duration: number };
+export type NativePlayerItem = { url: string; title: string; artist: string; album: string };
+export type NativeDownloadEvent = { id: string; received: number; total: number };
+export interface BackgroundAudioPlugin {
   update(options: { title: string; artist: string; album: string; playing: boolean; position: number; duration: number; canPrev: boolean; canNext: boolean }): Promise<void>;
   stop(): Promise<void>;
+  /** v29: native download into the app's files folder (`path` relative to it); rejects on failure / cancel. */
+  download(options: { id: string; url: string; path: string }): Promise<{ bytes: number }>;
+  cancelDownload(options: { id: string }): Promise<void>;
+  /** v29: native playlist player (MediaPlayer in the foreground service). */
+  playerLoad(options: { items: NativePlayerItem[]; index: number; startMs: number }): Promise<void>;
+  playerControl(options: { action: "pause" | "resume" | "stop" | "seek" | "next" | "previous" | "index"; ms?: number; index?: number }): Promise<void>;
+  playerMarks(options: { index: number; marks: number[] }): Promise<void>;
   addListener(event: "action", cb: (a: NativeAction) => void): Promise<ListenerHandle>;
+  addListener(event: "player", cb: (e: NativePlayerEvent) => void): Promise<ListenerHandle>;
+  addListener(event: "download", cb: (e: NativeDownloadEvent) => void): Promise<ListenerHandle>;
 }
 /** The native plugin (Android app only); loaded on first use. */
 let plugin: Promise<BackgroundAudioPlugin | null> | null = null;
-function backgroundAudio(): Promise<BackgroundAudioPlugin | null> {
+export function backgroundAudio(): Promise<BackgroundAudioPlugin | null> {
   plugin ??= platform() !== "android" ? Promise.resolve(null) : import("@capacitor/core")
     .then(({ Capacitor, registerPlugin }) => (Capacitor.isPluginAvailable("BackgroundAudio") ? registerPlugin<BackgroundAudioPlugin>("BackgroundAudio") : null))
     .catch(() => null);
@@ -165,6 +178,16 @@ export function updateSession(info: SessionInfo, playing: boolean, h: SessionHan
     bindWebHandlers();
     trackProgress(null, playing);
   }).catch(() => {});
+}
+
+/**
+ * The native player (reciters library) takes over the service: forget the web session (handlers, progress
+ * reports) without stopping the service — a report from it would end the native playlist.
+ */
+export function detachWebSession() {
+  handlers = null;
+  current = null;
+  if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
 }
 
 /** The recitation ended or was stopped: remove the lock-screen controls and the notification. */

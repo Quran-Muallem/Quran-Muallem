@@ -30,6 +30,8 @@ export type Mushaf = {
   surahStartPage(surah: number): number;
   juzOfPage(n: number): number;
   juzStartPage(juz: number): number;
+  /** First verse of a juz (1–30): [surah, ayah]. */
+  juzStartVerse(juz: number): [number, number];
   /** Uthmani words of a verse (1-based word index = array index + 1). */
   words(surah: number, ayah: number): string[];
   versesCount(surah: number): number;
@@ -85,6 +87,7 @@ export function buildMushaf(layout: Layout, data: Words): Mushaf {
     surahStartPage: (s) => surahStart[s] ?? 1,
     juzOfPage: (n) => { let j = 1; juzPages.forEach((p, i) => { if (p <= n) j = i + 1; }); return j; },
     juzStartPage: (j) => juzPages[j - 1] ?? 1,
+    juzStartVerse: (j) => (layout.juz[j - 1] ?? [1, 1]) as [number, number],
     words: (s, a) => data.surahs[s - 1]?.[a - 1] ?? [],
     versesCount: (s) => data.surahs[s - 1]?.length ?? 0,
     pageVerses: (n) => {

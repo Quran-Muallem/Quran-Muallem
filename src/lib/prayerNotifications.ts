@@ -19,7 +19,7 @@ import type { Language } from "@/i18n";
 
 type LocalNotificationsPlugin = typeof import("@capacitor/local-notifications").LocalNotifications;
 let plugin: Promise<LocalNotificationsPlugin | null> | null = null;
-function localNotifications(): Promise<LocalNotificationsPlugin | null> {
+export function localNotifications(): Promise<LocalNotificationsPlugin | null> {
   plugin ??= !isNativePlatform() ? Promise.resolve(null) : Promise.all([import("@capacitor/core"), import("@capacitor/local-notifications")])
     .then(([{ Capacitor }, m]) => (Capacitor.isPluginAvailable("LocalNotifications") ? m.LocalNotifications : null))
     .catch(() => null);

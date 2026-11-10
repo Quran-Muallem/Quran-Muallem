@@ -29,6 +29,19 @@ export type AppSettings = {
   translations: Partial<Record<Language, string>>;
   /** Chosen tafsir per app language (ids of `TAFSIRS`). */
   tafsirs: Partial<Record<Language, string>>;
+  /** v29 settings («الأصوات والتفاعل الحسي», «الآيات المخفية», «تذكيرات»). */
+  /** Light vibration when a word turns red / orange while reciting. */
+  mistakeVibration: boolean;
+  /** Vibration + chime when a surah is completed (after the recording ends). */
+  completionSound: boolean;
+  /** Stop the recording by itself after 2 s of silence at a surah end (else only by the stop button). */
+  autoStopSurahEnd: boolean;
+  /** Memorization mode: keep the first word of every verse visible as a cue. */
+  hiddenFirstWord: boolean;
+  /** Daily reminder for the wird («تذكير بالمداومة على الورد اليومي»), app only. */
+  dailyReminder: boolean;
+  /** Its time, "HH:MM" (24 h). */
+  dailyReminderTime: string;
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -41,6 +54,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
   recognizer: "zipformer",
   translations: {},
   tafsirs: {},
+  mistakeVibration: true,
+  completionSound: true,
+  autoStopSurahEnd: true,
+  hiddenFirstWord: false,
+  dailyReminder: false,
+  dailyReminderTime: "20:00",
 };
 
 const KEY = "hifz.settings";
@@ -67,6 +86,8 @@ export function cleanSettings(s: AppSettings & Record<string, unknown>): AppSett
   if (out.recognizer !== "zipformer" && out.recognizer !== "whisper") out.recognizer = "zipformer";
   if (!out.translations || typeof out.translations !== "object") out.translations = {};
   if (!out.tafsirs || typeof out.tafsirs !== "object") out.tafsirs = {};
+  for (const k of ["mistakeVibration", "completionSound", "autoStopSurahEnd", "hiddenFirstWord", "dailyReminder"] as const) if (typeof out[k] !== "boolean") out[k] = DEFAULT_SETTINGS[k];
+  if (typeof out.dailyReminderTime !== "string" || !/^\d{2}:\d{2}$/.test(out.dailyReminderTime)) out.dailyReminderTime = DEFAULT_SETTINGS.dailyReminderTime;
   delete out["chatProvider"]; delete out["chatModel"];
   return out;
 }

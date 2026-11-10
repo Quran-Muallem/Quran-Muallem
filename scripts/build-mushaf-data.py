@@ -35,6 +35,18 @@ for s in range(1, 115):
         sv.append([ws[i] for i in range(1, len(ws) + 1)])
     out.append(sv)
 assert sum(len(s) for s in out) == 6236
+# v29 corrections, checked against Quran.com's Uthmani text (api/v4/quran/verses/uthmani):
+#  - 84:21's verse-end marker sat after its 2nd word («وإذا قرئ ۝٢١ عليهم القرآن…»): it ends after word 6;
+#  - 11:13 «ٱفْتَرَىٰهُ» and 80:25 «أَنَّا» (wrong alif forms), 27:26 a stray RTL mark after «۩».
+for pg in pages:
+    for ln in pg:
+        if ln[0] == 2 and [84, 21, 0, 0, 1] in ln[1] and [84, 21, 1, 2, 0] in ln[1]:
+            ln[1] = [x for x in ln[1] if x != [84, 21, 0, 0, 1]]
+        if ln[0] == 2:
+            ln[1] = [[84, 21, 3, 6, 1] if x == [84, 21, 3, 6, 0] else x for x in ln[1]]
+out[10][12][2] = "ٱفْتَرَىٰهُ ۖ"
+out[79][24][0] = "أَنَّا"
+out[26][25][7] = out[26][25][7].replace("\u200f", "")
 json.dump({"v": 1, "source": "Madani Mushaf (QPC V2 layout, 604 pages x 15 lines) via github.com/zonetecde/mushaf-layout, text from Quran.com", "juz": [list(j) for j in JUZ], "pages": pages}, open("public/mushaf/layout.json", "w"), ensure_ascii=False, separators=(",", ":"))
 json.dump({"v": 1, "source": "Uthmani Hafs text per word (Quran.com via github.com/zonetecde/mushaf-layout)", "surahs": out}, open("public/mushaf/words.json", "w"), ensure_ascii=False, separators=(",", ":"))
 print("ok: 604 pages, 6236 verses")

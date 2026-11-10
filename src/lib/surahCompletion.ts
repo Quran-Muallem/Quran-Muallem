@@ -5,6 +5,7 @@
 import type { LiveStatus } from "@/lib/quranMatcher";
 import { successHaptic } from "@/lib/haptics";
 import { playCompletionChime } from "@/lib/chime";
+import { getSettings } from "@/lib/settings";
 import { normalizeArabic } from "@/lib/quranMatcher";
 import type { RecitationMode, WordResult } from "@/lib/badges";
 
@@ -113,6 +114,7 @@ export function tally(statuses: readonly LiveStatus[]): { correct: number; near:
 
 /** Success feedback: vibration + chime. Never throws, never blocks the caller. */
 export function celebrateSurah(): void {
+  if (!getSettings().completionSound) return;
   void successHaptic().catch(() => {});
   void playCompletionChime().catch(() => {});
 }

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { mistakeHaptic } from "@/lib/haptics";
+import { getSettings } from "@/lib/settings";
 import type { LiveStatus } from "@/lib/quranMatcher";
 
 /**
@@ -16,7 +17,7 @@ export function useMistakeHaptics(statuses: readonly LiveStatus[], active: boole
     statuses.forEach((s, i) => {
       if ((s === "ERROR" || s === "WARNING") && !seen.current.has(i)) { seen.current.add(i); fresh = true; }
     });
-    if (fresh) mistakeHaptic();
+    if (fresh && getSettings().mistakeVibration) mistakeHaptic();
   }, [statuses, active]);
   /** Forget what was seen (e.g. after an automatic page turn the indexes start again). */
   return () => { seen.current = new Set(); };

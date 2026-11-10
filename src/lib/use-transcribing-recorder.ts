@@ -94,6 +94,8 @@ export function useTranscribingRecorder(onTranscript: (text: string, final: bool
   const liveAbort = useRef<AbortController | null>(null);
   const starting = useRef(false);
   const kept = useRef<Promise<KeptAudio | null> | null>(null);
+  /** First sample of the part not yet handed out by `cut()` (one page / surah of a long recording). */
+  const segStart = useRef(0);
   const keepRef = useRef(keepAudio);
   keepRef.current = keepAudio;
   const callback = useRef(onTranscript);
@@ -175,7 +177,10 @@ export function useTranscribingRecorder(onTranscript: (text: string, final: bool
     const seconds = active.duration();
     const voiced = active.voicedSeconds();
     try { samples = active.stopSamples(); } catch (e) { setError(e instanceof Error && e.message === "silentRecording" ? "errSilent" : "errEmpty"); kept.current = null; return; }
-    kept.current = active.keptAudio(samples).then((blob) => (blob ? { blob, seconds } : null)).catch(() => null);
+    const from = Math.min(segStart.current, samples.length);
+    segStart.current = 0;
+    const partSeconds = Math.max(0, seconds - from / active.sampleRate);
+    kept.current = active.keptAudio(samples.subarray(from)).then((blob) => (blob ? { blob, seconds: partSeconds } : null)).catch(() => null);
     const controller = new AbortController();
     abort.current = controller;
     setTranscribing(true);
@@ -219,13 +224,17 @@ export function useTranscribingRecorder(onTranscript: (text: string, final: bool
     try {
       // Ends only by the user, the size limit or the system taking the microphone — never by a pause.
       kept.current = null;
+      segStart.current = 0;
       handle.current = await recordWav(() => { void finish(); }, () => { void finish(); }, { keepAudio: keepRef.current });
       setRecording(true);
       const active = handle.current;
       if (engineRef.current === "zipformer" && active.sampleRate === 16000) {
         // Stream to the phoneme model while reciting; audio recorded while it loads is fed afterwards.
         const session = new ZipformerSession((phonemes) => { if (handle.current === active) { setTranscript(phonemes); callback.current(phonemes, false, "phonemes"); } });
-        const z = { session, vad: new VadGate(active.sampleRate), fed: 0, failed: false, timer: null as ReturnType<typeof setInterval> | null };
+        // v29: 1.6 s of every pause reach the model (was 0.6 s): the streaming model needs that much trailing
+        // audio to emit a surah's LAST words while the reader is silent — else the end was only judged once
+        // the next speech arrived, and the 2-second stop at a surah end could not happen.
+        const z = { session, vad: new VadGate(active.sampleRate, { keepPauseSeconds: 1.6 }), fed: 0, failed: false, timer: null as ReturnType<typeof setInterval> | null };
         zf.current = z;
         session.start().then(() => {
           if (zf.current !== z || handle.current !== active) return;
@@ -255,5 +264,26 @@ export function useTranscribingRecorder(onTranscript: (text: string, final: bool
   const elapsed = useCallback(() => handle.current?.duration() ?? 0, []);
   /** The finished recording (once); null if none was kept. */
   const takeAudio = useCallback(async (): Promise<KeptAudio | null> => { const k = kept.current; kept.current = null; return k ? await k : null; }, []);
-  return { recording, paused, pause, resume, transcribing, transcript, error, getLevel, elapsed, takeAudio, cancel, toggle: () => { void toggle(); } };
+  /**
+   * While recording: hands out the audio since the previous cut (a finished page or surah) as its own
+   * recording; the microphone and the recognizer go on without a break. Null when not recording.
+   */
+  const cut = useCallback(async (): Promise<KeptAudio | null> => {
+    const h = handle.current;
+    if (!h) return null;
+    const from = segStart.current, to = h.totalSamples();
+    segStart.current = to;
+    const seconds = (to - from) / h.sampleRate;
+    if (seconds < 0.5) return null;
+    const blob = await h.rotateKept(h.samples(from, to)).catch(() => null);
+    return blob ? { blob, seconds } : null;
+  }, []);
+  /** Seconds of voice heard in the last `seconds` (0 when not recording). */
+  const voicedLast = useCallback((seconds: number) => {
+    const h = handle.current;
+    if (!h) return 0;
+    const to = h.totalSamples();
+    return h.voicedSecondsBetween(Math.max(0, to - Math.round(seconds * h.sampleRate)), to);
+  }, []);
+  return { recording, paused, pause, resume, transcribing, transcript, error, getLevel, elapsed, takeAudio, cut, voicedLast, cancel, toggle: () => { void toggle(); } };
 }

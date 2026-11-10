@@ -5,7 +5,8 @@
  *    `ayat_timing` reads), so the list works offline.
  *  - Favourites: kv `hifz.reciters.favorites.v1`.
  *  - Downloads: one file per surah in a sequential queue, 3 attempts each, a stall watchdog (STALL_MS) and
- *    storage fallbacks — app: @capacitor/file-transfer → WebView stream appended to the file → IndexedDB;
+ *    storage fallbacks — Android app (v29): the app's own native downloader (BackgroundAudio plugin,
+ *    HttpURLConnection) → @capacitor/file-transfer → WebView stream appended to the file → IndexedDB;
  *    browser: Cache Storage → IndexedDB (cdn.mp3quran.net sends CORS *). Manifest kv
  *    `hifz.surahAudio.downloads.v1` (records where each surah is stored).
  *  - Verse timing (where mp3quran.net has it): `ayat_timing?surah=&read=` → verse start / end in ms, so the
@@ -15,6 +16,7 @@ import { useSyncExternalStore } from "react";
 import catalog from "@/data/recitersCatalog.json";
 import { capacitorGlobal, createSignal, idb, isNativePlatform, kv } from "@/lib/storage";
 import { foldSurahName } from "@/lib/goTo";
+import { backgroundAudio } from "@/lib/audioPlayback";
 
 export type Moshaf = { id: number; ar: string; en: string; server: string; surahs?: number[]; timing?: number };
 export type HubReciter = { id: number; ar: string; en: string; moshaf: Moshaf[] };
@@ -222,6 +224,32 @@ async function nativeFileTransfer(url: string, key: string, surah: number, signa
   return { bytes: st.size, store: "file" };
 }
 
+/**
+ * Android app (v29): the app's own native downloader (BackgroundAudio plugin) writes straight into the files
+ * folder with progress events (received / total from the server). Older app builds without it reject at once
+ * and the next strategy takes over. Also watched for stalls.
+ */
+let nativeDownloadSeq = 0;
+async function nativePluginDownload(url: string, key: string, surah: number, signal: AbortSignal, progress: (r: number, t: number) => void): Promise<Stored> {
+  const na = await backgroundAudio();
+  if (!na) throw new Error("no native downloader");
+  const id = `dl${++nativeDownloadSeq}`;
+  let last = Date.now();
+  const sub = await na.addListener("download", (e) => { if (e.id === id) { last = Date.now(); progress(e.received, e.total); } });
+  progress(0, 0);
+  try {
+    const res = await new Promise<{ bytes: number }>((resolve, reject) => {
+      const watch = setInterval(() => {
+        if (signal.aborted) { clearInterval(watch); void na.cancelDownload({ id }).catch(() => {}); reject(aborted()); }
+        else if (Date.now() - last > STALL_MS) { clearInterval(watch); void na.cancelDownload({ id }).catch(() => {}); reject(new Stalled()); }
+      }, 1000);
+      na.download({ id, url, path: nativeFile(key, surah) }).then((r) => { clearInterval(watch); resolve(r); }, (e: unknown) => { clearInterval(watch); reject(e); });
+    });
+    if (!res.bytes) throw new Error("Empty download");
+    return { bytes: res.bytes, store: "file" };
+  } finally { void sub.remove(); }
+}
+
 /** App without the plugin (or when it hangs): stream in the WebView and append the pieces to the file. */
 async function nativeStreamToFile(url: string, key: string, surah: number, signal: AbortSignal, progress: (r: number, t: number) => void): Promise<Stored> {
   const { Filesystem, Directory } = await import("@capacitor/filesystem");
@@ -275,7 +303,7 @@ async function downloadOne(key: string, m: Moshaf, surah: number, signal: AbortS
   };
   setLive(k, { status: "downloading", received: 0, total: 0 });
   const strategies = isNativePlatform()
-    ? [() => nativeFileTransfer(url, key, surah, signal, progress), () => nativeStreamToFile(url, key, surah, signal, progress), () => webStore(url, signal, progress)]
+    ? [() => nativePluginDownload(url, key, surah, signal, progress), () => nativeFileTransfer(url, key, surah, signal, progress), () => nativeStreamToFile(url, key, surah, signal, progress), () => webStore(url, signal, progress)]
     : [() => webStore(url, signal, progress)];
   let error: unknown = null;
   for (const run of strategies) {
@@ -381,6 +409,21 @@ export async function surahPlayUrl(r: HubReciter, m: Moshaf, surah: number): Pro
     const hit = await (await caches.open(WEB_CACHE)).match(remote);
     return hit ? blobUrl(await hit.blob()) : remote;
   } catch { return remote; }
+}
+
+/**
+ * Android native player (v29): a URL the MediaPlayer can open — the downloaded file (file://… in the app's
+ * files folder) or the stream. Copies in Cache Storage / IndexedDB are WebView-only, so those stream.
+ */
+let filesBase: Promise<string | null> | null = null;
+export async function surahNativeUrl(r: HubReciter, m: Moshaf, surah: number): Promise<string> {
+  await loadSurahDownloads();
+  const remote = surahRemote(m, surah);
+  const entry = manifest.get()[fileKey(moshafKey(r, m), surah)];
+  if (!entry || (entry.store ?? "file") !== "file") return remote;
+  filesBase ??= import("@capacitor/filesystem").then(({ Filesystem, Directory }) => Filesystem.getUri({ path: "", directory: Directory.Data }).then((u) => u.uri.replace(/\/+$/, ""))).catch(() => null);
+  const base = await filesBase;
+  return base ? `${base}/${nativeFile(moshafKey(r, m), surah)}` : remote;
 }
 
 /* ───────────── verse timing ───────────── */
