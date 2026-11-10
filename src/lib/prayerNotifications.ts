@@ -16,12 +16,13 @@ import { isNativePlatform } from "@/lib/storage";
 import { NOTIFY_PRAYERS, modeOf, timesFor, voiceOf, type DayTimes, type NotifyPrayer, type PrayerSettings } from "@/lib/PrayerTimesEngine";
 import { ADHAN_VOICES, SILENT_FILE, VIBRATE_CHANNEL, adhanFileFor, channelFor } from "@/data/adhanVoices";
 import type { Language } from "@/i18n";
+import { thenSafe } from "@/lib/thenSafe";
 
 type LocalNotificationsPlugin = typeof import("@capacitor/local-notifications").LocalNotifications;
 let plugin: Promise<LocalNotificationsPlugin | null> | null = null;
 export function localNotifications(): Promise<LocalNotificationsPlugin | null> {
   plugin ??= !isNativePlatform() ? Promise.resolve(null) : Promise.all([import("@capacitor/core"), import("@capacitor/local-notifications")])
-    .then(([{ Capacitor }, m]) => (Capacitor.isPluginAvailable("LocalNotifications") ? m.LocalNotifications : null))
+    .then(([{ Capacitor }, m]) => (Capacitor.isPluginAvailable("LocalNotifications") ? thenSafe(m.LocalNotifications) : null))
     .catch(() => null);
   return plugin;
 }

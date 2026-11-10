@@ -20,6 +20,7 @@
 import { assetUrl } from "@/lib/assets";
 import { platform } from "@/lib/storage";
 import { getSettings, subscribeSettings } from "@/lib/settings";
+import { thenSafe } from "@/lib/thenSafe";
 
 type NativeAction = { action: "toggle" | "play" | "pause" | "next" | "previous" | "stop" | "seekto"; seekTime?: number };
 type ListenerHandle = { remove: () => Promise<void> };
@@ -45,7 +46,7 @@ export interface BackgroundAudioPlugin {
 let plugin: Promise<BackgroundAudioPlugin | null> | null = null;
 export function backgroundAudio(): Promise<BackgroundAudioPlugin | null> {
   plugin ??= platform() !== "android" ? Promise.resolve(null) : import("@capacitor/core")
-    .then(({ Capacitor, registerPlugin }) => (Capacitor.isPluginAvailable("BackgroundAudio") ? registerPlugin<BackgroundAudioPlugin>("BackgroundAudio") : null))
+    .then(({ Capacitor, registerPlugin }) => (Capacitor.isPluginAvailable("BackgroundAudio") ? thenSafe(registerPlugin<BackgroundAudioPlugin>("BackgroundAudio")) : null))
     .catch(() => null);
   return plugin;
 }

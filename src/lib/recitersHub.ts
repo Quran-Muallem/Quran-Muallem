@@ -17,6 +17,7 @@ import catalog from "@/data/recitersCatalog.json";
 import { capacitorGlobal, createSignal, idb, isNativePlatform, kv } from "@/lib/storage";
 import { foldSurahName } from "@/lib/goTo";
 import { backgroundAudio } from "@/lib/audioPlayback";
+import { thenSafe } from "@/lib/thenSafe";
 
 export type Moshaf = { id: number; ar: string; en: string; server: string; surahs?: number[]; timing?: number };
 export type HubReciter = { id: number; ar: string; en: string; moshaf: Moshaf[] };
@@ -116,7 +117,7 @@ const idbKey = (url: string) => `surahAudio:${url}`;
 type FT = typeof import("@capacitor/file-transfer").FileTransfer;
 let ftPlugin: Promise<FT | null> | null = null;
 const fileTransfer = () => (ftPlugin ??= !isNativePlatform() ? Promise.resolve(null) : Promise.all([import("@capacitor/core"), import("@capacitor/file-transfer")])
-  .then(([{ Capacitor }, m]) => (Capacitor.isPluginAvailable("FileTransfer") ? m.FileTransfer : null)).catch(() => null));
+  .then(([{ Capacitor }, m]) => (Capacitor.isPluginAvailable("FileTransfer") ? thenSafe(m.FileTransfer) : null)).catch(() => null));
 
 const controllers = new Map<string, AbortController>();
 
