@@ -659,5 +659,6 @@
   "tajweedFavorites": "Favoriten",
   "tajweedFavAdd": "Zu Favoriten hinzufügen",
   "tajweedFavRemove": "Aus Favoriten entfernen",
-  "tajweedFavNone": "Noch keine Favoriten – tippe bei einer Regel auf ⭐."
+  "tajweedFavNone": "Noch keine Favoriten – tippe bei einer Regel auf ⭐.",
+  "tajweedVoiceWbwChoice": "Wort für Wort (wie bei Korrekturen)"
 }

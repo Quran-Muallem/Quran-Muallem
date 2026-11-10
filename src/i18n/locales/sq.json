@@ -659,5 +659,6 @@
   "tajweedFavorites": "Të preferuarat",
   "tajweedFavAdd": "Shto te të preferuarat",
   "tajweedFavRemove": "Hiq nga të preferuarat",
-  "tajweedFavNone": "Ende pa të preferuara — prek ⭐ pranë një rregulli."
+  "tajweedFavNone": "Ende pa të preferuara — prek ⭐ pranë një rregulli.",
+  "tajweedVoiceWbwChoice": "Fjalë për fjalë (si te korrigjimet)"
 }

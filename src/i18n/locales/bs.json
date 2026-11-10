@@ -659,5 +659,6 @@
   "tajweedFavorites": "Omiljeno",
   "tajweedFavAdd": "Dodaj u omiljeno",
   "tajweedFavRemove": "Ukloni iz omiljenog",
-  "tajweedFavNone": "Još nema omiljenih — dodirni ⭐ pored pravila."
+  "tajweedFavNone": "Još nema omiljenih — dodirni ⭐ pored pravila.",
+  "tajweedVoiceWbwChoice": "Riječ po riječ (kao kod ispravki)"
 }

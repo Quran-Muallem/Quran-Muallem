@@ -659,5 +659,6 @@
   "tajweedFavorites": "প্রিয়",
   "tajweedFavAdd": "প্রিয়তে যোগ করুন",
   "tajweedFavRemove": "প্রিয় থেকে সরান",
-  "tajweedFavNone": "এখনও কোনো প্রিয় নেই — কোনো নিয়মের পাশে ⭐ চাপুন।"
+  "tajweedFavNone": "এখনও কোনো প্রিয় নেই — কোনো নিয়মের পাশে ⭐ চাপুন।",
+  "tajweedVoiceWbwChoice": "শব্দে শব্দে (সংশোধনের মতো)"
 }

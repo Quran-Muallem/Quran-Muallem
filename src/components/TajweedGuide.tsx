@@ -6,7 +6,7 @@ import { toArabicDigits } from "@/lib/quranService";
 import { useI18n } from "@/lib/i18n";
 import { getReciter } from "@/lib/reciterManager";
 import { useSettings } from "@/lib/settings";
-import { exampleRef, playExample, stopExample, type ExampleVoice } from "@/lib/tajweedAudio";
+import { exampleRef, getExampleSource, playExample, setExampleSource, stopExample, type ExampleSource, type ExampleVoice } from "@/lib/tajweedAudio";
 import { cn } from "@/lib/utils";
 
 type Filter = "all" | "favorites" | TajweedCategory["id"];
@@ -112,7 +112,7 @@ export function TajweedGuide() {
         })}
       </div>
 
-      <VoiceLine />
+      <VoicePicker />
 
       {searching && <p className="text-xs text-emerald-100/65" aria-live="polite">{hits ? `${num(hits)} ${t("tajweedResults")}` : t("tajweedNone")}</p>}
       {filter === "favorites" && !searching && hits === 0 && <p className="rounded-2xl bg-black/20 p-4 text-center text-sm text-emerald-100/70">{t("tajweedFavNone")}</p>}
@@ -148,15 +148,32 @@ export function ScholarNotice() {
   );
 }
 
-/** Which Sheikh the examples are played with (the reciter chosen in the settings). */
-function VoiceLine() {
+/**
+ * Which voice the examples start with: the word-by-word voice of the mistake corrections (default) or the
+ * Sheikh chosen in the settings. The other one is the fallback.
+ */
+function VoicePicker() {
   const { t, language } = useI18n();
   const r = getReciter(useSettings().reciterId);
+  const [source, setSource] = useState<ExampleSource>(getExampleSource);
+  const pick = (v: ExampleSource) => { setExampleSource(v); setSource(v); stopExample(); setPlayState(null); };
+  const options: [ExampleSource, string][] = [["wordByWord", t("tajweedVoiceWbwChoice")], ["sheikh", language === "ar" ? r.nameArabic : r.nameEnglish]];
   return (
-    <p className="flex items-center gap-2 px-1 text-xs text-emerald-100/70" data-tajweed-voice={r.id}>
-      <Volume2 className="h-3.5 w-3.5 shrink-0 text-amber-200/80" />
-      <span>{t("tajweedVoiceOf")}: <span className={cn(language === "ar" && "font-arabic text-sm")} style={{ color: GOLD_LIGHT }}>{language === "ar" ? r.nameArabic : r.nameEnglish}</span></span>
-    </p>
+    <div className="flex flex-wrap items-center gap-2 px-1 text-xs text-emerald-100/70" data-tajweed-voice={source}>
+      <span className="flex items-center gap-1.5"><Volume2 className="h-3.5 w-3.5 shrink-0 text-amber-200/80" />{t("tajweedVoiceOf")}:</span>
+      <div role="radiogroup" aria-label={t("tajweedVoiceOf")} className="flex flex-wrap gap-1.5">
+        {options.map(([id, label]) => {
+          const on = source === id;
+          return (
+            <button key={id} type="button" role="radio" aria-checked={on} onClick={() => pick(id)} data-tajweed-voice-option={id}
+              className={cn("rounded-full px-3 py-1 transition", on ? "font-semibold text-emerald-950" : "text-emerald-100/80 hover:bg-white/5", language === "ar" && "font-arabic text-[0.8rem]")}
+              style={on ? { background: GOLD_GRADIENT } : { boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.4)}` }}>
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

@@ -659,5 +659,6 @@
   "tajweedFavorites": "Favoris",
   "tajweedFavAdd": "Ajouter aux favoris",
   "tajweedFavRemove": "Retirer des favoris",
-  "tajweedFavNone": "Pas encore de favoris — touchez ⭐ à côté d’une règle."
+  "tajweedFavNone": "Pas encore de favoris — touchez ⭐ à côté d’une règle.",
+  "tajweedVoiceWbwChoice": "Mot à mot (comme les corrections)"
 }

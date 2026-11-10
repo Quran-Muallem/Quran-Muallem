@@ -659,5 +659,6 @@
   "tajweedFavorites": "Избранное",
   "tajweedFavAdd": "В избранное",
   "tajweedFavRemove": "Убрать из избранного",
-  "tajweedFavNone": "Избранного пока нет — нажмите ⭐ у правила."
+  "tajweedFavNone": "Избранного пока нет — нажмите ⭐ у правила.",
+  "tajweedVoiceWbwChoice": "Пословно (как в исправлениях)"
 }

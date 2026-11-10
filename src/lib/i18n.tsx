@@ -570,6 +570,7 @@ export const copy = {
   tajweedFavAdd: ["أضف إلى المفضلة", "Add to favourites"],
   tajweedFavRemove: ["أزل من المفضلة", "Remove from favourites"],
   tajweedFavNone: ["لا قواعد في المفضلة بعد — اضغط ⭐ بجانب أي قاعدة.", "No favourites yet — tap ⭐ next to any rule."],
+  tajweedVoiceWbwChoice: ["كلمة بكلمة (كتصحيح الأخطاء)", "Word by word (as in corrections)"],
 } as const;
 export type CopyKey = keyof typeof copy;
 export function translate(language: Language, key: CopyKey): string {

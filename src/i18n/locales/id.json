@@ -659,5 +659,6 @@
   "tajweedFavorites": "Favorit",
   "tajweedFavAdd": "Tambah ke favorit",
   "tajweedFavRemove": "Hapus dari favorit",
-  "tajweedFavNone": "Belum ada favorit — ketuk ⭐ di samping aturan."
+  "tajweedFavNone": "Belum ada favorit — ketuk ⭐ di samping aturan.",
+  "tajweedVoiceWbwChoice": "Per kata (seperti koreksi)"
 }

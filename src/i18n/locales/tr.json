@@ -659,5 +659,6 @@
   "tajweedFavorites": "Favoriler",
   "tajweedFavAdd": "Favorilere ekle",
   "tajweedFavRemove": "Favorilerden çıkar",
-  "tajweedFavNone": "Henüz favori yok — bir kuralın yanındaki ⭐ simgesine dokunun."
+  "tajweedFavNone": "Henüz favori yok — bir kuralın yanındaki ⭐ simgesine dokunun.",
+  "tajweedVoiceWbwChoice": "Kelime kelime (düzeltmelerdeki gibi)"
 }
