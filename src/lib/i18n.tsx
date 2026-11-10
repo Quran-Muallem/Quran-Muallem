@@ -559,6 +559,7 @@ export const copy = {
   connTestDesc: ["لا يعمل التنزيل أو التشغيل؟ هذا الاختبار يفحص الاتصال بخادم التلاوات على جهازك ويُظهر أين يتوقف.", "Downloads or playback not working? This test checks the connection to the recitation server on your phone and shows where it fails."],
   connTestRun: ["اختبار الاتصال", "Test connection"],
   connTestCopy: ["نسخ", "Copy"],
+  goToSearchAll: ["اسم السورة، أو صفحة، أو ١٨:١٠", "Surah name, page or 18:10"],
 } as const;
 export type CopyKey = keyof typeof copy;
 export function translate(language: Language, key: CopyKey): string {

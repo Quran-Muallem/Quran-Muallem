@@ -648,5 +648,6 @@
   "recConnecting": "Sunucuya bağlanıyor…",
   "connTestDesc": "İndirme ya da oynatma çalışmıyor mu? Bu test telefonunda sunucu bağlantısını denetler ve nerede takıldığını gösterir.",
   "connTestRun": "Bağlantıyı test et",
-  "connTestCopy": "Kopyala"
+  "connTestCopy": "Kopyala",
+  "goToSearchAll": "Sure adı, sayfa veya 18:10"
 }

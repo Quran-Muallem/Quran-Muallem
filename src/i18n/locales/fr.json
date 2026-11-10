@@ -648,5 +648,6 @@
   "recConnecting": "Connexion au serveur…",
   "connTestDesc": "Téléchargement ou lecture bloqués ? Ce test vérifie la connexion au serveur sur votre téléphone et montre où ça échoue.",
   "connTestRun": "Tester la connexion",
-  "connTestCopy": "Copier"
+  "connTestCopy": "Copier",
+  "goToSearchAll": "Sourate, page ou 18:10"
 }

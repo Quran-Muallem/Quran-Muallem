@@ -648,5 +648,6 @@
   "recConnecting": "Menghubungkan ke server…",
   "connTestDesc": "Unduhan atau pemutaran gagal? Tes ini memeriksa koneksi ke server di ponselmu dan menunjukkan letak masalahnya.",
   "connTestRun": "Tes koneksi",
-  "connTestCopy": "Salin"
+  "connTestCopy": "Salin",
+  "goToSearchAll": "Nama surah, halaman atau 18:10"
 }

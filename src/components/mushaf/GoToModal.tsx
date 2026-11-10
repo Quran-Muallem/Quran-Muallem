@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Bookmark, BookOpen, ChevronDown, Clock, CornerDownLeft, Hash, Search, X } from "lucide-react";
+import { Bookmark, Clock, CornerDownLeft, Search, X } from "lucide-react";
 import { GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
-import { TOTAL_PAGES, type Mushaf } from "@/lib/mushafData";
+import { type Mushaf } from "@/lib/mushafData";
 import { SURAH_META, getSurahMeta, toArabicDigits } from "@/lib/quranService";
 import { directionFor, useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -12,29 +12,25 @@ import { parseGoTo, searchSurahs, surahMeaning, type GoToTarget } from "@/lib/go
 export { parseGoTo, type GoToTarget };
 
 /**
- * «اذهب إلى» (v30, own design — a centred card, not a copy of another app):
- *  1. surah search with autocomplete (Arabic, transliterated or translated name; Enter opens the first hit);
- *  2. jump to a page or to «surah:verse» (typed, or surah + verse pickers);
- *  3. small chips: bookmarks and recently read places;
- *  4. all surahs (with the memorization line) and the 30 ajzāʾ, folded.
+ * «اذهب إلى» (v32): opens straight on the list of ALL surahs (full names, large and readable). On top:
+ * the search field (filters the list while typing; Enter opens the first hit) with a page / «surah:verse»
+ * jump in the same row, then the recently read surahs and bookmarks as chips, then Surahs / Ajzāʾ.
  */
 export function GoToModal({ open, page, surah, mushaf, onClose, onGo }: {
   open: boolean; page: number; surah: number; mushaf?: Mushaf | null | undefined; onClose: () => void; onGo: (t: GoToTarget) => void;
 }) {
   const { t, language } = useI18n();
-  const [name, setName] = useState("");
-  const [quick, setQuick] = useState("");
-  const [s, setS] = useState(surah);
-  const [a, setA] = useState(1);
-  const [list, setList] = useState<"surahs" | "juz" | null>(null);
+  const [q, setQ] = useState("");
+  const [tab, setTab] = useState<"surahs" | "juz">("surahs");
   const recent = useRecentReads();
   const bookmarks = useBookmarks();
   const progress = useProgress();
-  const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
-    setName(""); setQuick(""); setS(surah); setA(1); setList(null);
-    const id = setTimeout(() => searchRef.current?.focus(), 60);
+    setQ(""); setTab("surahs");
+    // Scroll the surah being read into view.
+    const id = setTimeout(() => listRef.current?.querySelector(`[data-goto-surah="${surah}"]`)?.scrollIntoView({ block: "center" }), 60);
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => { clearTimeout(id); window.removeEventListener("keydown", onKey); };
@@ -45,149 +41,126 @@ export function GoToModal({ open, page, surah, mushaf, onClose, onGo }: {
   const ar = language === "ar" || language === "ur";
   const num = (n: number) => (ar ? toArabicDigits(n) : String(n));
   const go = (target: GoToTarget | null) => { if (target) { onGo(target); onClose(); } };
-  const hits = name.trim() ? searchSurahs(name, 6) : [];
-  const parsed = quick.trim() ? parseGoTo(quick) : null;
-  const count = getSurahMeta(s)?.versesCount ?? 1;
+  // A number («589», «18:10») jumps; text filters the surahs.
+  const jump = q.trim() && /^[\d٠-٩۰-۹\s:：.,/-]+$/.test(q.trim()) ? parseGoTo(q) : null;
+  const ids = q.trim() && !jump ? searchSurahs(q, 114) : SURAH_META.map((m) => m.id);
   const label = (id: number) => (ar ? getSurahMeta(id)?.nameArabic : getSurahMeta(id)?.nameSimple) ?? String(id);
-  const submitQuick = (e: FormEvent) => { e.preventDefault(); go(parsed); };
-  const pageOk = (n: number) => n >= 1 && n <= TOTAL_PAGES;
-
-  const SurahRow = ({ id, compact = false }: { id: number; compact?: boolean }) => {
-    const m = getSurahMeta(id)!;
-    const share = shares[id - 1] ?? 0;
-    return (
-      <button type="button" data-goto-surah={id} onClick={() => go({ surah: id, ayah: 1 })}
-        className={cn("group flex w-full items-center gap-3 rounded-2xl px-3 text-start transition hover:bg-white/5", compact ? "py-2" : "py-2.5")}>
-        {/* number in an eight-point star */}
-        <span className="relative flex h-9 w-9 shrink-0 items-center justify-center text-[0.7rem] font-semibold" style={{ color: GOLD_LIGHT }}>
-          <span className="absolute inset-1 rotate-45 rounded-md" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.7)}` }} aria-hidden="true" />
-          <span className="absolute inset-1 rounded-md" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.7)}` }} aria-hidden="true" />
-          <span className="relative">{num(id)}</span>
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex items-baseline gap-2">
-            <span className="truncate font-arabic text-lg leading-tight text-emerald-50">{m.nameArabic}</span>
-            {!ar && <span className="truncate text-xs text-emerald-100/70">{m.nameSimple}{surahMeaning(id, language) ? ` · ${surahMeaning(id, language)}` : ""}</span>}
-          </span>
-          <span className="mt-1 flex items-center gap-2 text-[0.68rem] text-emerald-100/55">
-            <span>{num(m.versesCount)} {t("goToVerses")}</span><span aria-hidden="true">•</span><span>{t("pageShort").replace("{n}", num(mushaf?.surahStartPage(id) ?? 0))}</span>
-            {share > 0 && (
-              <span className="ms-auto flex items-center gap-1" title={t("progressMemorized")}>
-                <span className="h-1 w-12 overflow-hidden rounded-full bg-white/10"><span className="block h-full rounded-full bg-emerald-400" style={{ width: `${Math.round(share * 100)}%` }} /></span>
-                <span className="tabular-nums">{num(Math.round(share * 100))}%</span>
-              </span>
-            )}
-          </span>
-        </span>
-      </button>
-    );
-  };
+  const submit = (e: FormEvent) => { e.preventDefault(); if (jump) go(jump); else if (ids[0]) go({ surah: ids[0], ayah: 1 }); };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto px-3 pb-6 pt-[max(1rem,env(safe-area-inset-top))]" dir={directionFor(language)} lang={language}>
-      <button type="button" aria-label={t("close")} onClick={onClose} className="fixed inset-0 bg-black/65 backdrop-blur-[3px] animate-in fade-in" />
+    <div className="fixed inset-0 z-[60] flex justify-center" dir={directionFor(language)} lang={language}>
+      <button type="button" aria-label={t("close")} onClick={onClose} className="absolute inset-0 bg-black/70 animate-in fade-in" />
       <section role="dialog" aria-modal="true" aria-label={t("goTo")} data-goto-sheet=""
-        className="relative w-full max-w-md overflow-hidden rounded-[1.75rem] shadow-2xl animate-in fade-in zoom-in-95 duration-200"
-        style={{ background: "linear-gradient(165deg, var(--hq-emerald) 0%, var(--hq-emerald-deep) 70%)", boxShadow: `0 0 0 1px ${alpha(GOLD, 0.55)}, 0 20px 50px -20px rgba(0,0,0,.8)` }}>
-        {/* title band */}
-        <div className="relative flex items-center gap-2 px-4 pb-2 pt-4">
-          <span className="h-px flex-1" style={{ background: `linear-gradient(90deg, transparent, ${alpha(GOLD, 0.8)})` }} aria-hidden="true" />
-          <h2 className="font-arabic text-lg" style={{ color: GOLD_LIGHT }}>{t("goTo")}</h2>
-          <span className="h-px flex-1" style={{ background: `linear-gradient(270deg, transparent, ${alpha(GOLD, 0.8)})` }} aria-hidden="true" />
-          <button type="button" onClick={onClose} aria-label={t("close")} className="absolute end-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-amber-200 hover:bg-white/10"><X className="h-4 w-4" /></button>
-        </div>
-
-        <div className="space-y-3 px-4 pb-4">
-          {/* 1 · surah search with autocomplete */}
-          <div className="rounded-2xl p-1" style={{ background: "rgba(0,0,0,.22)", boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.4)}` }}>
-            <label className="relative block">
+        className="relative mx-2 my-[max(0.5rem,env(safe-area-inset-top))] flex w-full max-w-md flex-col overflow-hidden rounded-[1.5rem] shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+        style={{ background: "#062b22", boxShadow: `0 0 0 1px ${alpha(GOLD, 0.6)}, 0 20px 50px -20px rgba(0,0,0,.8)`, maxHeight: "calc(100dvh - 1rem - env(safe-area-inset-top) - env(safe-area-inset-bottom))" }}>
+        {/* fixed top: title, search / jump, recently read, tabs */}
+        <div className="shrink-0 space-y-3 px-4 pb-3 pt-4" style={{ background: "linear-gradient(180deg, #0a3d30, #062b22)" }}>
+          <div className="flex items-center gap-2">
+            <h2 className="flex-1 font-arabic text-xl" style={{ color: GOLD_LIGHT }}>{t("goTo")}</h2>
+            <button type="button" onClick={onClose} aria-label={t("close")} className="flex h-9 w-9 items-center justify-center rounded-full text-amber-100 hover:bg-white/10"><X className="h-5 w-5" /></button>
+          </div>
+          <form onSubmit={submit} className="flex items-center gap-2">
+            <label className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute inset-y-0 start-3 my-auto h-5 w-5 text-amber-200" aria-hidden="true" />
-              <input ref={searchRef} value={name} onChange={(e) => setName(e.target.value)} type="search" autoComplete="off" enterKeyHint="go"
-                role="combobox" aria-expanded={hits.length > 0} aria-controls="goto-hits" data-goto-surah-search=""
-                onKeyDown={(e) => { if (e.key === "Enter" && hits[0]) { e.preventDefault(); go({ surah: hits[0], ayah: 1 }); } }}
-                placeholder={t("goToSurahPlaceholder")} aria-label={t("goToSurahName")}
-                className="h-12 w-full rounded-xl bg-transparent ps-11 pe-3 text-base text-emerald-50 placeholder:text-emerald-100/40 focus:outline-none" />
+              <input value={q} onChange={(e) => setQ(e.target.value)} type="search" autoComplete="off" enterKeyHint="go" data-goto-surah-search=""
+                placeholder={t("goToSearchAll")} aria-label={t("goToSurahName")}
+                className="h-12 w-full rounded-2xl border bg-black/30 ps-11 pe-3 text-base text-white placeholder:text-emerald-100/50 focus:outline-none"
+                style={{ borderColor: alpha(GOLD, 0.55) }} />
             </label>
-            {name.trim() !== "" && (
-              <ul id="goto-hits" role="listbox" className="mt-1 border-t pt-1" style={{ borderColor: alpha(GOLD, 0.2) }} data-goto-hits="">
-                {hits.length === 0 && <li className="px-3 py-2 text-xs text-emerald-100/60">{t("goToSurahNone")}</li>}
-                {hits.map((id) => <li key={id} role="option" aria-selected={false}><SurahRow id={id} compact /></li>)}
-              </ul>
-            )}
-          </div>
+            <button type="submit" disabled={!q.trim() || (!jump && !ids.length)} aria-label={t("goTo")}
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-emerald-950 disabled:opacity-40" style={{ background: GOLD_GRADIENT }}>
+              <CornerDownLeft className="h-5 w-5" />
+            </button>
+          </form>
+          <p className="-mt-1 text-xs text-emerald-100/70" data-goto-hint="">
+            {jump ? ("page" in jump ? `→ ${t("pageLabel")} ${num(jump.page)}` : `→ ${label(jump.surah)} ${num(jump.surah)}:${num(jump.ayah)}`) : q.trim() && /\d/.test(q) ? t("goToInvalid") : t("goToExample")}
+          </p>
 
-          {/* 2 · page or verse */}
-          <div className="rounded-2xl p-3" style={{ background: "rgba(0,0,0,.14)", boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.25)}` }} data-goto-section="page">
-            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-amber-200/90"><Hash className="h-3.5 w-3.5" aria-hidden="true" />{t("goToPageAyah")}</p>
-            <form onSubmit={submitQuick} className="flex items-center gap-2">
-              <input value={quick} onChange={(e) => setQuick(e.target.value)} inputMode="text" enterKeyHint="go" autoComplete="off" data-goto-quick=""
-                placeholder={t("goToPlaceholder")} aria-label={t("goToPlaceholder")}
-                className="h-11 min-w-0 flex-1 rounded-xl border border-amber-400/40 bg-black/25 px-3 text-base text-emerald-50 placeholder:text-emerald-100/40 focus:outline-none" />
-              <button type="submit" disabled={!parsed} aria-label={t("goTo")} className="flex h-11 w-11 items-center justify-center rounded-xl text-emerald-950 disabled:opacity-40" style={{ background: GOLD_GRADIENT }}>
-                <CornerDownLeft className="h-5 w-5" />
-              </button>
-            </form>
-            <p className={cn("mt-1 min-h-[1rem] text-[0.7rem]", quick.trim() && !parsed ? "text-red-200" : "text-emerald-100/55")}>
-              {!quick.trim() ? t("goToExample") : parsed ? ("page" in parsed ? `${t("pageLabel")} ${num(parsed.page)}` : `${label(parsed.surah)} ${num(parsed.surah)}:${num(parsed.ayah)}`) : t("goToInvalid")}
-            </p>
-            <div className="mt-1 grid grid-cols-[1fr_4.5rem_auto] items-end gap-2">
-              <select value={s} onChange={(e) => { setS(Number(e.target.value)); setA(1); }} aria-label={t("surah")} className={field}>
-                {SURAH_META.map((m) => <option key={m.id} value={m.id}>{ar ? `${toArabicDigits(m.id)}. ${m.nameArabic}` : `${m.id}. ${m.nameSimple}`}</option>)}
-              </select>
-              <select value={a} onChange={(e) => setA(Number(e.target.value))} aria-label={t("verse")} className={field}>
-                {Array.from({ length: count }, (_, i) => <option key={i} value={i + 1}>{num(i + 1)}</option>)}
-              </select>
-              <button type="button" onClick={() => go({ surah: s, ayah: a })} className={goBtn} style={{ background: GOLD_GRADIENT }}>{t("goShort")}</button>
-            </div>
-          </div>
-
-          {/* 3 · bookmarks and recently read as chips */}
-          {(bookmarks.length > 0 || recent.length > 0) && (
-            <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-0.5" data-goto-chips="">
-              {bookmarks.map((b) => (
-                <button key={`b${b.page}`} type="button" onClick={() => go({ page: b.page })} data-goto-bookmark={b.page}
-                  className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-emerald-950" style={{ background: GOLD_GRADIENT }}>
-                  <Bookmark className="h-3.5 w-3.5 fill-current" aria-hidden="true" />{label(b.surah)} · {t("pageShort").replace("{n}", num(b.page))}
-                </button>
-              ))}
-              {recent.map((r) => (
-                <button key={`r${r.surah}`} type="button" onClick={() => go({ page: r.page })} data-goto-recent-item={r.surah}
-                  className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-emerald-50" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.45)}`, background: "rgba(0,0,0,.18)" }}>
-                  <Clock className="h-3.5 w-3.5 text-amber-200" aria-hidden="true" />{label(r.surah)} {num(r.surah)}:{num(r.ayah)}
-                </button>
-              ))}
+          {(recent.length > 0 || bookmarks.length > 0) && (
+            <div>
+              <p className="mb-1.5 text-xs font-semibold text-amber-200">{t("recentlyRead")}</p>
+              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" data-goto-chips="">
+                {recent.map((r) => (
+                  <button key={`r${r.surah}`} type="button" onClick={() => go({ page: r.page })} data-goto-recent-item={r.surah}
+                    className="flex shrink-0 items-center gap-2 rounded-2xl px-3 py-2 text-start" style={{ background: "rgba(255,255,255,.06)", boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.45)}` }}>
+                    <Clock className="h-4 w-4 shrink-0 text-amber-200" aria-hidden="true" />
+                    <span>
+                      <span className="block whitespace-nowrap font-arabic text-base leading-tight text-white">{label(r.surah)}</span>
+                      <span className="block whitespace-nowrap text-[0.7rem] text-emerald-100/70">{num(r.surah)}:{num(r.ayah)} · {t("pageShort").replace("{n}", num(r.page))}</span>
+                    </span>
+                  </button>
+                ))}
+                {bookmarks.map((b) => (
+                  <button key={`b${b.page}`} type="button" onClick={() => go({ page: b.page })} data-goto-bookmark={b.page}
+                    className="flex shrink-0 items-center gap-2 rounded-2xl px-3 py-2 text-start text-emerald-950" style={{ background: GOLD_GRADIENT }}>
+                    <Bookmark className="h-4 w-4 shrink-0 fill-current" aria-hidden="true" />
+                    <span>
+                      <span className="block whitespace-nowrap font-arabic text-base leading-tight">{label(b.surah)}</span>
+                      <span className="block whitespace-nowrap text-[0.7rem]">{t("pageShort").replace("{n}", num(b.page))}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* 4 · all surahs / ajzāʾ, folded */}
-          <div className="grid grid-cols-2 gap-2">
+          <div role="tablist" className="grid grid-cols-2 gap-1 rounded-2xl bg-black/30 p-1">
             {(["surahs", "juz"] as const).map((k) => (
-              <button key={k} type="button" onClick={() => setList(list === k ? null : k)} aria-expanded={list === k} data-goto-tab={k}
-                className="flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm text-emerald-50"
-                style={{ background: list === k ? alpha(GOLD, 0.18) : "rgba(0,0,0,.14)", boxShadow: `inset 0 0 0 1px ${alpha(GOLD, list === k ? 0.7 : 0.25)}` }}>
-                <BookOpen className="h-4 w-4 text-amber-200" aria-hidden="true" />{t(k === "surahs" ? "tabSurahs" : "tabJuzs")}
-                <ChevronDown className={cn("h-4 w-4 text-amber-200 transition", list === k && "rotate-180")} aria-hidden="true" />
+              <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} data-goto-tab={k}
+                className={cn("rounded-xl py-2 text-sm font-semibold", tab === k ? "text-emerald-950" : "text-emerald-50")} style={tab === k ? { background: GOLD_GRADIENT } : undefined}>
+                {t(k === "surahs" ? "tabSurahs" : "tabJuzs")}
               </button>
             ))}
           </div>
-          {list === "surahs" && (
-            <ul className="max-h-[50dvh] overflow-y-auto overscroll-contain rounded-2xl" style={{ background: "rgba(0,0,0,.12)" }} data-goto-surah-list="">
-              {SURAH_META.map((m) => <li key={m.id} className={cn(m.id === surah && "bg-amber-300/10")}><SurahRow id={m.id} /></li>)}
+        </div>
+
+        {/* the full list */}
+        <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-3" data-goto-surah-list="">
+          {tab === "surahs" ? (
+            <ul data-goto-hits="">
+              {ids.length === 0 && <li className="px-3 py-4 text-sm text-emerald-100/70">{t("goToSurahNone")}</li>}
+              {ids.map((id) => {
+                const m = getSurahMeta(id)!;
+                const share = shares[id - 1] ?? 0;
+                const here = id === surah;
+                return (
+                  <li key={id}>
+                    <button type="button" data-goto-surah={id} onClick={() => go({ surah: id, ayah: 1 })}
+                      className={cn("flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-start", here ? "bg-amber-300/15" : "hover:bg-white/5")}
+                      style={here ? { boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.6)}` } : undefined}>
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-emerald-950" style={{ background: GOLD_GRADIENT }}>{num(id)}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-arabic text-xl leading-snug text-white">{ar ? `سورة ${m.nameArabic}` : m.nameSimple}</span>
+                        <span className="block text-xs text-emerald-100/75">
+                          {!ar && <>{m.nameArabic}{surahMeaning(id, language) ? ` · ${surahMeaning(id, language)}` : ""} · </>}
+                          {num(m.versesCount)} {t("goToVerses")} · {t("pageShort").replace("{n}", num(mushaf?.surahStartPage(id) ?? 0))}
+                        </span>
+                        {share > 0 && (
+                          <span className="mt-1.5 flex items-center gap-2" title={t("progressMemorized")}>
+                            <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10"><span className="block h-full rounded-full bg-emerald-400" style={{ width: `${Math.round(share * 100)}%` }} /></span>
+                            <span className="text-[0.7rem] tabular-nums text-emerald-200">{num(Math.round(share * 100))}%</span>
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
-          )}
-          {list === "juz" && (
-            <ul className="grid grid-cols-3 gap-1.5" data-goto-juz-list="">
+          ) : (
+            <ul className="grid grid-cols-2 gap-2 px-1 pt-1" data-goto-juz-list="">
               {Array.from({ length: JUZ_COUNT }, (_, i) => i + 1).map((j) => {
                 const [js, ja] = mushaf?.juzStartVerse(j) ?? [1, 1];
                 const jp = mushaf?.juzStartPage(j) ?? 1;
                 const here = mushaf ? mushaf.juzOfPage(page) === j : false;
                 return (
                   <li key={j}>
-                    <button type="button" data-goto-juz={j} onClick={() => pageOk(jp) && go({ page: jp })}
-                      className="w-full rounded-xl px-2 py-2 text-center"
-                      style={{ background: here ? alpha(GOLD, 0.18) : "rgba(0,0,0,.16)", boxShadow: `inset 0 0 0 1px ${alpha(GOLD, here ? 0.7 : 0.22)}` }}>
-                      <span className="block text-sm font-semibold text-emerald-50">{t("juz")} {num(j)}</span>
-                      <span className="block truncate text-[0.62rem] text-emerald-100/55">{label(js)} {num(ja)}</span>
+                    <button type="button" data-goto-juz={j} onClick={() => go({ page: jp })}
+                      className="w-full rounded-2xl px-3 py-3 text-start"
+                      style={{ background: here ? alpha(GOLD, 0.18) : "rgba(255,255,255,.05)", boxShadow: `inset 0 0 0 1px ${alpha(GOLD, here ? 0.7 : 0.25)}` }}>
+                      <span className="block text-base font-semibold text-white">{t("juz")} {num(j)}</span>
+                      <span className="block font-arabic text-sm text-emerald-100/80">{label(js)} {num(js)}:{num(ja)}</span>
+                      <span className="block text-xs text-emerald-100/60">{t("pageShort").replace("{n}", num(jp))}</span>
                     </button>
                   </li>
                 );
@@ -199,8 +172,5 @@ export function GoToModal({ open, page, surah, mushaf, onClose, onGo }: {
     </div>
   );
 }
-
-const field = "h-10 w-full rounded-xl border border-amber-400/40 bg-[var(--mf-page-deep)] px-2 text-sm text-emerald-50";
-const goBtn = "h-10 rounded-xl px-4 text-sm font-semibold text-emerald-950 disabled:opacity-40";
 
 export default GoToModal;

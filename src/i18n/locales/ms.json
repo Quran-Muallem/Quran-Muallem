@@ -648,5 +648,6 @@
   "recConnecting": "Menyambung ke pelayan…",
   "connTestDesc": "Muat turun atau main tidak berfungsi? Ujian ini menyemak sambungan ke pelayan pada telefon anda dan menunjukkan di mana gagal.",
   "connTestRun": "Uji sambungan",
-  "connTestCopy": "Salin"
+  "connTestCopy": "Salin",
+  "goToSearchAll": "Nama surah, halaman atau 18:10"
 }

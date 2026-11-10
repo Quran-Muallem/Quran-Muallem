@@ -648,5 +648,6 @@
   "recConnecting": "Conectando con el servidor…",
   "connTestDesc": "¿No funciona la descarga o la reproducción? Esta prueba revisa la conexión al servidor en tu móvil y muestra dónde falla.",
   "connTestRun": "Probar conexión",
-  "connTestCopy": "Copiar"
+  "connTestCopy": "Copiar",
+  "goToSearchAll": "Sura, página o 18:10"
 }

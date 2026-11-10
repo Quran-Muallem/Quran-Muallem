@@ -544,20 +544,9 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
         {/* v30 own design: a gold medallion with the surah name (tap → «اذهب إلى»), page · juz · hizb as small
             seals under it; the tools sit together in one capsule. */}
         <button type="button" onClick={() => setGoToOpen(true)} aria-label={t("goTo")} title={t("goTo")} data-mushaf-header-open=""
-          className="group relative min-w-0 flex-1 rounded-2xl px-2 pb-1 pt-0.5 text-center"
+          className="group relative min-w-0 flex-1 rounded-2xl px-2 py-1.5 text-center"
           style={{ background: `radial-gradient(120% 140% at 50% 0%, ${alpha(GOLD, 0.22)}, transparent 60%), ${alpha("var(--mf-page-deep)", 0.9)}`, boxShadow: `inset 0 0 0 1px ${alpha(GOLD_LIGHT, 0.55)}, 0 4px 14px -8px rgba(0,0,0,.6)` }}>
-          <span className="flex items-center justify-center gap-1.5">
-            <span className="h-px w-3 shrink-0" style={{ background: GOLD_GRADIENT }} aria-hidden="true" />
-            <span className="truncate font-arabic text-[1.02rem] leading-snug" style={{ color: GOLD_B }}>سُورَةُ {getSurahMeta(firstSurah)?.nameArabic}</span>
-            <span className="h-px w-3 shrink-0" style={{ background: GOLD_GRADIENT }} aria-hidden="true" />
-          </span>
-          <span className="mt-0.5 flex items-center justify-center gap-1" dir={language === "ar" || language === "ur" ? "rtl" : "ltr"} data-mushaf-header-info={`${t("hdrPage")} ${num(page)} | ${t("hdrJuz")} ${num(juz)} | ${t("hdrHizb")} ${num(hizb)}`}>
-            {([["hdrPage", page], ["hdrJuz", juz], ["hdrHizb", hizb]] as const).map(([k, v]) => (
-              <span key={k} className="whitespace-nowrap rounded-full px-1.5 text-[0.6rem] leading-[1.15rem] text-emerald-50/90" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.45)}`, background: "rgba(0,0,0,.18)" }}>
-                {t(k)} <b className="font-semibold" style={{ color: GOLD_LIGHT }}>{num(v)}</b>
-              </span>
-            ))}
-          </span>
+          <span className="block font-arabic text-[1.05rem] leading-snug" style={{ color: GOLD_B }}>سورة {getSurahMeta(firstSurah)?.nameArabic}</span>
         </button>
         <div className="flex shrink-0 items-center rounded-2xl px-0.5" style={{ background: alpha("var(--mf-page-deep)", 0.9), boxShadow: `inset 0 0 0 1px ${alpha(GOLD_LIGHT, 0.45)}` }}>
           <button type="button" onClick={() => { const v = verses.find((x) => x.startsOnPage) ?? verses[0]; void toggleBookmark({ page, surah: v?.surah ?? firstSurah, ayah: v?.ayah ?? 1 }); }}
@@ -580,6 +569,15 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
         <SheikhControls compact reciterId={reciter.id} playing={player.playing} loading={player.loading} failed={player.failed}
           onToggle={() => { if (rec.listening) return; player.toggle(); }} onReciter={() => setReciterOpen(true)} />
       </div>
+      {/* page · juz · hizb on their own line, readable */}
+      <button type="button" onClick={() => setGoToOpen(true)} className="mb-1 flex w-full items-center justify-center gap-1.5" dir={language === "ar" || language === "ur" ? "rtl" : "ltr"}
+        data-mushaf-header-info={`${t("hdrPage")} ${num(page)} | ${t("hdrJuz")} ${num(juz)} | ${t("hdrHizb")} ${num(hizb)}`} aria-label={t("goTo")}>
+        {([["hdrPage", page], ["hdrJuz", juz], ["hdrHizb", hizb]] as const).map(([k, v]) => (
+          <span key={k} className="whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs text-emerald-50" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.45)}`, background: "rgba(0,0,0,.25)" }}>
+            {t(k)} <b className="font-semibold" style={{ color: GOLD_LIGHT }}>{num(v)}</b>
+          </span>
+        ))}
+      </button>
 
       {/* «تم التعرف على سورة الكهف - الآية ١» — after an automatic jump to the recited verse */}
       {detected && (

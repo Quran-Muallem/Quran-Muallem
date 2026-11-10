@@ -648,5 +648,6 @@
   "recConnecting": "Verbinde mit dem Server …",
   "connTestDesc": "Download oder Abspielen geht nicht? Dieser Test prüft auf deinem Handy die Verbindung zum Rezitations-Server und zeigt, wo es hängt.",
   "connTestRun": "Verbindung testen",
-  "connTestCopy": "Kopieren"
+  "connTestCopy": "Kopieren",
+  "goToSearchAll": "Surenname, Seite oder 18:10"
 }
