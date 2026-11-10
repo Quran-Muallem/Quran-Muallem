@@ -97,7 +97,7 @@ export function ContentSelectList({ kind, selectedId, onSelect, stickyBg = "var(
               <h3 dir={isRtlText(CONTENT_LANGUAGE_NAMES[g.lang]) ? "rtl" : "ltr"} style={{ background: stickyBg }} className={cn("sticky top-0 z-10 px-1 py-1.5 text-xs font-semibold uppercase tracking-wide text-amber-200/90", isRtlText(CONTENT_LANGUAGE_NAMES[g.lang]) && "font-arabic text-sm normal-case")}>
                 {CONTENT_LANGUAGE_NAMES[g.lang]}
               </h3>
-              {!g.items.length && <p className="rounded-xl bg-black/15 px-3 py-2 text-[0.72rem] leading-relaxed text-emerald-100/70" data-german-tafsir-note="">{t("tafsirGermanNote")}</p>}
+              {kind === "tf" && g.lang === "de" && <p className="mb-1 rounded-xl bg-black/15 px-3 py-2 text-[0.72rem] leading-relaxed text-emerald-100/70" data-german-tafsir-note="">{t("tafsirGermanNote")}</p>}
               <ul className="space-y-1">
                 {g.items.map((o) => {
                   const st = dl[o.id] ?? { status: "none" };
@@ -110,7 +110,10 @@ export function ContentSelectList({ kind, selectedId, onSelect, stickyBg = "var(
                         <span className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-full border", selected ? "border-amber-300 bg-amber-300 text-emerald-950" : "border-amber-200/40")}>
                           {selected && <Check className="h-3.5 w-3.5" />}
                         </span>
-                        <span dir={isRtlText(o.name) ? "rtl" : "ltr"} className={cn("min-w-0 flex-1 text-sm text-emerald-50", isRtlText(o.name) && "font-arabic")}>{o.name}</span>
+                        <span dir={isRtlText(o.name) ? "rtl" : "ltr"} className={cn("min-w-0 flex-1 text-sm text-emerald-50", isRtlText(o.name) && "font-arabic")}>
+                          {o.name}
+                          {"meanings" in o && o.meanings && <span className="mt-0.5 block text-[0.66rem] text-amber-200/80" data-meanings-label="">{t("tafsirMeaningsLabel")}</span>}
+                        </span>
                       </button>
                       {st.status === "done" ? (
                         <span className="flex shrink-0 items-center gap-1">

@@ -166,3 +166,52 @@ export function judgeWithTajweed(expected: string, heard: string, ctx: WordConte
   }
   return best;
 }
+
+/* ------------------------------------------------------------------------------------------------------ */
+/* v38 · what went wrong in a word (for the review after the recitation)                                   */
+/* ------------------------------------------------------------------------------------------------------ */
+
+/**
+ * Kinds of mistake the phonemes can show. The canonical phonemes write a madd as a run of ا / ۥ / ۦ (2 = natural,
+ * 4–6 = long), ghunnah of a stressed nūn / mīm as a run of ن / م, ikhfāʾ as a run of ں (nūn) / ۾ (mīm), qalqalah
+ * as ڇ after the letter and shaddah as a doubled letter — so these are compared, not guessed.
+ */
+export type TajweedIssue = "missing" | "madd" | "ghunnah" | "ikhfa" | "qalqalah" | "tafkheem" | "shadda" | "harakat" | "letters";
+
+const runs = (s: string, re: RegExp) => [...s.matchAll(re)].map((m) => m[0].length);
+const total = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
+const VOWELS = /[َُِ]/g;
+const stripVowels = (s: string) => s.replace(VOWELS, "");
+
+/** The mistakes visible in the phonemes of a word (`expected` canonical, `heard` from the recognizer). */
+export function diagnoseWord(expected: string | null | undefined, heard: string | null | undefined): TajweedIssue[] {
+  if (!heard) return ["missing"];
+  if (!expected) return ["letters"];
+  // A different word (most consonants differ): the letters are the problem, not a Tajweed detail.
+  const cons = (x: string) => [...stripVowels(core(x)).replace(/[اۥۦڇ]/g, "")];
+  const ce = cons(expected), ch = cons(heard);
+  if (editDistance(ce, ch) > Math.max(1, Math.floor(0.4 * Math.max(ce.length, ch.length)))) return ["letters"];
+  const out = new Set<TajweedIssue>();
+  // Madd: total length of the long-vowel runs (a natural madd is 2, a long one 4–6).
+  const eM = runs(expected, /[اۥۦ]{2,}/g), hM = runs(heard, /[اۥۦ]{2,}/g);
+  if (eM.length && Math.abs(total(eM) - total(hM)) >= 2) out.add("madd");
+  // Ghunnah of a stressed nūn / mīm (ننن / ممم, also in idghām with ghunnah).
+  const eG = runs(expected, /ن{3,}|م{3,}/g), hG = runs(heard, /ن{3,}|م{3,}/g);
+  if (eG.length && total(hG) < total(eG) - 1) out.add("ghunnah");
+  // Ikhfāʾ / iqlāb: the hidden nūn / mīm (ں / ۾) read as a clear one.
+  const eI = (expected.match(/[ں۾]/g) ?? []).length, hI = (heard.match(/[ں۾]/g) ?? []).length;
+  if (eI && hI < eI - 1) out.add("ikhfa");
+  // Qalqalah.
+  if ((expected.match(/ڇ/g) ?? []).length > (heard.match(/ڇ/g) ?? []).length) out.add("qalqalah");
+  // Heavy ↔ light letter.
+  if (tafkheemSlip(expected, heard)) out.add("tafkheem");
+  // Shaddah: a doubled letter (not a madd or ghunnah run) heard single.
+  const doubles = (s: string) => runs(s.replace(/[اۥۦ]+|ن{3,}|م{3,}|[ں۾]+/g, ""), /(.)\1/g).length;
+  if (doubles(expected) > doubles(heard)) out.add("shadda");
+  if (!out.size) {
+    // Same consonants, other vowels → the ḥarakāt; otherwise letters are wrong / missing.
+    const sameLetters = stripVowels(core(expected)) === stripVowels(core(heard));
+    out.add(sameLetters ? "harakat" : "letters");
+  }
+  return [...out];
+}

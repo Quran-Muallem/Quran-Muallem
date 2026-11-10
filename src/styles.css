@@ -317,3 +317,36 @@ html[lang="ar"] nav { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
 @keyframes reciter-wave { 0%, 100% { transform: scaleY(.35) } 50% { transform: scaleY(1) } }
 .reciter-wave { transform-origin: bottom; animation: reciter-wave .9s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .reciter-wave { animation: none; } }
+
+/* v38 «ألوان أحكام التجويد» (Quran.com's scheme; lighter tones on the dark page themes) */
+:root {
+  --tj-silent: #9aa39d; --tj-madd-normal: #8fb0ff; --tj-madd-permissible: #7f8cff; --tj-madd-necessary: #c38bff;
+  --tj-madd-obligatory: #6fa0ff; --tj-qalqalah: #ff6b6b; --tj-ikhfa-shafawi: #f07ae0; --tj-ikhfa: #d58cff;
+  --tj-idgham-shafawi: #8be15a; --tj-iqlab: #5fd3ff; --tj-idgham-ghunnah: #4fd1a5; --tj-idgham-wo-ghunnah: #7cd66b;
+  --tj-idgham-mutajanis: #b9b9b9; --tj-ghunnah: #ffa24c;
+}
+html[data-theme="light"] {
+  --tj-silent: #8c8c8c; --tj-madd-normal: #537fff; --tj-madd-permissible: #4050ff; --tj-madd-necessary: #000ebc;
+  --tj-madd-obligatory: #2144c1; --tj-qalqalah: #dd0008; --tj-ikhfa-shafawi: #d500b7; --tj-ikhfa: #9400a8;
+  --tj-idgham-shafawi: #58b800; --tj-iqlab: #1aa7e0; --tj-idgham-ghunnah: #169777; --tj-idgham-wo-ghunnah: #169200;
+  --tj-idgham-mutajanis: #a1a1a1; --tj-ghunnah: #ff7e1e;
+}
+.tj-ham_wasl, .tj-laam_shamsiyah, .tj-slnt { color: var(--tj-silent); }
+.tj-madda_normal { color: var(--tj-madd-normal); }
+.tj-madda_permissible { color: var(--tj-madd-permissible); }
+.tj-madda_necessary { color: var(--tj-madd-necessary); }
+.tj-madda_obligatory { color: var(--tj-madd-obligatory); }
+.tj-qalaqah { color: var(--tj-qalqalah); }
+.tj-ikhafa_shafawi { color: var(--tj-ikhfa-shafawi); }
+.tj-ikhafa { color: var(--tj-ikhfa); }
+.tj-idgham_shafawi { color: var(--tj-idgham-shafawi); }
+.tj-iqlab { color: var(--tj-iqlab); }
+.tj-idgham_ghunnah { color: var(--tj-idgham-ghunnah); }
+.tj-idgham_wo_ghunnah { color: var(--tj-idgham-wo-ghunnah); }
+.tj-idgham_mutajanisayn, .tj-idgham_mutaqaribayn { color: var(--tj-idgham-mutajanis); }
+.tj-ghunnah { color: var(--tj-ghunnah); }
+.tjb-ham_wasl { background: var(--tj-silent); } .tjb-madda_normal { background: var(--tj-madd-normal); }
+.tjb-madda_permissible { background: var(--tj-madd-permissible); } .tjb-madda_necessary { background: var(--tj-madd-necessary); }
+.tjb-madda_obligatory { background: var(--tj-madd-obligatory); } .tjb-qalaqah { background: var(--tj-qalqalah); }
+.tjb-ikhafa { background: var(--tj-ikhfa); } .tjb-iqlab { background: var(--tj-iqlab); }
+.tjb-idgham_ghunnah { background: var(--tj-idgham-ghunnah); } .tjb-ghunnah { background: var(--tj-ghunnah); }

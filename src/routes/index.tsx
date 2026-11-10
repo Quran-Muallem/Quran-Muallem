@@ -3,6 +3,9 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { BookOpen, Headphones, Home, LayoutGrid, Loader2, PenLine, Mic, Lightbulb, RotateCcw, Search, Settings, Sparkles, Square, Target, Pause, Play } from "lucide-react";
 import { VoiceWordFix, type WordFix } from "@/components/VoiceWordFix";
 import { useVoiceProfile } from "@/lib/userAdaptation";
+import { deferLiveMistakes, tokenVerses } from "@/lib/liveMistakes";
+import { SessionReview, type ReviewItem } from "@/components/SessionReview";
+import { useTajweedWords, type TajweedSeg } from "@/lib/tajweedColors";
 import { useMistakeHaptics } from "@/lib/useMistakeHaptics";
 import { matchLive, normalizeArabic, type LiveMatch, type LiveStatus, type WordStatus } from "@/lib/quranMatcher";
 import { useSpeechRecognition, type SpeechErrorCode } from "@/lib/useSpeechRecognition";
@@ -350,11 +353,30 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
     ? matchLivePhonemes(transcript, texts, refs, { final: !whisper.recording })
     : matchLive(transcript, texts)), [transcript, texts, profile, textKind, refs, whisper.recording]); // eslint-disable-line react-hooks/exhaustive-deps
   const listening = useWhisper ? whisper.recording : speech.isListening;
+  // v38: while reciting, red / orange appear only once their verse is finished (liveMistakes.ts).
+  const verseOf = useMemo(() => tokenVerses(texts), [texts]);
+  const liveStatuses = useMemo(() => (listening ? deferLiveMistakes(match.statuses, verseOf, match.cursor) : match.statuses), [listening, match.statuses, match.cursor, verseOf]);
   // Word colours shared with the Mushaf (RecitationContext): a passage recited there shows the same
   // green / orange / red here; a new recitation replaces them verse by verse as the reciter reaches them.
   const colors = useWordColors();
   const tokenKeys = useMemo(() => passageTokenKeys(target.surahId, ayat, mushafWords ? (s2, a) => mushafWords.words(s2, a) : null, (tok) => !!normalizeArabic(tok)),
     [target.surahId, ayat, mushafWords]);
+  // v38 «ألوان أحكام التجويد»: coloured words of the passage (a token is coloured only if its text is the word's).
+  const tajweedWords = useTajweedWords(settings.tajweedColors && !!mushafWords, useMemo(() => ayat.map((a) => ({ surah: target.surahId, ayah: a.number })), [ayat, target.surahId]),
+    (s2, a2) => mushafWords?.words(s2, a2).length ?? -1);
+  const tokenTexts = useMemo(() => ayat.flatMap((a) => a.text.split(" ")), [ayat]);
+  const tajweedOf = (i: number) => {
+    const k = tokenKeys[i];
+    const segs = k ? tajweedWords.get(k) : undefined;
+    return segs && segs.map((x) => x.text).join("") === tokenTexts[i] ? segs : undefined;
+  };
+  /** Verses («s:a») whose saved colours are hidden after «إعادة» until they are recited again (v38). */
+  const [cleared, setCleared] = useState<ReadonlySet<string>>(() => new Set());
+  /** v38: review of the mistakes after the stop. */
+  const [review, setReview] = useState<{ items: ReviewItem[]; stats: { correct: number; near: number; wrong: number } } | null>(null);
+  const [retryAt, setRetryAt] = useState<number | null>(null);
+  /** The last review, to open again with «مراجعة الأخطاء» after closing it. */
+  const [reviewReady, setReviewReady] = useState<{ items: ReviewItem[]; stats: { correct: number; near: number; wrong: number } } | null>(null);
   const shown = useMemo((): LiveStatus[] => {
     const live = listening || match.statuses.some(isJudged);
     // Owner key of each token (a waqf sign belongs to the word before it).
@@ -367,15 +389,15 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
     const bad = (st: LiveStatus) => st === "ERROR" || st === "WARNING";
     return tokenKeys.map((k, i) => {
       // «كشف الأخطاء» off → no red / orange; «تظليل الأخطاء الماضية» off → earlier mistakes not shown.
-      if (live && liveVerses.has(verse(owners[i] ?? null))) { const st = match.statuses[i] ?? "PENDING"; return !settings.errorDetection && bad(st) ? "PENDING" : st; }
-      const st: LiveStatus = (k && colors.get(k)?.st) || "PENDING";
+      if (live && liveVerses.has(verse(owners[i] ?? null))) { const st = liveStatuses[i] ?? "PENDING"; return !settings.errorDetection && bad(st) ? "PENDING" : st; }
+      const st: LiveStatus = (k && !cleared.has(verse(k)) && colors.get(k)?.st) || "PENDING";
       return bad(st) && (!settings.showPastMistakes || !settings.errorDetection) ? "PENDING" : st;
     });
-  }, [listening, match.statuses, match.cursor, tokenKeys, colors, settings.errorDetection, settings.showPastMistakes]);
+  }, [listening, match.statuses, liveStatuses, match.cursor, tokenKeys, colors, cleared, settings.errorDetection, settings.showPastMistakes]);
   // Light vibration when a word turns red/orange while reciting (recognition keeps running).
-  useMistakeHaptics(match.statuses, listening);
+  useMistakeHaptics(liveStatuses, listening);
   const [wordFix, setWordFix] = useState<WordFix | null>(null);
-  useEffect(() => { if (listening) setWordFix(null); }, [listening]);
+  useEffect(() => { if (listening) { setWordFix(null); setReview(null); } }, [listening]);
   const tapWord = (i: number) => {
     const heard = match.heard[i] ?? (tokenKeys[i] ? colors.get(tokenKeys[i]!)?.heard : null) ?? null;
     let o = 0;
@@ -409,7 +431,13 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
   const passageKey = `${target.surahId}:${from}-${to}:${target.mode}`;
   const snap = useRef(store.practice?.key === passageKey ? store.practice : null);
   const [hints, setHints] = useState<Set<number>>(() => new Set(snap.current?.hints ?? []));
-  const reset = useCallback(() => { stopListening(); resetTranscript(); setWhisperText(""); setBase(null); whisper.cancel(); setSaved(null); setHints(new Set()); setWordFix(null); }, [stopListening, resetTranscript, whisper.cancel]);
+  const reset = useCallback(() => { session.current = false; stopListening(); resetTranscript(); setWhisperText(""); setBase(null); whisper.cancel(); setSaved(null); setHints(new Set()); setWordFix(null); setReview(null); setReviewReady(null); }, [stopListening, resetTranscript, whisper.cancel]); // eslint-disable-line react-hooks/exhaustive-deps
+  /**
+   * v38 «إعادة»: start the passage again from scratch — the running recitation is dropped (nothing saved),
+   * timer and score go back to 0 and the passage shows no colours (saved colours of these verses are hidden
+   * until they are recited again).
+   */
+  const resetSession = () => { reset(); setCleared(new Set(ayat.map((a) => `${target.surahId}:${a.number}`))); };
   // One-tap hint: each tap reveals exactly one more hidden word (the next one not yet recited or shown),
   // with no limit; recording and recognition keep running. A word shown by a hint counts as "almost right".
   const giveHint = () => {
@@ -535,6 +563,9 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
   latestHints.current = hints;
   const latestMushaf = useRef(mushafWords);
   latestMushaf.current = mushafWords;
+  /** Canonical phonemes per token while the phoneme engine judges (for the review's diagnosis). */
+  const refsRef = useRef<(string | null)[] | null>(null);
+  refsRef.current = textKind === "phonemes" ? refs : null;
   const latest = useRef({ match, ayat, from, to });
   latest.current = { match, ayat, from, to };
   useEffect(() => { if (listening) { session.current = true; setSaved(null); } }, [listening]);
@@ -544,7 +575,7 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
     const timer = setTimeout(() => {
       session.current = false;
       const { match: m, ayat: a, from: f, to: tt } = latest.current;
-      savePassage(m, a, f, tt, whisper.takeAudio);
+      savePassage(m, a, f, tt, whisper.takeAudio, true);
     }, useWhisper ? 0 : 900);
     return () => clearTimeout(timer);
   }, [listening, processing, target.surahId, target.mode, useWhisper]);
@@ -552,7 +583,7 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
    * Saves a recited passage: its own recording (`take`: the rest after the stop, or a cut while the
    * microphone goes on into the next surah), progress, word colours for both views.
    */
-  function savePassage(m: typeof match, a: Ayah[], f: number, tt: number, take: () => Promise<{ blob: Blob; seconds: number } | null>) {
+  function savePassage(m: typeof match, a: Ayah[], f: number, tt: number, take: () => Promise<{ blob: Blob; seconds: number } | null>, final = false) {
       // Only the verses actually reached (judged words), so a part never claims verses it did not cover.
       let reachedTo = f;
       { let o = 0; a.forEach((x) => { const n = x.text.split(" ").length; if (m.statuses.slice(o, o + n).some((st) => st && st !== "PENDING")) reachedTo = x.number; o += n; }); }
@@ -568,6 +599,20 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
         recited.push({ key, status: st === "CORRECT" && latestHints.current.has(i) ? "WARNING" : st, heard: m.heard[i] ?? null });
       });
       store.commitWords(recited, target.mode, "practice");
+      const judgedVerses = new Set(recited.filter((r) => r.status !== "PENDING").map((r) => r.key.slice(0, r.key.lastIndexOf(":"))));
+      if (judgedVerses.size) setCleared((c) => (c.size ? new Set([...c].filter((v) => !judgedVerses.has(v))) : c));
+      // v38: after the stop, the review of every red / orange word (not when the passage moves on).
+      if (final && getSettings().errorDetection) {
+        const words = a.flatMap((x) => x.text.split(" "));
+        const items: ReviewItem[] = [];
+        tk.forEach((key, i) => {
+          const st = m.statuses[i];
+          if (!key || (st !== "ERROR" && st !== "WARNING")) return;
+          items.push({ key, word: words[i] ?? "", heard: m.heard[i] ?? null, expected: refsRef.current?.[i] ?? null, status: st });
+        });
+        const r = items.length ? { items, stats: tally(m.statuses) } : null;
+        setReview(r); setReviewReady(r);
+      }
       const results = ayahResults(a, m.statuses.map((st, i): LiveStatus => (st === "CORRECT" && latestHints.current.has(i) ? "WARNING" : st)), m.done);
       if (!results.length) return;
       void recordAttempt({ surahId: target.surahId, mode: target.mode, results });
@@ -592,6 +637,12 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
     if (speech.isListening) stopListening();
     else { if (match.done || match.recited) resetTranscript(); setBase(null); startListening(); }
   };
+  // v38 «أعد الآية» / «أعد التلاوة»: once the passage has settled (its reset ran), the microphone starts.
+  useEffect(() => {
+    if (retryAt == null || text.status !== "ready" || listening) return;
+    const id = setTimeout(() => { setRetryAt(null); toggleMicRef.current(); }, 120);
+    return () => clearTimeout(id);
+  }, [retryAt, text.status, passageKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const errorKey = useWhisper ? whisper.error : speechErrorKey(speech.error);
   const setRange = (f: number, tt: number) => onTargetChange({ ...target, fromAyah: f, toAyah: Math.min(Math.max(tt, f), f + MAX_RANGE - 1) });
   const num = (n: number) => (language === "ar" ? toArabicDigits(n) : String(n));
@@ -642,7 +693,7 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
         </select>
       </div>
 
-      <LiveMetrics match={match} onReset={reset} />
+      <LiveMetrics match={match} onReset={resetSession} />
 
       {/* Start / stop right above the surah title; it stays reachable (sticky) while the text scrolls along */}
       <div className={cn("-mx-1 rounded-3xl px-1 transition-colors", listening && "sticky top-[calc(max(1rem,env(safe-area-inset-top))+3.25rem)] z-20 bg-background/85 shadow-lg backdrop-blur")}>
@@ -661,7 +712,8 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
           </div>
         )}
         {text.status === "ready" && (
-          <LiveText ayat={ayat} statuses={shown} cursor={match.cursor} masked={masked} hints={hints} active={listening} playingAyah={player.playing ? player.ayah : null}
+          <LiveText ayat={ayat} statuses={shown} tajweedOf={settings.tajweedColors ? tajweedOf : undefined}
+            clean={settings.mushafStyle === "clean" ? { fontSize: settings.quranFontSize } : undefined} cursor={match.cursor} masked={masked} hints={hints} active={listening} playingAyah={player.playing ? player.ayah : null}
             onWordTap={listening ? undefined : tapWord} />
         )}
         {wordFix && <VoiceWordFix fix={wordFix} onClose={() => setWordFix(null)} className="mt-3" />}
@@ -694,6 +746,17 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
       <RecorderFeedback transcribing={processing} transcript={useWhisper && textKind === "text" ? whisper.transcript : ""} error={errorKey} />
       <p className="text-center text-xs leading-relaxed text-muted-foreground">{t("whisperPrivacy")}</p>
       {recognizer === "zipformer" && <p className="text-center text-xs leading-relaxed text-muted-foreground">{t("zfDisclaimer")}</p>}
+      {review && !listening && (
+        <SessionReview items={review.items} stats={review.stats} onClose={() => setReview(null)}
+          onRetryVerse={(_s, a) => { setReview(null); reset(); setCleared(new Set()); setRange(a, Math.max(a, to)); setRetryAt(Date.now()); }}
+          onRetryAll={() => { setReview(null); resetSession(); setRetryAt(Date.now()); }}
+          onDetails={(it) => { setReview(null); const i = tokenKeys.indexOf(it.key); if (i >= 0) tapWord(i); }} />
+      )}
+      {!review && !listening && reviewReady && (
+        <button type="button" onClick={() => setReview(reviewReady)} data-review-open="" className="mx-auto flex items-center gap-1.5 rounded-full border border-accent/50 bg-accent/10 px-4 py-1.5 text-sm text-accent">
+          {t("srOpen")} · {num(reviewReady.items.length)}
+        </button>
+      )}
       <ReciterSelectModal open={reciterOpen} onOpenChange={setReciterOpen} selectedId={settings.reciterId} surah={target.surahId}
         onSelect={(id) => { void updateSettings({ reciterId: id }); }} />
     </div>
@@ -768,7 +831,11 @@ const statusClass: Record<WordStatus, string> = {
  * Ayah text in large Uthmani type (full Tashkeel), tinted word by word. `masked` hides every word that has not
  * been recited correctly yet; `cursor` is the word expected next; the verse the Sheikh is reciting gets a gold marker.
  */
-function LiveText({ ayat, statuses, cursor, masked, hints, active, playingAyah, onWordTap }: {
+function LiveText({ ayat, statuses, cursor, masked, hints, active, playingAyah, onWordTap, tajweedOf, clean }: {
+  /** v38 «ألوان أحكام التجويد»: coloured segments of a token (when its text matches). */
+  tajweedOf?: ((index: number) => TajweedSeg[] | undefined) | undefined;
+  /** v38 «نص قرآني سلس»: clear script at this size. */
+  clean?: { fontSize: number } | undefined;
   ayat: Ayah[]; statuses: LiveStatus[]; cursor: number; masked: boolean; hints?: Set<number>; active: boolean; playingAyah: number | null;
   /** Tap on a word marked wrong or almost right (voice profile). */
   onWordTap?: ((index: number) => void) | undefined;
@@ -786,7 +853,7 @@ function LiveText({ ayat, statuses, cursor, masked, hints, active, playingAyah, 
   }, [cursor, active]);
   let offset = 0;
   return (
-    <div ref={box} dir="rtl" lang="ar" className="space-y-5 text-center font-quran text-[2.1rem] leading-[2.4]">
+    <div ref={box} dir="rtl" lang="ar" className={cn("space-y-5 text-center leading-[2.4]", clean ? "font-arabic" : "font-quran text-[2.1rem]")} style={clean ? { fontSize: clean.fontSize } : undefined}>
       {ayat.map((a) => {
         const words = a.text.split(" ");
         const start = offset; offset += words.length;
@@ -811,7 +878,9 @@ function LiveText({ ayat, statuses, cursor, masked, hints, active, playingAyah, 
                     hidden && status === "PENDING" && "text-muted-foreground/60",
                     hinted && status === "PENDING" && "text-accent underline decoration-dotted underline-offset-8",
                     isCursor && "ring-2 ring-accent/70 animate-pulse")}>
-                  {hidden ? "•".repeat(Math.min(6, Math.max(2, letters))) : w}
+                  {hidden ? "•".repeat(Math.min(6, Math.max(2, letters)))
+                    : status === "PENDING" && tajweedOf?.(index) ? tajweedOf(index)!.map((sg, k) => (sg.cls ? <span key={k} className={`tj-${sg.cls}`}>{sg.text}</span> : sg.text))
+                    : w}
                 </span>
               );
             })}{" "}
@@ -864,7 +933,8 @@ function LiveMetrics({ match, onReset }: { match: LiveMatch; onReset: () => void
           {extra > 0 && <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground">+{extra}</span>}
         </div>
       </div>
-      <Button variant="ghost" onClick={onReset} aria-label={t("reset")} className="h-10 w-10 shrink-0 rounded-full border border-border p-0"><RotateCcw className="h-4 w-4" /></Button>
+      {/* v38 «إعادة»: start the passage again from scratch (timer, score, colours) */}
+      <Button variant="ghost" onClick={onReset} aria-label={t("resetSession")} data-recite-reset="" className="h-10 shrink-0 gap-1.5 rounded-full border border-border px-3"><RotateCcw className="h-4 w-4" /><span className="text-xs">{t("resetSession")}</span></Button>
     </div>
   );
 }

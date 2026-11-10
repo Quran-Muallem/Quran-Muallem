@@ -57,7 +57,15 @@ export type AppSettings = {
   playbackRate: number;
   /** «حفظ التسجيلات الصوتية»: keep the recordings of your recitation on this device. */
   saveRecordings: boolean;
+  /** v38 «هيئة المصحف»: the Madinah page (15 lines like print) or flowing Quran text in a clear script. */
+  mushafStyle: MushafStyle;
+  /** Font size (px) of the flowing text style. */
+  quranFontSize: number;
+  /** «ألوان أحكام التجويد»: colour the Tajweed rules in the Quran text (Mushaf and Tasmīʿ). */
+  tajweedColors: boolean;
 };
+export type MushafStyle = "madinah" | "clean";
+export const QURAN_FONT_SIZES = [20, 24, 28, 32, 36, 40, 44] as const;
 
 export const DEFAULT_SETTINGS: AppSettings = {
   language: "ar",
@@ -83,6 +91,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   sessionHaptic: true,
   playbackRate: 1,
   saveRecordings: true,
+  mushafStyle: "madinah",
+  quranFontSize: 28,
+  tajweedColors: false,
 };
 export const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 1.75] as const;
 
@@ -110,10 +121,12 @@ export function cleanSettings(s: AppSettings & Record<string, unknown>): AppSett
   if (out.recognizer !== "zipformer" && out.recognizer !== "whisper") out.recognizer = "zipformer";
   if (!out.translations || typeof out.translations !== "object") out.translations = {};
   if (!out.tafsirs || typeof out.tafsirs !== "object") out.tafsirs = {};
-  for (const k of ["mistakeVibration", "completionSound", "autoStopSurahEnd", "hiddenFirstWord", "dailyReminder", "errorDetection", "showPastMistakes", "mistakeSound", "sessionSound", "sessionHaptic", "saveRecordings"] as const) if (typeof out[k] !== "boolean") out[k] = DEFAULT_SETTINGS[k];
+  for (const k of ["mistakeVibration", "completionSound", "autoStopSurahEnd", "hiddenFirstWord", "dailyReminder", "errorDetection", "showPastMistakes", "mistakeSound", "sessionSound", "sessionHaptic", "saveRecordings", "tajweedColors"] as const) if (typeof out[k] !== "boolean") out[k] = DEFAULT_SETTINGS[k];
   if (typeof out.dailyReminderTime !== "string" || !/^\d{2}:\d{2}$/.test(out.dailyReminderTime)) out.dailyReminderTime = DEFAULT_SETTINGS.dailyReminderTime;
   if (!(PLAYBACK_RATES as readonly number[]).includes(out.playbackRate as number)) out.playbackRate = 1;
   if (!["tone", "click", "bell"].includes(out.mistakeSoundType as string)) out.mistakeSoundType = "tone";
+  if (out.mushafStyle !== "madinah" && out.mushafStyle !== "clean") out.mushafStyle = "madinah";
+  if (!(QURAN_FONT_SIZES as readonly number[]).includes(out.quranFontSize as number)) out.quranFontSize = DEFAULT_SETTINGS.quranFontSize;
   delete out["chatProvider"]; delete out["chatModel"];
   return out;
 }

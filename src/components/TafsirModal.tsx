@@ -117,6 +117,7 @@ export function TafsirModal({ open, surah, ayah, tab: initialTab, onClose, onAya
             <>
               <PickerButton label={t("ayahTafsir")} value={tafsir.option.name} onClick={() => setPicker("tf")} />
               {tafsir.fallback && <p className="mb-2 rounded-xl bg-black/20 px-3 py-2 text-xs leading-relaxed text-amber-100/90">{t("tafsirFallbackNote")}</p>}
+              {tafsir.option.meanings && <p className="mb-2 rounded-xl bg-black/20 px-3 py-2 text-xs leading-relaxed text-amber-100/90" data-meanings-note="">{t("tafsirMeaningsNote")}</p>}
               {tf.status === "loading" ? loading : tf.status === "error" ? failed(tf.offline) : (
                 <>
                   {tf.data.fromAyah !== ayah && <p className="mb-2 text-xs text-emerald-100/60">{t("tafsirGroupNote").replace("{n}", num(tf.data.fromAyah))}</p>}

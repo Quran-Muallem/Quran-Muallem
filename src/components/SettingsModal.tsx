@@ -2,9 +2,10 @@ import { speechEngineFor } from "@/lib/speechEngine";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AlertOctagon, AlertTriangle, BellRing, Highlighter, Info, BookOpen, BookText, CheckCircle2, ChevronLeft, ChevronRight, Download, ExternalLink, Eye, EyeOff, FileText, Globe, Languages, Loader2, Lock, Mic, MinusCircle, Play, Podcast, ShieldCheck, Sun, Trash2, Upload, XCircle } from "lucide-react";
 import { GoldDialog, GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
-import { PLAYBACK_RATES, THEME_COLORS, updateSettings, useSettings, type ThemeId } from "@/lib/settings";
+import { PLAYBACK_RATES, QURAN_FONT_SIZES, THEME_COLORS, updateSettings, useSettings, type MushafStyle, type ThemeId } from "@/lib/settings";
+import { TAJWEED_LEGEND } from "@/lib/tajweedColors";
 import { BackupError, downloadBackup, importProgressJson } from "@/lib/progressStorage";
-import { cachedSurahIds, downloadWholeQuran } from "@/lib/quranService";
+import { cachedSurahIds, downloadWholeQuran, toArabicDigits } from "@/lib/quranService";
 import { directionFor, useI18n, type CopyKey } from "@/lib/i18n";
 import { ReciterSelectModal } from "@/components/ReciterSelectModal";
 import { ContentSelectList } from "@/components/ContentSelectModal";
@@ -86,7 +87,13 @@ export function SettingsModal({ open, onOpenChange }: { open: boolean; onOpenCha
             <SpeechSection /><Section title={t("voiceTitle")}><VoiceProfilePanel /></Section>
           </>)}
           {page === "listening" && <ListeningSection onManage={() => { onOpenChange(false); window.dispatchEvent(new Event("qm:open-reciters")); }} />}
-          {page === "mushafLook" && (<><p className="rounded-xl bg-black/15 p-3 text-xs leading-relaxed text-emerald-100/75">{t("setMushafLookDesc")}</p><ThemeSection /></>)}
+          {page === "mushafLook" && (<>
+            <p className="rounded-xl bg-black/15 p-3 text-xs leading-relaxed text-emerald-100/75">{t("setMushafLookDesc")}</p>
+            <MushafStyleSection />
+            <Toggle k="tajweedColors" label="setTajweedColors" desc="setTajweedColorsDesc" />
+            {s0.tajweedColors && <TajweedLegend />}
+            <ThemeSection />
+          </>)}
           {page === "hidden" && <Toggle k="hiddenFirstWord" label="setHiddenFirstWord" desc="setHiddenFirstWordDesc" />}
           {page === "highlight" && <Toggle k="showPastMistakes" label="setPastMistakes" desc="setPastMistakesDesc" />}
           {page === "language" && <LanguageSection />}
@@ -120,7 +127,7 @@ export function SettingsModal({ open, onOpenChange }: { open: boolean; onOpenCha
   );
 }
 
-type BoolKey = "mistakeVibration" | "completionSound" | "autoStopSurahEnd" | "hiddenFirstWord" | "errorDetection" | "showPastMistakes" | "mistakeSound" | "sessionSound" | "sessionHaptic" | "saveRecordings";
+type BoolKey = "mistakeVibration" | "completionSound" | "autoStopSurahEnd" | "hiddenFirstWord" | "errorDetection" | "showPastMistakes" | "mistakeSound" | "sessionSound" | "sessionHaptic" | "saveRecordings" | "tajweedColors";
 function Toggle({ k, label, desc }: { k: BoolKey; label: CopyKey; desc: CopyKey }) {
   const { t } = useI18n();
   const s = useSettings();
@@ -136,6 +143,61 @@ function Toggle({ k, label, desc }: { k: BoolKey; label: CopyKey; desc: CopyKey 
         <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all", on ? "start-[1.375rem]" : "start-0.5")} />
       </span>
     </label>
+  );
+}
+
+/** v38 «هيئة المصحف»: Madinah page or flowing clear text (with its font size). */
+function MushafStyleSection() {
+  const { t, language } = useI18n();
+  const s = useSettings();
+  const num = (n: number) => (language === "ar" ? toArabicDigits(n) : String(n));
+  const styles: { id: MushafStyle; label: CopyKey; desc: CopyKey; font: string }[] = [
+    { id: "madinah", label: "mushafStyleMadinah", desc: "mushafStyleMadinahDesc", font: "font-quran" },
+    { id: "clean", label: "mushafStyleClean", desc: "mushafStyleCleanDesc", font: "font-arabic" },
+  ];
+  return (
+    <div className="space-y-2" role="radiogroup" aria-label={t("setMushafStyle")} data-settings-mushaf-style={s.mushafStyle}>
+      <p className="px-1 text-xs font-semibold" style={{ color: GOLD_LIGHT }}>{t("setMushafStyle")}</p>
+      {styles.map((st) => {
+        const on = s.mushafStyle === st.id;
+        return (
+          <button key={st.id} type="button" role="radio" aria-checked={on} onClick={() => void updateSettings({ mushafStyle: st.id })} data-mushaf-style={st.id}
+            className="flex w-full items-center gap-3 rounded-2xl bg-black/15 p-3 text-start" style={{ boxShadow: `inset 0 0 0 ${on ? 2 : 1}px ${alpha(on ? GOLD_LIGHT : GOLD, on ? 0.85 : 0.3)}` }}>
+            <span dir="rtl" lang="ar" className={cn("w-24 shrink-0 rounded-xl bg-black/25 px-2 py-1 text-center text-lg leading-loose text-emerald-50", st.font)}>بِسْمِ ٱللَّهِ</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm text-emerald-50">{t(st.label)}</span>
+              <span className="mt-0.5 block text-xs leading-relaxed text-emerald-100/60">{t(st.desc)}</span>
+            </span>
+            <span aria-hidden="true" className={cn("h-4 w-4 shrink-0 rounded-full border-2", on ? "border-amber-300 bg-amber-300" : "border-white/40")} />
+          </button>
+        );
+      })}
+      {s.mushafStyle === "clean" && (
+        <div className="rounded-2xl bg-black/15 p-3" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
+          <p className="text-sm text-emerald-50">{t("setQuranFontSize")}</p>
+          <div className="mt-2 flex flex-wrap gap-1.5" role="radiogroup" aria-label={t("setQuranFontSize")}>
+            {QURAN_FONT_SIZES.map((px) => (
+              <button key={px} type="button" role="radio" aria-checked={s.quranFontSize === px} onClick={() => void updateSettings({ quranFontSize: px })} data-font-size={px}
+                className={cn("rounded-full px-3 py-1 text-xs", s.quranFontSize === px ? "font-semibold text-emerald-950" : "text-emerald-100/80")}
+                style={s.quranFontSize === px ? { background: GOLD_GRADIENT } : { boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.4)}` }}>{num(px)}</button>
+            ))}
+          </div>
+          <p dir="rtl" lang="ar" className="mt-2 font-arabic leading-loose text-emerald-50" style={{ fontSize: s.quranFontSize }}>ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** The colours of the Tajweed rules (Quran.com's scheme), shown when the colours are on. */
+function TajweedLegend() {
+  const { t } = useI18n();
+  return (
+    <ul className="grid grid-cols-2 gap-1.5 rounded-2xl bg-black/15 p-3 text-xs text-emerald-50" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }} data-tajweed-legend="">
+      {TAJWEED_LEGEND.map(([cls, key]) => (
+        <li key={cls} className="flex items-center gap-2"><span className={cn("h-3 w-3 shrink-0 rounded-full", `tjb-${cls}`)} />{t(key)}</li>
+      ))}
+    </ul>
   );
 }
 

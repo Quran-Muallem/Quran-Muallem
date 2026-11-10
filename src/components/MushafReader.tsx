@@ -29,6 +29,7 @@ import { getSettings, updateSettings, useSettings } from "@/lib/settings";
 import type { LiveMatch, LiveStatus } from "@/lib/quranMatcher";
 import { useI18n } from "@/lib/i18n";
 import { VoiceWordFix, type WordFix } from "@/components/VoiceWordFix";
+import { SessionReview, type ReviewItem } from "@/components/SessionReview";
 import { unifiedMode, useRecitationStore, useSessionStats, useWordColors, wordDone, type RecitedWord, type WordResult } from "@/context/RecitationContext";
 import { colorsFor, mergeLive, reachedVerses } from "@/lib/wordColors";
 import { finishedSurah, pageReadyToTurn, surahEndIndices, tally } from "@/lib/surahCompletion";
@@ -36,6 +37,7 @@ import { hizbOfPage, noteRecentRead, toggleBookmark, useBookmarks } from "@/lib/
 import { cn } from "@/lib/utils";
 import { MIN_EMPTY_PART_SECONDS, SURAH_END_SILENCE_MS, addToOpen, mainPart, recordingParts, type OpenParts, type RecordingPart } from "@/lib/recordingParts";
 import { setMicActive } from "@/lib/recordingActivity";
+import { useTajweedWords } from "@/lib/tajweedColors";
 
 function useMushaf() {
   const [state, setState] = useState<{ data: Mushaf | null; error: boolean }>({ data: null, error: false });
@@ -105,6 +107,15 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
   useKeepAwake(true);
   /** Stage 4: a word marked wrong that the user tapped — offer "Add to my voice profile". */
   const [wordFix, setWordFix] = useState<WordFix | null>(null);
+  /** v38: review of the session's mistakes after the stop (and the last one, to open it again). */
+  const [review, setReview] = useState<{ items: ReviewItem[]; stats: { correct: number; near: number; wrong: number } } | null>(null);
+  const [reviewReady, setReviewReady] = useState<typeof review>(null);
+  /** Mistakes and totals of the running session, across automatic page turns. */
+  const sessionReview = useRef<{ items: ReviewItem[]; stats: { correct: number; near: number; wrong: number } }>({ items: [], stats: { correct: 0, near: 0, wrong: 0 } });
+  /** Verses («s:a») whose saved colours are hidden after «إعادة» until they are recited again (v38). */
+  const [cleared, setCleared] = useState<ReadonlySet<string>>(() => new Set());
+  /** «أعد الآية» / «أعد التلاوة»: start the microphone once the view has settled. */
+  const [retryAt, setRetryAt] = useState<number | null>(null);
   /** Words revealed with the hint button (memorization). */
   const [hints, setHints] = useState<Set<WordKey>>(() => new Set(snap.current?.hints ?? []));
   const hintsRef = useRef(hints);
@@ -151,6 +162,8 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
   }, [mushaf, surahId, focusAyah, jumpId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const verses = useMemo(() => (mushaf ? mushaf.pageVerses(page) : []), [mushaf, page]);
+  // v38 «ألوان أحكام التجويد» (Quran.com's tajweed text, per surah, cached offline).
+  const tajweed = useTajweedWords(settings.tajweedColors && !!mushaf, verses, (s, a) => mushaf?.words(s, a).length ?? -1);
 
   // Remember the page ("continue where you left off").
   useEffect(() => {
@@ -226,6 +239,21 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
       return { key: k, status: st === "CORRECT" && hintsRef.current.has(k) ? "WARNING" : st, heard: m.heard[tk] ?? null };
     });
     store.commitWords(recited, mode, "mushaf", { continues: true });
+    const judgedVerses = new Set(recited.filter((r) => r.status !== "PENDING").map((r) => r.key.slice(0, r.key.lastIndexOf(":"))));
+    if (judgedVerses.size) setCleared((c) => (c.size ? new Set([...c].filter((v) => !judgedVerses.has(v))) : c));
+    // v38: the session's red / orange words for the review after the stop.
+    {
+      const acc = sessionReview.current;
+      keys.forEach((k, i) => {
+        const tk = tokenOfKey[i] ?? -1;
+        const st = recited[i]?.status;
+        if (st !== "ERROR" && st !== "WARNING") return;
+        const [s2, a2, w2] = k.split(":").map(Number) as [number, number, number];
+        acc.items.push({ key: k, word: mushaf?.words(s2, a2)[w2 - 1] ?? "", heard: m.heard[tk] ?? null, expected: rec.engine === "phonemes" ? refs?.[tk] ?? null : null, status: st });
+      });
+      const tl = tally(recited.map((r) => r.status));
+      acc.stats = { correct: acc.stats.correct + tl.correct, near: acc.stats.near + tl.near, wrong: acc.stats.wrong + tl.wrong };
+    }
     if (!pageTurn.current) setLiveShown(false);
     // Running totals of the continuous session (across automatic page turns).
     store.addPart(tally(m.statuses), pageTurn.current);
@@ -236,7 +264,12 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
     // their surah (the recording goes on, nothing is cut); the stop saves what is open.
     void range;
     if (turned) collect(m);
-    else { collect(m); flush("final"); }
+    else {
+      collect(m); flush("final");
+      const acc = sessionReview.current;
+      const r = acc.items.length && getSettings().errorDetection ? { items: [...acc.items], stats: acc.stats } : null;
+      setReview(r); setReviewReady(r);
+    }
   }, [practice, targets, mode, hints, keys, tokenOfKey, keyOfToken, store, wordResults]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ---------------- recordings: one per surah (across pages) ---------------- */
@@ -300,10 +333,31 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
     if (autoTurn.current) { autoTurn.current = false; return; }
     reset();
   }, [page, mode, startIdx]); // eslint-disable-line react-hooks/exhaustive-deps
+  /**
+   * v38 «إعادة»: start again from scratch on this page — the running recitation is dropped (nothing saved),
+   * timer and score go back to 0, the page shows no colours (saved colours of its verses are hidden until
+   * they are recited again), hints and messages are cleared. The view stays where it is.
+   */
+  const resetSession = () => {
+    player.pause();
+    reset();
+    setLiveShown(false); setSaved(null); setWordFix(null); setReview(null); setReviewReady(null); setCompleted(null);
+    setHints(new Set());
+    setCleared(new Set(verses.map((v) => `${v.surah}:${v.ayah}`)));
+    sessionReview.current = { items: [], stats: { correct: 0, near: 0, wrong: 0 } };
+    openParts.current = new Map(); savedVerses.current = new Set();
+    store.startSession(); store.endSession();
+  };
+  // «أعد الآية» / «أعد التلاوة»: once the view has settled on the verse (its reset ran), the microphone starts.
+  useEffect(() => {
+    if (retryAt == null || rec.listening) return;
+    const id = setTimeout(() => { setRetryAt(null); rec.toggle(); }, 150);
+    return () => clearTimeout(id);
+  }, [retryAt, page, startIdx]); // eslint-disable-line react-hooks/exhaustive-deps
   // Microphone on: a new session (an automatic page turn keeps the microphone on, so it continues).
   const doneSurahs = useRef(new Set<number>());
   useEffect(() => {
-    if (rec.listening) { setWordFix(null); setMarked(null); setLiveShown(true); setCompleted(null); doneSurahs.current = new Set(); savedVerses.current = new Set(); openParts.current = new Map(); savedAny.current = false; store.startSession(); }
+    if (rec.listening) { sessionReview.current = { items: [], stats: { correct: 0, near: 0, wrong: 0 } }; setReview(null); setWordFix(null); setMarked(null); setLiveShown(true); setCompleted(null); doneSurahs.current = new Set(); savedVerses.current = new Set(); openParts.current = new Map(); savedAny.current = false; store.startSession(); }
     else store.endSession();
     setMicActive(rec.listening);
   }, [rec.listening]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -327,19 +381,25 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
   const statuses = useMemo(() => {
     const showLive = rec.listening || rec.processing || liveShown;
     // «تظليل الأخطاء الماضية» off: saved red / orange of earlier recitations are not shown.
-    const saved = () => { const m0 = colorsFor(colors, pageKeys); if (!showPast) for (const [k, st] of m0) if (st === "ERROR" || st === "WARNING") m0.delete(k); return m0; };
+    const saved = () => {
+      const m0 = colorsFor(colors, pageKeys);
+      if (!showPast) for (const [k, st] of m0) if (st === "ERROR" || st === "WARNING") m0.delete(k);
+      if (cleared.size) for (const k of [...m0.keys()]) if (cleared.has(k.slice(0, k.lastIndexOf(":")))) m0.delete(k); // after «إعادة»
+      return m0;
+    };
     // «كشف الأخطاء» off: no word is marked red / orange at all.
     const plain = (m0: Map<string, LiveStatus>) => { if (!detectErrors) for (const [k, st] of m0) if (st === "ERROR" || st === "WARNING") m0.delete(k); return m0; };
     if (!showLive) return plain(saved());
     // While reciting: live colours for the verses reached (a new recitation replaces their colours),
     // the saved colours for every other verse of the page (before the start verse, not reached yet).
-    const live = keys.map((_, i) => rec.match.statuses[tokenOfKey[i] ?? -1] ?? "PENDING");
+    // v38: while reciting, mistakes of the verse being recited stay neutral until the verse is finished.
+    const live = keys.map((_, i) => rec.liveStatuses[tokenOfKey[i] ?? -1] ?? "PENDING");
     const reached = reachedVerses(keys, live, rec.listening ? keyOfToken[rec.match.cursor] ?? 0 : -1);
     const map = saved();
     for (const [k, st] of mergeLive(colors, keys, live, reached)) map.set(k, st);
     for (const k of keys) if (reached.has(k.slice(0, k.lastIndexOf(":"))) && map.get(k) === "PENDING") map.delete(k);
     return plain(map);
-  }, [rec.listening, rec.processing, liveShown, colors, pageKeys, keys, tokenOfKey, keyOfToken, rec.match.statuses, rec.match.cursor, showPast, detectErrors]);
+  }, [rec.listening, rec.processing, liveShown, colors, pageKeys, keys, tokenOfKey, keyOfToken, rec.liveStatuses, rec.match.cursor, showPast, detectErrors, cleared]);
   // Remember the view for the next visit of this tab (the colours themselves live in RecitationContext).
   useEffect(() => {
     store.mushaf = { surahId, focusAyah, jumpId, page, mode, selected, hints: [...hints] };
@@ -520,6 +580,7 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
 
   const surahName = (s: number) => { const m = getSurahMeta(s); return m ? (language === "ar" ? m.nameArabic : m.nameSimple) : String(s); };
   const live = tally(rec.match.statuses);
+  const pageHasColours = statuses.size > 0;
   const sessionLine = t("sessionStats").replace("{c}", num(session.correct + live.correct)).replace("{w}", num(session.wrong + live.wrong)).replace("{p}", num(session.pages + 1));
   const status = rec.error ? <span className="text-red-200">{t(rec.error)}</span>
     : model.status === "loading" && rec.useWhisper ? `${t("modelLoading")} · ${num(model.progress)}%`
@@ -600,7 +661,8 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
           if (Math.abs(dx) > 60 && Math.abs(dy) < 50) turn(dx > 0 ? 1 : -1);
         }}>
         <div key={page} className="animate-in fade-in duration-300">
-          <MushafPage mushaf={mushaf} page={page} maxTextHeight={textHeight} statuses={statuses} hidden={hidden} hinted={hints} cursor={cursor} marked={marked ?? undefined}
+          <MushafPage mushaf={mushaf} page={page} maxTextHeight={textHeight} tajweed={settings.tajweedColors ? tajweed : undefined}
+            flow={settings.mushafStyle === "clean" ? { fontSize: settings.quranFontSize } : undefined} statuses={statuses} hidden={hidden} hinted={hints} cursor={cursor} marked={marked ?? undefined}
             highlight={playingKey ?? (rec.listening ? null : selected)}
             verseStatus={(s, a) => verseStatus(progress, s, a)}
             recorded={(s, a) => recordings.some((r) => covers(r, s, a))}
@@ -623,6 +685,8 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
         onMic={() => { player.pause(); rec.toggle(); }} getLevel={rec.getLevel} status={rec.paused ? t("recitePausedStatus") : status}
         paused={rec.paused} onPause={rec.canPause ? () => { if (rec.paused) rec.resume(); else { rec.pause(); } } : undefined}
         onHeight={setBarH}
+        onReset={rec.listening || liveShown || rec.match.recited > 0 || saved != null || reviewReady != null || pageHasColours ? resetSession : undefined}
+        onReview={!rec.listening && !review && reviewReady ? () => setReview(reviewReady) : undefined} reviewCount={reviewReady?.items.length ?? 0}
         extra={showMine || wordFix ? (
           <div className="space-y-1.5">
             {wordFix && <VoiceWordFix fix={wordFix} onClose={() => setWordFix(null)} />}
@@ -634,6 +698,21 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
         ) : undefined}
         nextPage={rec.match.done && !rec.listening && page < TOTAL_PAGES ? () => { setSelected(null); turn(1); } : undefined} />
 
+      {review && !rec.listening && (
+        <SessionReview items={review.items} stats={review.stats} onClose={() => setReview(null)}
+          onRetryVerse={(s2, a2) => { setReview(null); setPage(mushaf.pageOf(s2, a2)); setSelected(`${s2}:${a2}`); setRetryAt(Date.now()); }}
+          onRetryAll={() => {
+            const first = review.items[0]?.key.split(":").map(Number);
+            setReview(null); resetSession();
+            if (first) { setPage(mushaf.pageOf(first[0]!, first[1]!)); }
+            setRetryAt(Date.now());
+          }}
+          onDetails={(it) => {
+            setReview(null);
+            const [s2, a2] = it.key.split(":").map(Number);
+            setWordFix({ id: it.key, word: it.word, heard: it.heard, surah: s2, ayah: a2, phonemes: it.expected ?? undefined, status: it.status });
+          }} />
+      )}
       <MushafMenu open={menuOpen} onClose={() => setMenuOpen(false)} page={page} surah={firstSurah} juz={juz}
         onPage={(p) => { setSelected(null); setPage(Math.min(TOTAL_PAGES, Math.max(1, p))); }}
         onSurah={(s2) => { setPage(mushaf.surahStartPage(s2)); setSelected(`${s2}:1`); }}

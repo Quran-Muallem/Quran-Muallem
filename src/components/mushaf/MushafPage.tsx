@@ -1,6 +1,7 @@
 import { Fragment, useLayoutEffect, useRef, useState } from "react";
 import type { Mushaf } from "@/lib/mushafData";
 import type { LiveStatus } from "@/lib/quranMatcher";
+import type { TajweedSeg } from "@/lib/tajweedColors";
 import type { VerseStatus } from "@/lib/progressStorage";
 import { getSurahMeta, toArabicDigits } from "@/lib/quranService";
 import { cn } from "@/lib/utils";
@@ -24,7 +25,11 @@ export type WordKey = string; // "surah:ayah:word"
  * with the original line breaks, surah banners and Basmala in their line slots, ornate verse medallions.
  * Words can be coloured (recitation), hidden (memorization) and verses highlighted (audio / selection).
  */
-export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, marked, highlight, verseStatus, recorded, onVerseTap, onWordTap, maxTextHeight }: {
+export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, marked, highlight, verseStatus, recorded, onVerseTap, onWordTap, maxTextHeight, tajweed, flow }: {
+  /** v38 «ألوان أحكام التجويد»: coloured segments per word (words not judged by a recitation use them). */
+  tajweed?: Map<WordKey, TajweedSeg[]> | undefined;
+  /** v38 «نص قرآني سلس»: flowing text at this font size instead of the 15 justified lines of print. */
+  flow?: { fontSize: number } | undefined;
   /** Tap on a word judged wrong or almost right (e.g. to add it to the voice profile). */
   onWordTap?: ((key: WordKey) => void) | undefined;
   /** Verses with a saved recording of the user get a small dot on their marker. */
@@ -64,6 +69,7 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, mar
   // One font size for every page (like print), derived from the page width and the screen height.
   // Lines that are naturally longer are condensed slightly; all lines are justified edge to edge.
   useLayoutEffect(() => {
+    if (flow) return; // flowing text: no fitting to the printed lines
     const run = () => {
       const box = wrap.current, m = measure.current;
       if (!box || !m) return;
@@ -100,7 +106,7 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, mar
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(run) : null;
     if (wrap.current) ro?.observe(wrap.current);
     return () => ro?.disconnect();
-  }, [page, centered, maxTextHeight]);
+  }, [page, centered, maxTextHeight, flow]);
 
   const lineH = fontSize * lineFactor;
   const pageH = boxSize * lineFactor * LINES_PER_PAGE;
@@ -121,7 +127,7 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, mar
         // word appears too (in red / orange) so the reciter can read what was missed and carry on.
         const isHidden = !measuring && hidden?.has(k) && st !== "CORRECT" && st !== "WARNING" && st !== "ERROR";
         tokens.push(
-          <span key={k} data-word={measuring ? undefined : k} data-status={st}
+          <span key={k} data-word={measuring ? undefined : k} data-status={st} data-cursor={!measuring && cursor === k ? "" : undefined}
             onClick={measuring ? undefined : onWordTap && (st === "ERROR" || st === "WARNING") ? () => onWordTap(k) : onVerseTap ? (e) => onVerseTap(seg.surah, seg.ayah, { x: e.clientX, y: e.clientY }) : undefined}
             className={cn("relative inline-block cursor-pointer whitespace-nowrap rounded-[0.25em] px-[0.04em] transition-colors duration-300",
               isHi && "bg-amber-200/15 shadow-[0_0_0_0.12em_rgba(253,230,138,.12)]",
@@ -133,7 +139,9 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, mar
               !measuring && marked?.has(k) && !isHidden && "bg-amber-300/25 shadow-[0_0_0_0.1em_rgba(252,211,77,.75)]",
               !measuring && cursor === k && "ring-2 ring-amber-300/80 animate-pulse")}>
             {isHidden && <span aria-hidden="true" className="absolute inset-x-[0.08em] top-[38%] bottom-[30%] rounded-full bg-[color-mix(in_srgb,var(--mf-ink)_12%,transparent)]" />}
-            {words[w - 1] ?? ""}
+            {!measuring && !isHidden && (!st || st === "PENDING") && tajweed?.get(k)
+              ? tajweed.get(k)!.map((sg, j) => (sg.cls ? <span key={j} className={`tj-${sg.cls}`}>{sg.text}</span> : sg.text))
+              : words[w - 1] ?? ""}
           </span>,
         );
       }
@@ -152,6 +160,38 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, mar
       }
       return <Fragment key={si}>{tokens}</Fragment>;
     });
+
+  if (flow) {
+    // Consecutive text lines flow together (words wrap to the screen); banners and Basmala stay blocks.
+    const fh = flow.fontSize * 2.05;
+    const blocks: ({ kind: "header"; surah: number } | { kind: "basmala" } | { kind: "text"; lines: Extract<ReturnType<Mushaf["page"]>[number], { type: "text" }>[] })[] = [];
+    for (const line of lines) {
+      if (line.type === "header") blocks.push({ kind: "header", surah: line.surah });
+      else if (line.type === "basmala") blocks.push({ kind: "basmala" });
+      else { const last = blocks[blocks.length - 1]; if (last?.kind === "text") last.lines.push(line); else blocks.push({ kind: "text", lines: [line] }); }
+    }
+    return (
+      <PageFrame>
+        <div className="mb-1 flex items-center justify-between px-1 font-arabic text-[0.78rem]" dir="rtl" style={{ color: GOLD_B }}>
+          <span>{headName ? `سُورَةُ ${headName}` : ""}</span>
+          <span>الجُزْءُ {toArabicDigits(mushaf.juzOfPage(page))}</span>
+        </div>
+        <div className="h-px w-full" style={{ background: `linear-gradient(90deg, transparent, ${GOLD_A}, transparent)` }} />
+        <div ref={wrap} data-mushaf-text="" data-mushaf-flow="" dir="rtl" lang="ar" className="relative mt-1 font-arabic" style={{ fontSize: flow.fontSize, color: INK }}>
+          {blocks.map((b, i) => {
+            if (b.kind === "header") return <div key={i} className="flex items-center" style={{ height: fh }}><SurahBanner name={`سُورَةُ ${getSurahMeta(b.surah)?.nameArabic ?? ""}`} height={fh * 0.92} /></div>;
+            if (b.kind === "basmala") return <BasmalaLine key={i} height={fh} />;
+            return (
+              <div key={i} className="flex flex-wrap items-center justify-start gap-x-[0.3em]" style={{ lineHeight: `${fh}px` }}>
+                {b.lines.map((line, li) => <Fragment key={li}>{renderTokens(line, false)}</Fragment>)}
+              </div>
+            );
+          })}
+        </div>
+        <PageNumber n={page} />
+      </PageFrame>
+    );
+  }
 
   return (
     <PageFrame>

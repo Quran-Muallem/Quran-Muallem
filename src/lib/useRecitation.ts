@@ -8,6 +8,7 @@ import { matchLivePhonemes } from "@/lib/quranAlignment";
 import type { CopyKey } from "@/lib/i18n";
 import { useVoiceProfile } from "@/lib/userAdaptation";
 import { useMistakeHaptics } from "@/lib/useMistakeHaptics";
+import { deferLiveMistakes, tokenVerses } from "@/lib/liveMistakes";
 
 const speechErrorKey = (code: SpeechErrorCode | null): CopyKey | null =>
   code === "not-allowed" ? "errMic" : code === "audio-capture" ? "errNoMic" : code === "network" ? "errSpeechNetwork" : code === "unsupported" ? "errUnsupported" : code ? "errFailed" : null;
@@ -51,8 +52,13 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
     : matchLive(transcript, targets)), [transcript, targets, profile, textEngine, phonemeRefs, whisper.recording]); // eslint-disable-line react-hooks/exhaustive-deps
   const listening = useWhisper ? whisper.recording : speech.isListening;
   const processing = useWhisper && whisper.transcribing;
+  // v38: while reciting, red / orange appear only once their verse is finished (see liveMistakes.ts).
+  const verseOf = useMemo(() => tokenVerses(targets), [targets]);
+  const liveStatuses = useMemo(() => (listening ? deferLiveMistakes(match.statuses, verseOf, match.cursor) : match.statuses),
+    [listening, match.statuses, match.cursor, verseOf]);
 
-  const reset = useCallback(() => { stopListening(); resetTranscript(); setWhisperText(""); whisper.cancel(); setBase(null); }, [stopListening, resetTranscript, whisper.cancel]);
+  // Reset (v38 «إعادة»): the session is dropped, nothing of it is saved.
+  const reset = useCallback(() => { session.current = false; stopListening(); resetTranscript(); setWhisperText(""); whisper.cancel(); setBase(null); }, [stopListening, resetTranscript, whisper.cancel]); // eslint-disable-line react-hooks/exhaustive-deps
   const latestFull = useRef({ text: fullTranscript, kind: textEngine });
   latestFull.current = { text: fullTranscript, kind: textEngine };
   /** Keep recording, but judge only what is said from now on (used for the automatic page turn). */
@@ -82,7 +88,7 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
   endCb.current = onSessionEnd;
   useEffect(() => { if (listening) session.current = true; }, [listening]);
   // A short, light vibration when a word turns red/orange while reciting (never interrupts recognition).
-  const forgetMistakes = useMistakeHaptics(match.statuses, listening);
+  const forgetMistakes = useMistakeHaptics(liveStatuses, listening);
   useEffect(() => {
     if (listening || processing || !session.current) return;
     const timer = setTimeout(() => { session.current = false; endCb.current?.(latest.current); }, useWhisper ? 0 : 900);
@@ -108,7 +114,9 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
   return {
     /** "phonemes" while the Zipformer engine judges this recitation. */
     engine: textEngine,
-    match, transcript, listening, rebase, rebaseBy, forgetMistakes,
+    match, transcript, listening, rebase,
+    /** Statuses to show: while reciting, mistakes of the verse being recited stay neutral (v38). */
+    liveStatuses, rebaseBy, forgetMistakes,
     /** What `transcript` holds: Zipformer phonemes or Arabic text (Whisper / browser recognizer). */
     transcriptKind: (useWhisper && textEngine === "phonemes" ? "phonemes" : "text") as "phonemes" | "text", processing, useWhisper, reset, toggle,
     /** Paused recitation (on-device engines): state and colours kept, recognition goes on after `resume`. */

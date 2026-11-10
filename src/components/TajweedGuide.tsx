@@ -6,7 +6,7 @@ import { toArabicDigits } from "@/lib/quranService";
 import { useI18n } from "@/lib/i18n";
 import { getReciter } from "@/lib/reciterManager";
 import { useSettings } from "@/lib/settings";
-import { exampleRef, getExampleSource, playExample, setExampleSource, stopExample, type ExampleSource, type ExampleVoice } from "@/lib/tajweedAudio";
+import { TAJWEED_VOICES, exampleRef, getExampleSource, playExample, setExampleSource, stopExample, tajweedVoice, type ExampleVoice, type TajweedVoice, type TajweedVoiceId } from "@/lib/tajweedAudio";
 import { cn } from "@/lib/utils";
 
 type Filter = "all" | "favorites" | TajweedCategory["id"];
@@ -155,24 +155,31 @@ export function ScholarNotice() {
 function VoicePicker() {
   const { t, language } = useI18n();
   const r = getReciter(useSettings().reciterId);
-  const [source, setSource] = useState<ExampleSource>(getExampleSource);
-  const pick = (v: ExampleSource) => { setExampleSource(v); setSource(v); stopExample(); setPlayState(null); };
-  const options: [ExampleSource, string][] = [["wordByWord", t("tajweedVoiceWbwChoice")], ["sheikh", language === "ar" ? r.nameArabic : r.nameEnglish]];
+  const [source, setSource] = useState<TajweedVoiceId>(getExampleSource);
+  const pick = (v: TajweedVoiceId) => { setExampleSource(v); setSource(v); stopExample(); setPlayState(null); };
+  const name = (v: TajweedVoice) => (language === "ar" ? v.ar : v.en);
+  const label = (v: TajweedVoice) =>
+    v.style === "wbw" ? t("tajweedVoiceWbwChoice")
+    : v.style === "selected" ? `${language === "ar" ? r.nameArabic : r.nameEnglish} (${t("tajweedVoiceSettings")})`
+    : `${name(v)} — ${t(v.style === "mujawwad" ? "tajweedMujawwad" : "tajweedMurattal")}`;
+  const current = tajweedVoice(source);
+  const wordExact = current.style === "wbw" || current.style === "selected" || current.quranComId != null;
   return (
-    <div className="flex flex-wrap items-center gap-2 px-1 text-xs text-emerald-100/70" data-tajweed-voice={source}>
-      <span className="flex items-center gap-1.5"><Volume2 className="h-3.5 w-3.5 shrink-0 text-amber-200/80" />{t("tajweedVoiceOf")}:</span>
-      <div role="radiogroup" aria-label={t("tajweedVoiceOf")} className="flex flex-wrap gap-1.5">
-        {options.map(([id, label]) => {
-          const on = source === id;
-          return (
-            <button key={id} type="button" role="radio" aria-checked={on} onClick={() => pick(id)} data-tajweed-voice-option={id}
-              className={cn("rounded-full px-3 py-1 transition", on ? "font-semibold text-emerald-950" : "text-emerald-100/80 hover:bg-white/5", language === "ar" && "font-arabic text-[0.8rem]")}
-              style={on ? { background: GOLD_GRADIENT } : { boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.4)}` }}>
-              {label}
-            </button>
-          );
-        })}
-      </div>
+    <div className="space-y-1 px-1 text-xs text-emerald-100/70" data-tajweed-voice={source}>
+      <label className="flex items-center gap-2">
+        <span className="flex shrink-0 items-center gap-1.5"><Volume2 className="h-3.5 w-3.5 shrink-0 text-amber-200/80" />{t("tajweedVoiceOf")}:</span>
+        <select value={source} onChange={(e) => pick(e.target.value as TajweedVoiceId)} aria-label={t("tajweedVoiceOf")} data-tajweed-voice-select=""
+          className={cn("min-w-0 flex-1 rounded-full bg-black/30 px-3 py-1.5 text-emerald-50 focus:outline-none", language === "ar" && "font-arabic text-sm")}
+          style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.55)}` }}>
+          <optgroup label={t("tajweedMujawwadGroup")}>
+            {TAJWEED_VOICES.filter((v) => v.style === "mujawwad" || v.style === "murattal").map((v) => <option key={v.id} value={v.id}>{label(v)}</option>)}
+          </optgroup>
+          <optgroup label={t("tajweedOtherVoices")}>
+            {TAJWEED_VOICES.filter((v) => v.style === "wbw" || v.style === "selected").map((v) => <option key={v.id} value={v.id}>{label(v)}</option>)}
+          </optgroup>
+        </select>
+      </label>
+      {!wordExact && <p className="ps-6 text-[0.68rem] text-amber-200/70" data-tajweed-verse-only="">{t("tajweedVerseOnly")}</p>}
     </div>
   );
 }

@@ -32,7 +32,9 @@ export type ContentSource =
 /** Content language: the app's languages plus a few more offered for translations / tafsir. */
 export type ContentLanguage = Language | "pt" | "it" | "nl" | "fa";
 export type TranslationOption = { id: string; language: ContentLanguage; name: string; sources: ContentSource[] };
-export type TafsirOption = { id: string; language: ContentLanguage; name: string; sources: ContentSource[]; /** Tafsir Ibn Kathir */ ibnKathir?: boolean };
+export type TafsirOption = { id: string; language: ContentLanguage; name: string; sources: ContentSource[]; /** Tafsir Ibn Kathir */ ibnKathir?: boolean;
+  /** v38: a translation of the meanings (with its footnotes) offered where no free tafsir exists — not a tafsir. */
+  meanings?: boolean };
 
 /** Language headers of the selector lists (own name of each language). */
 export const CONTENT_LANGUAGE_NAMES: Record<ContentLanguage, string> = {
@@ -122,6 +124,9 @@ export const TAFSIRS: TafsirOption[] = [
   { id: "en-mukhtasar", language: "en", name: "Al-Mukhtasar", sources: [cdn("en-tafsir-al-mukhtasar")] },
   { id: "en-jalalayn", language: "en", name: "Tafsir al-Jalalayn", sources: [cdn("en-al-jalalayn")] },
   { id: "en-tazkir", language: "en", name: "Tazkirul Quran (Wahiduddin Khan)", sources: [cdn("en-tazkirul-quran"), qc(817)] },
+  // v38: German has no freely licensed tafsir (Ibn Kathir / as-Sa'di in German are copyrighted). Offered instead,
+  // clearly marked: Bubenheim & Elyas «Der edle Qur'an», the meanings with QuranEnc's footnotes.
+  { id: "de-bubenheim-meanings", language: "de", name: "Der edle Qur'an – Bedeutungen (Bubenheim & Elyas)", meanings: true, sources: [qe("german_bubenheim"), aqc("de.bubenheim")] },
   { id: "fr-mukhtasar", language: "fr", name: "Al-Mukhtasar (abrégé)", sources: [cdn("french-mokhtasar")] },
   { id: "ik-tr", language: "tr", name: "İbn Kesîr Tefsiri", ibnKathir: true, sources: [cdn("tr-tafsir-ibne-kathir")] },
   { id: "tr-saadi", language: "tr", name: "Es-Sa'dî Tefsiri", sources: [cdn("turkish-tafsir-as-saadi-turkish")] },
@@ -271,6 +276,19 @@ async function fromCdns(path: string): Promise<unknown> {
 async function tafsirFromSource(src: ContentSource, surah: number, ayah: number): Promise<string> {
   if (src.kind === "tafsirCdn") return tafsirTextOf(await fromCdns(`${src.slug}/${surah}/${ayah}.json`));
   if (src.kind === "quranCom") return tafsirTextOf(await getJson(`${QURAN_COM}/tafsirs/${src.id}/by_ayah/${surah}:${ayah}`));
+  // Translations of the meanings (v38, German): the verse with its footnotes.
+  if (src.kind === "quranEnc") {
+    const d = await getJson(`${QURAN_ENC}/translation/aya/${src.key}/${surah}/${ayah}`) as { result?: { translation?: string; footnotes?: string } };
+    const tr = cleanText(d.result?.translation ?? ""), notes = cleanText(d.result?.footnotes ?? "");
+    if (!tr) throw new Error("empty");
+    return notes ? `${tr}\n\n${notes}` : tr;
+  }
+  if (src.kind === "alquranCloud") {
+    const d = await getJson(`${ALQURAN_CLOUD}/ayah/${surah}:${ayah}/${src.edition}`) as { data?: { text?: string } };
+    const tr = cleanText(d.data?.text ?? "");
+    if (!tr) throw new Error("empty");
+    return tr;
+  }
   throw new Error("not a tafsir source");
 }
 
@@ -367,6 +385,9 @@ async function tafsirSurah(src: ContentSource, surah: number): Promise<Map<numbe
       for (const t of d.tafsirs ?? []) out.set(Number(t.verse_key.split(":")[1]), cleanText(t.text ?? ""));
       if (!d.pagination?.next_page) break;
     }
+  } else if (src.kind === "quranEnc" || src.kind === "alquranCloud") {
+    // Translations of the meanings (v38): the same per-surah loader as the translations.
+    (await surahFromSource(src, surah)).forEach((text, i) => out.set(i + 1, text));
   } else throw new Error("not a tafsir source");
   if (!out.size) throw new Error("empty");
   return out;

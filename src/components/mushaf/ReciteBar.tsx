@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { ReciterAvatar } from "@/components/ReciterPill";
 import type { Reciter } from "@/lib/reciterManager";
-import { ChevronLeft, Lightbulb, Loader2, Mic, Pause, Play, Square } from "lucide-react";
+import { ClipboardList, ChevronLeft, Lightbulb, Loader2, Mic, Pause, Play, RotateCcw, Square } from "lucide-react";
 import { toArabicDigits } from "@/lib/quranService";
 import { GOLD_A, GOLD_B, GOLD_C } from "@/components/mushaf/MushafOrnaments";
 import { useI18n } from "@/lib/i18n";
@@ -14,7 +14,12 @@ export type BarMode = "RECITATION_MODE" | "MEMORIZATION_MODE";
  * The Sheikh player lives in the screen's top row (SheikhControls); `player` here is optional.
  * `onHeight` reports the bar's height so the Mushaf page can fit the rest of the screen exactly.
  */
-export function ReciteBar({ mode, onMode, listening, busy, onMic, paused = false, onPause, getLevel, status, player, nextPage, hint, extra, docked = false, onHeight }: {
+export function ReciteBar({ mode, onMode, listening, busy, onMic, paused = false, onPause, getLevel, status, player, nextPage, hint, extra, docked = false, onHeight, onReset, onReview, reviewCount = 0 }: {
+  /** v38 «إعادة»: start the session again from scratch (shown while there is something to reset). */
+  onReset?: (() => void) | undefined;
+  /** v38: open the review of the last recitation's mistakes again. */
+  onReview?: (() => void) | undefined;
+  reviewCount?: number;
   onHeight?: ((px: number) => void) | undefined;
   /** Extra row above the controls (the user's own recording). */
   extra?: ReactNode;
@@ -68,7 +73,19 @@ export function ReciteBar({ mode, onMode, listening, busy, onMic, paused = false
               <ReciterAvatar reciter={player.reciter} selected={player.playing} className="h-8 w-8 text-sm" />
             </button>
           </>}
+          {onReset && (
+            <button type="button" onClick={onReset} aria-label={t("resetSession")} title={t("resetSession")} data-recite-reset=""
+              className="flex shrink-0 items-center gap-1 rounded-full border border-amber-300/50 px-2 py-1 text-xs text-amber-100 active:scale-95">
+              <RotateCcw className="h-3.5 w-3.5" /><span className="[@media(max-width:360px)]:hidden">{t("resetSession")}</span>
+            </button>
+          )}
           <div className="min-w-0 flex-1 truncate text-center text-xs text-amber-100/90">{status}</div>
+          {onReview && reviewCount > 0 && (
+            <button type="button" onClick={onReview} aria-label={t("srOpen")} title={t("srOpen")} data-review-open=""
+              className="flex shrink-0 items-center gap-1 rounded-full border border-red-300/50 bg-red-500/10 px-2 py-1 text-xs text-red-100">
+              <ClipboardList className="h-3.5 w-3.5" />{language === "ar" ? toArabicDigits(reviewCount) : reviewCount}
+            </button>
+          )}
           {hint && (
             <button type="button" onClick={hint.onClick} disabled={hint.disabled} aria-label={t("hintLabel")}
               className="flex shrink-0 items-center gap-1 rounded-full border border-amber-300/60 bg-amber-300/10 px-2.5 py-1 text-xs text-amber-100 disabled:opacity-40">
