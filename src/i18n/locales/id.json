@@ -649,5 +649,15 @@
   "connTestDesc": "Unduhan atau pemutaran gagal? Tes ini memeriksa koneksi ke server di ponselmu dan menunjukkan letak masalahnya.",
   "connTestRun": "Tes koneksi",
   "connTestCopy": "Salin",
-  "goToSearchAll": "Nama surah, halaman atau 18:10"
+  "goToSearchAll": "Nama surah, halaman atau 18:10",
+  "tajweedListen": "Dengarkan",
+  "tajweedVoiceOf": "Suara",
+  "tajweedVoiceSheikh": "Suara syekh",
+  "tajweedVoiceWbw": "Rekaman per kata",
+  "tajweedVoiceVerse": "Ayat lengkap, suara syekh",
+  "tajweedPlayFailed": "Contoh tidak dapat diputar — periksa koneksi",
+  "tajweedFavorites": "Favorit",
+  "tajweedFavAdd": "Tambah ke favorit",
+  "tajweedFavRemove": "Hapus dari favorit",
+  "tajweedFavNone": "Belum ada favorit — ketuk ⭐ di samping aturan."
 }

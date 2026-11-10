@@ -5,8 +5,8 @@ const all = TAJWEED.flatMap((c) => c.rules);
 const ids = (q: string) => searchTajweed(q).flatMap((g) => g.rules.map((r) => r.id));
 
 describe("tajweed data", () => {
-  it("has the six categories with complete, unique rules", () => {
-    expect(TAJWEED.map((c) => c.id)).toEqual(["noon", "meem", "madd", "makharij", "qalqalah", "tafkheem"]);
+  it("has the nine categories with complete, unique rules", () => {
+    expect(TAJWEED.map((c) => c.id)).toEqual(["noon", "meem", "madd", "makharij", "qalqalah", "tafkheem", "raLamAlif", "waqf", "waqfSigns"]);
     expect(new Set(all.map((r) => r.id)).size).toBe(all.length);
     for (const c of TAJWEED) {
       expect(c.titleAr && c.titleEn && c.introAr && c.introEn).toBeTruthy();

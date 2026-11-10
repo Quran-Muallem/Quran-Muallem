@@ -649,5 +649,15 @@
   "connTestDesc": "Download oder Abspielen geht nicht? Dieser Test prüft auf deinem Handy die Verbindung zum Rezitations-Server und zeigt, wo es hängt.",
   "connTestRun": "Verbindung testen",
   "connTestCopy": "Kopieren",
-  "goToSearchAll": "Surenname, Seite oder 18:10"
+  "goToSearchAll": "Surenname, Seite oder 18:10",
+  "tajweedListen": "Anhören",
+  "tajweedVoiceOf": "Stimme",
+  "tajweedVoiceSheikh": "Stimme des Scheichs",
+  "tajweedVoiceWbw": "Wort-für-Wort-Aufnahme",
+  "tajweedVoiceVerse": "Ganzer Vers, Stimme des Scheichs",
+  "tajweedPlayFailed": "Beispiel konnte nicht abgespielt werden – Verbindung prüfen",
+  "tajweedFavorites": "Favoriten",
+  "tajweedFavAdd": "Zu Favoriten hinzufügen",
+  "tajweedFavRemove": "Aus Favoriten entfernen",
+  "tajweedFavNone": "Noch keine Favoriten – tippe bei einer Regel auf ⭐."
 }

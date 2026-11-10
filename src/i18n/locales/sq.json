@@ -649,5 +649,15 @@
   "connTestDesc": "Shkarkimi ose luajtja nuk punon? Ky test kontrollon lidhjen me serverin në telefonin tënd dhe tregon ku ngec.",
   "connTestRun": "Testo lidhjen",
   "connTestCopy": "Kopjo",
-  "goToSearchAll": "Emri i sures, faqja ose 18:10"
+  "goToSearchAll": "Emri i sures, faqja ose 18:10",
+  "tajweedListen": "Dëgjo",
+  "tajweedVoiceOf": "Zëri",
+  "tajweedVoiceSheikh": "Zëri i shejhut",
+  "tajweedVoiceWbw": "Regjistrim fjalë për fjalë",
+  "tajweedVoiceVerse": "I gjithë ajeti, zëri i shejhut",
+  "tajweedPlayFailed": "Shembulli nuk u luajt — kontrollo lidhjen",
+  "tajweedFavorites": "Të preferuarat",
+  "tajweedFavAdd": "Shto te të preferuarat",
+  "tajweedFavRemove": "Hiq nga të preferuarat",
+  "tajweedFavNone": "Ende pa të preferuara — prek ⭐ pranë një rregulli."
 }

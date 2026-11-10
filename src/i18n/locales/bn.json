@@ -649,5 +649,15 @@
   "connTestDesc": "ডাউনলোড বা চালানো কাজ করছে না? এই পরীক্ষা আপনার ফোনে সার্ভার সংযোগ যাচাই করে কোথায় আটকায় দেখায়।",
   "connTestRun": "সংযোগ পরীক্ষা",
   "connTestCopy": "কপি",
-  "goToSearchAll": "সূরার নাম, পৃষ্ঠা বা 18:10"
+  "goToSearchAll": "সূরার নাম, পৃষ্ঠা বা 18:10",
+  "tajweedListen": "শুনুন",
+  "tajweedVoiceOf": "কণ্ঠ",
+  "tajweedVoiceSheikh": "শাইখের কণ্ঠ",
+  "tajweedVoiceWbw": "শব্দে শব্দে রেকর্ডিং",
+  "tajweedVoiceVerse": "পুরো আয়াত, শাইখের কণ্ঠ",
+  "tajweedPlayFailed": "উদাহরণটি চালানো যায়নি — সংযোগ দেখুন",
+  "tajweedFavorites": "প্রিয়",
+  "tajweedFavAdd": "প্রিয়তে যোগ করুন",
+  "tajweedFavRemove": "প্রিয় থেকে সরান",
+  "tajweedFavNone": "এখনও কোনো প্রিয় নেই — কোনো নিয়মের পাশে ⭐ চাপুন।"
 }

@@ -649,5 +649,15 @@
   "connTestDesc": "Не работает загрузка или воспроизведение? Тест проверит связь с сервером на вашем телефоне и покажет, где сбой.",
   "connTestRun": "Проверить связь",
   "connTestCopy": "Копировать",
-  "goToSearchAll": "Сура, страница или 18:10"
+  "goToSearchAll": "Сура, страница или 18:10",
+  "tajweedListen": "Слушать",
+  "tajweedVoiceOf": "Голос",
+  "tajweedVoiceSheikh": "Голос шейха",
+  "tajweedVoiceWbw": "Пословная запись",
+  "tajweedVoiceVerse": "Весь аят, голос шейха",
+  "tajweedPlayFailed": "Не удалось воспроизвести пример — проверьте соединение",
+  "tajweedFavorites": "Избранное",
+  "tajweedFavAdd": "В избранное",
+  "tajweedFavRemove": "Убрать из избранного",
+  "tajweedFavNone": "Избранного пока нет — нажмите ⭐ у правила."
 }

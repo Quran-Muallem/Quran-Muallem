@@ -649,5 +649,15 @@
   "connTestDesc": "ڈاؤن لوڈ یا چلانا کام نہیں کر رہا؟ یہ ٹیسٹ آپ کے فون پر سرور سے رابطہ جانچتا اور بتاتا ہے کہاں رکتا ہے۔",
   "connTestRun": "کنکشن ٹیسٹ",
   "connTestCopy": "کاپی",
-  "goToSearchAll": "سورت کا نام، صفحہ یا 18:10"
+  "goToSearchAll": "سورت کا نام، صفحہ یا 18:10",
+  "tajweedListen": "سنیں",
+  "tajweedVoiceOf": "آواز",
+  "tajweedVoiceSheikh": "شیخ کی آواز",
+  "tajweedVoiceWbw": "لفظ بہ لفظ ریکارڈنگ",
+  "tajweedVoiceVerse": "پوری آیت، شیخ کی آواز",
+  "tajweedPlayFailed": "مثال نہیں چل سکی — کنکشن چیک کریں",
+  "tajweedFavorites": "پسندیدہ",
+  "tajweedFavAdd": "پسندیدہ میں شامل کریں",
+  "tajweedFavRemove": "پسندیدہ سے ہٹائیں",
+  "tajweedFavNone": "ابھی کوئی پسندیدہ نہیں — کسی قاعدے کے ساتھ ⭐ دبائیں۔"
 }

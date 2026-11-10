@@ -7,7 +7,12 @@
  * a test checks that each mark occurs in its example.
  */
 
-export type TajweedExample = { ar: string; mark?: string[]; noteAr?: string; noteEn?: string };
+export type TajweedExample = {
+  ar: string; mark?: string[]; noteAr?: string; noteEn?: string;
+  /** Where it is recited in the Quran: [surah, ayah, first word, last word] (Mushaf word numbers). Examples
+   * without it are located automatically (src/data/tajweedRefs.json, written by scripts/build-tajweed-refs.py). */
+  ref?: [number, number, number, number];
+};
 
 export type TajweedRule = {
   id: string;
@@ -25,7 +30,7 @@ export type TajweedRule = {
 };
 
 export type TajweedCategory = {
-  id: "noon" | "meem" | "madd" | "makharij" | "qalqalah" | "tafkheem";
+  id: "noon" | "meem" | "madd" | "makharij" | "qalqalah" | "tafkheem" | "raLamAlif" | "waqf" | "waqfSigns";
   titleAr: string;
   titleEn: string;
   introAr: string;
@@ -427,7 +432,7 @@ export const TAJWEED: TajweedCategory[] = [
           "Iṭbāq (tongue covers the palate): ṣ ḍ ṭ ẓ — opposite: infitāḥ.",
           "Idhlāq (easy, from lips/tip): f r m n l b — opposite: iṣmāt.",
         ],
-        examples: [{ ar: "قَطَبَ", mark: ["قَ", "طَ"], noteAr: "حروف شديدة", noteEn: "Letters with shiddah" }],
+        examples: [{ ar: "قِطَعًا", mark: ["قِ", "طَ"], noteAr: "حروف شديدة", noteEn: "Letters with shiddah" }],
         keywords: ["sifat", "attributes", "hams", "jahr", "istila", "itbaq", "صفات", "همس", "جهر", "استعلاء"],
       },
       {
@@ -510,7 +515,7 @@ export const TAJWEED: TajweedCategory[] = [
   /* ------------------------------------------------------------------ */
   {
     id: "tafkheem",
-    titleAr: "التفخيم والترقيق",
+    titleAr: "الحروف المفخمة والمرققة",
     titleEn: "Heavy & light letters",
     introAr: "التفخيم تسمين صوت الحرف، والترقيق تنحيفه. حروف الاستعلاء «خص ضغط قظ» مفخمة دائمًا، وحروف الاستفال مرققة إلا الراء واللام في لفظ الجلالة والألف في بعض الأحوال.",
     introEn: "Tafkhīm makes a letter heavy, tarqīq light. The raised letters «خص ضغط قظ» are always heavy; the others are light — except rāʾ, the lām of “Allāh” and, at times, alif.",
@@ -522,12 +527,64 @@ export const TAJWEED: TajweedCategory[] = [
         letters: "خ ص ض غ ط ق ظ",
         summaryAr: "تُفخَّم دائمًا، وأقواها المطبقة (ص ض ط ظ)، ويتفاوت تفخيمها بحسب حركتها: المفتوح بعده ألف، ثم المفتوح، ثم المضموم، ثم الساكن، ثم المكسور.",
         summaryEn: "Always heavy, the strongest being ṣ ḍ ṭ ẓ. Heaviness depends on the vowel: fatḥah + alif, fatḥah, ḍammah, sukūn, then kasrah.",
+        pointsAr: ["تُجمع في «خُصَّ ضَغْطٍ قِظْ»، وسُمّيت حروف الاستعلاء لأن أقصى اللسان يرتفع بها إلى الحنك الأعلى فيمتلئ الفم بالصوت.", "اضغط على أي مثال لتسمعه بصوت الشيخ الذي اخترته، وانتبه لامتلاء الصوت مع كل حرف."],
+        pointsEn: ["Collected in «خُصَّ ضَغْطٍ قِظْ»: the back of the tongue rises to the palate, so the mouth fills with sound.", "Tap any example to hear it in your chosen Sheikh's voice and listen for the full, heavy sound of each letter."],
         examples: [
-          { ar: "قَالَ", mark: ["قَا"] },
-          { ar: "الصِّرَاطَ", mark: ["صِّ", "طَ"] },
+          { ar: "خَالِدِينَ", mark: ["خَا"], noteAr: "الخاء", noteEn: "khāʾ" },
+          { ar: "الصَّالِحَاتِ", mark: ["صَّا"], noteAr: "الصاد", noteEn: "ṣād" },
+          { ar: "الضَّالِّينَ", mark: ["ضَّا"], noteAr: "الضاد", noteEn: "ḍād" },
+          { ar: "غَيْرِ", mark: ["غَ"], noteAr: "الغين", noteEn: "ghayn" },
+          { ar: "الصِّرَاطَ", mark: ["طَ"], noteAr: "الطاء", noteEn: "ṭāʾ" },
+          { ar: "قَالَ", mark: ["قَا"], noteAr: "القاف", noteEn: "qāf" },
+          { ar: "ظَالِمِينَ", mark: ["ظَا"], noteAr: "الظاء", noteEn: "ẓāʾ" },
         ],
         keywords: ["istila", "tafkheem", "heavy", "استعلاء", "تفخيم"],
       },
+      {
+        id: "tafkheem-levels",
+        titleAr: "مراتب التفخيم الخمس",
+        titleEn: "The five levels of heaviness",
+        letters: "خ ص ض غ ط ق ظ",
+        summaryAr: "يتفاوت تفخيم حرف الاستعلاء بحسب حركته، من الأقوى إلى الأضعف: المفتوح وبعده ألف، ثم المفتوح، ثم المضموم، ثم الساكن، ثم المكسور.",
+        summaryEn: "A raised letter is heavier or lighter by its vowel, from strongest to weakest: fatḥah followed by alif, fatḥah, ḍammah, sukūn, kasrah.",
+        pointsAr: ["الساكن يتبع ما قبله في بعض الأقوال: فالساكن بعد فتح أقوى من الساكن بعد كسر.", "حتى المكسور مفخم، لكنه أخفّ مراتب التفخيم، ولا يُرقَّق."],
+        pointsEn: ["Some scholars rank a silent letter by the vowel before it.", "Even with kasrah the letter stays heavy — only less so; it is never made light."],
+        examples: [
+          { ar: "قَالَ", mark: ["قَا"], noteAr: "١ · مفتوح بعده ألف", noteEn: "1 · fatḥah + alif" },
+          { ar: "صَبَرُوا", mark: ["صَ"], noteAr: "٢ · مفتوح", noteEn: "2 · fatḥah" },
+          { ar: "قُتِلَ", mark: ["قُ"], noteAr: "٣ · مضموم", noteEn: "3 · ḍammah" },
+          { ar: "يَقْطَعُونَ", mark: ["قْ"], noteAr: "٤ · ساكن", noteEn: "4 · sukūn" },
+          { ar: "قِيلَ", mark: ["قِ"], noteAr: "٥ · مكسور", noteEn: "5 · kasrah" },
+        ],
+        keywords: ["levels", "maratib", "tafkheem", "مراتب", "تفخيم"],
+      },
+      {
+        id: "istifal",
+        titleAr: "حروف الاستفال (الترقيق)",
+        titleEn: "The light letters (istifāl)",
+        letters: "ا ب ت ث ج ح د ذ ر ز س ش ع ف ك ل م ن ه و ي ء",
+        summaryAr: "باقي الحروف (اثنان وعشرون حرفًا) مُرقَّقة: ينخفض اللسان عن الحنك عند النطق بها، فيخرج الصوت نحيفًا. ويُستثنى منها الراء واللام في لفظ الجلالة والألف، فلها أحكام خاصة.",
+        summaryEn: "The other 22 letters are light: the tongue stays low, so the sound is thin. Rāʾ, the lām of “Allāh” and alif have their own rules (below).",
+        pointsAr: ["احذر تفخيم الحروف المرققة، خاصة إذا جاورت حرفًا مفخمًا، مثل السين في «مُسْتَقِيم» والتاء في «تَطَّلِعُ»."],
+        pointsEn: ["Do not make light letters heavy next to a heavy one, e.g. the sīn in «mustaqīm»."],
+        examples: [
+          { ar: "بِسْمِ", mark: ["سْ"], noteAr: "سين مرققة", noteEn: "Light sīn" },
+          { ar: "الْمُسْتَقِيمَ", mark: ["سْتَ"], noteAr: "السين والتاء بجوار القاف", noteEn: "sīn and tāʾ next to qāf" },
+          { ar: "نَسْتَعِينُ", mark: ["سْتَ"] },
+          { ar: "كَانَ", mark: ["كَا"], noteAr: "ألف مرققة بعد الكاف", noteEn: "Light alif after kāf" },
+        ],
+        keywords: ["istifal", "tarqeeq", "light", "استفال", "ترقيق"],
+      },
+    ],
+  },
+  /* ------------------------------------------------------------------ */
+  {
+    id: "raLamAlif",
+    titleAr: "أحكام الراء واللام والألف",
+    titleEn: "Rāʾ, lām & alif: heavy or light",
+    introAr: "حروف تُفخَّم تارةً وتُرقَّق تارةً بحسب ما يجاورها: الراء بحسب حركتها وما قبلها، واللام في لفظ الجلالة بحسب ما قبلها، والألف تتبع الحرف الذي قبلها.",
+    introEn: "Letters that are heavy at times and light at others, depending on their neighbours: rāʾ by its vowel and what comes before, the lām of “Allāh” by the vowel before it, and alif follows the letter before it.",
+    rules: [
       {
         id: "alif",
         titleAr: "الألف",
@@ -586,6 +643,93 @@ export const TAJWEED: TajweedCategory[] = [
         ],
         keywords: ["lam", "allah", "jalalah", "لام", "لفظ الجلاله"],
       },
+    ],
+  },
+  /* ------------------------------------------------------------------ */
+  {
+    id: "waqf",
+    titleAr: "الوقف بالسكون والابتداء",
+    titleEn: "Stopping on sukūn & starting again",
+    introAr: "الوقف قطع الصوت على آخر الكلمة زمنًا يُتنفّس فيه عادةً بنية استئناف القراءة. ويُوقف على الكلمة بالسكون (السكون العارض)، ثم يُبتدأ بما يصح معناه.",
+    introEn: "A stop (waqf) cuts the sound at the end of a word for a breath, intending to continue. The word is stopped with sukūn, then the reading starts again at a place that keeps the meaning.",
+    rules: [
+      {
+        id: "waqf-sukoon",
+        titleAr: "الوقف بالسكون (السكون العارض)",
+        titleEn: "Stopping with sukūn",
+        summaryAr: "إذا وقفت على كلمة — في وسط الآية أو آخرها — سكّنت آخرها، فلا تنطق الفتحة ولا الضمة ولا الكسرة ولا التنوين. التطبيق لا يعدّ ذلك خطأً.",
+        summaryEn: "When you stop on a word — mid-verse or at its end — its last letter takes sukūn: no fatḥah, ḍammah, kasrah or tanwīn. The app does not count this as a mistake.",
+        pointsAr: ["تنوين الفتح يُبدل ألفًا عند الوقف: «عَلِيمًا» ← «عَلِيمَا».", "تنوين الضم والكسر يُحذف ويُسكَّن الحرف: «عَذَابٌ» ← «عَذَابْ».", "التاء المربوطة تُقلب هاءً ساكنة: «الْجَنَّةَ» ← «الْجَنَّهْ».", "صلة هاء الضمير تُحذف: «لَهُۥ» ← «لَهْ».", "إذا سبق الحرفَ الموقوفَ عليه حرفُ مدّ جاز المدّ العارض للسكون (حركتان أو أربع أو ست)."],
+        pointsEn: ["Tanwīn al-fatḥ becomes a long alif: ʿalīman → ʿalīmā.", "Tanwīn with ḍammah / kasrah is dropped: ʿadhābun → ʿadhāb.", "Tāʾ marbūṭah becomes a silent hāʾ: al-jannata → al-jannah.", "The lengthening of the pronoun hāʾ is dropped: lahū → lah.", "A madd letter before the stopped letter may be lengthened 2, 4 or 6 counts (madd ʿāriḍ)."],
+        examples: [
+          { ar: "نَسْتَعِينُ", mark: ["نُ"], noteAr: "يُوقف: نَسْتَعِينْ", noteEn: "Stop: nastaʿīn" },
+          { ar: "عَلِيمًا", mark: ["مًا"], noteAr: "يُوقف: عَلِيمَا", noteEn: "Stop: ʿalīmā" },
+          { ar: "عَذَابٌ", mark: ["بٌ"], noteAr: "يُوقف: عَذَابْ", noteEn: "Stop: ʿadhāb" },
+          { ar: "الْجَنَّةَ", mark: ["ةَ"], noteAr: "يُوقف: الْجَنَّهْ", noteEn: "Stop: al-jannah" },
+        ],
+        keywords: ["waqf", "sukoon", "stop", "pause", "وقف", "سكون", "عارض"],
+      },
+      {
+        id: "waqf-idtirari",
+        titleAr: "الوقف الاضطراري والابتداء الحسن",
+        titleEn: "Stopping for breath & a good restart",
+        summaryAr: "إذا انقطع نفَسك في وسط الآية فقِف على الكلمة بالسكون، ثم ارجع وابدأ من كلمة يصح الابتداء بها ويستقيم معها المعنى — ولو أعدت كلمة أو كلمتين. هذه الإعادة لا تُحسب خطأً في التطبيق.",
+        summaryEn: "If your breath runs out mid-verse, stop on the word with sukūn, then go back to a word where starting keeps the meaning — even repeating one or two words. The app does not count such a repetition as a mistake.",
+        pointsAr: ["لا تبدأ بكلمة تُغيّر المعنى، مثل البدء بـ«إِلَٰهَ» بعد «لَا».", "الوقف القبيح: ما لا يُفهم منه المعنى أو يُوهم معنى فاسدًا، فيلزم الرجوع والوصل."],
+        pointsEn: ["Do not start at a word that changes the meaning (e.g. “ilāh” after “lā”).", "An ugly stop leaves the meaning broken or wrong — go back and join."],
+        examples: [
+          { ar: "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ", mark: ["نَعْبُدُ"], noteAr: "وقف حسن على «نَعْبُدُ» ثم ابتداء", noteEn: "Good stop after naʿbudu, then restart" },
+          { ar: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ", mark: ["لِلَّهِ"] },
+        ],
+        keywords: ["idtirari", "breath", "ibtida", "repeat", "اضطراري", "ابتداء", "اعاده"],
+      },
+      {
+        id: "ibtida-wasl",
+        titleAr: "الابتداء بهمزة الوصل",
+        titleEn: "Starting with hamzat al-waṣl",
+        summaryAr: "همزة الوصل (ٱ) تسقط في الوصل وتُنطق عند الابتداء: مفتوحة مع «ال»، ومضمومة إذا كان ثالث الفعل مضمومًا ضمًّا لازمًا، ومكسورة فيما عدا ذلك.",
+        summaryEn: "Hamzat al-waṣl (ٱ) is silent when joining and pronounced when starting: with fatḥah before “al-”, with ḍammah when the verb's third letter has a lasting ḍammah, otherwise with kasrah.",
+        examples: [
+          { ar: "الْحَمْدُ", mark: ["الْ"], noteAr: "تُبدأ: أَلْحَمْدُ", noteEn: "Start: al-ḥamdu" },
+          { ar: "اهْدِنَا", mark: ["ا"], noteAr: "تُبدأ: اِهْدِنَا", noteEn: "Start: ihdinā" },
+          { ar: "ارْجِعُوا", mark: ["ا"], noteAr: "تُبدأ: اِرْجِعُوا", noteEn: "Start: irjiʿū" },
+        ],
+        keywords: ["hamzat al wasl", "ibtida", "همزه الوصل", "ابتداء"],
+      },
+    ],
+  },
+  /* ------------------------------------------------------------------ */
+  {
+    id: "waqfSigns",
+    titleAr: "أحكام الوقف والابتداء والمعاني",
+    titleEn: "Mushaf stop marks & meaning",
+    introAr: "علامات الوقف في المصحف ترشد القارئ إلى مواضع الوقف التي تحفظ المعنى. وهي اجتهادية وليست واجبة شرعًا إلا ما يُغيّر المعنى.",
+    introEn: "The stop marks in the Mushaf show where stopping keeps the meaning. They are guidance by scholars; only a stop that changes the meaning must be avoided.",
+    rules: [
+      { id: "sign-mim", titleAr: "م — الوقف اللازم", titleEn: "م — required stop", letters: "ۘ",
+        summaryAr: "يلزم الوقف هنا، لأن الوصل قد يُوهم معنى غير المراد.", summaryEn: "Stop here: joining could suggest a wrong meaning.",
+        examples: [{ ar: "يَسْمَعُونَ", mark: ["يَسْمَعُونَ"], noteAr: "الأنعام ٣٦: ثم «وَالْمَوْتَىٰ يَبْعَثُهُمُ اللَّهُ»", noteEn: "6:36, then “wa-l-mawtā…”", ref: [6, 36, 4, 4] }],
+        keywords: ["mim", "lazim", "required", "لازم", "ميم"] },
+      { id: "sign-la", titleAr: "لا — الوقف الممنوع", titleEn: "لا — do not stop", letters: "ۙ",
+        summaryAr: "لا يُوقف هنا؛ فإن وقفت لضرورة فارجع وصِل الكلام بما بعده.", summaryEn: "Do not stop here; if you had to, go back and join it with what follows.",
+        examples: [{ ar: "طَيِّبِينَ", mark: ["طَيِّبِينَ"], noteAr: "النحل ٣٢", noteEn: "16:32", ref: [16, 32, 4, 4] }],
+        keywords: ["la", "forbidden", "ممنوع"] },
+      { id: "sign-jim", titleAr: "ج — الوقف الجائز", titleEn: "ج — stop allowed", letters: "ۚ",
+        summaryAr: "الوقف والوصل جائزان بالتساوي.", summaryEn: "Stopping and joining are equally fine.",
+        examples: [{ ar: "نَبَأَهُمْ بِالْحَقِّ", mark: ["بِالْحَقِّ"], noteAr: "الكهف ١٣", noteEn: "18:13", ref: [18, 13, 4, 5] }],
+        keywords: ["jaiz", "allowed", "جائز", "جيم"] },
+      { id: "sign-sila", titleAr: "صلى — الوصل أولى", titleEn: "صلى — joining is better", letters: "ۖ",
+        summaryAr: "يجوز الوقف، والوصل أولى.", summaryEn: "You may stop, but joining is better.",
+        examples: [{ ar: "إِلَّا هُوَ", mark: ["هُوَ"], noteAr: "الأنعام ١٧", noteEn: "6:17", ref: [6, 17, 8, 9] }],
+        keywords: ["sila", "wasl", "صلى", "الوصل اولى"] },
+      { id: "sign-qila", titleAr: "قلى — الوقف أولى", titleEn: "قلى — stopping is better", letters: "ۗ",
+        summaryAr: "يجوز الوصل، والوقف أولى.", summaryEn: "You may join, but stopping is better.",
+        examples: [{ ar: "إِلَّا قَلِيلٌ", mark: ["قَلِيلٌ"], noteAr: "الكهف ٢٢", noteEn: "18:22", ref: [18, 22, 21, 22] }],
+        keywords: ["qila", "قلى", "الوقف اولى"] },
+      { id: "sign-muanaqah", titleAr: "∴ ∴ — وقف التعانق", titleEn: "∴ ∴ — paired stop", letters: "ۛ",
+        summaryAr: "علامتان متقاربتان: يُوقف على إحداهما فقط لا على كلتيهما.", summaryEn: "Two marks close together: stop at one of them, not at both.",
+        examples: [{ ar: "لَا رَيْبَ فِيهِ", mark: ["رَيْبَ", "فِيهِ"], noteAr: "البقرة ٢", noteEn: "2:2", ref: [2, 2, 3, 5] }],
+        keywords: ["muanaqah", "تعانق"] },
     ],
   },
 ];

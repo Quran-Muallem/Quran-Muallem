@@ -649,5 +649,15 @@
   "connTestDesc": "¿No funciona la descarga o la reproducción? Esta prueba revisa la conexión al servidor en tu móvil y muestra dónde falla.",
   "connTestRun": "Probar conexión",
   "connTestCopy": "Copiar",
-  "goToSearchAll": "Sura, página o 18:10"
+  "goToSearchAll": "Sura, página o 18:10",
+  "tajweedListen": "Escuchar",
+  "tajweedVoiceOf": "Voz",
+  "tajweedVoiceSheikh": "Voz del jeque",
+  "tajweedVoiceWbw": "Grabación palabra por palabra",
+  "tajweedVoiceVerse": "Aleya completa, voz del jeque",
+  "tajweedPlayFailed": "No se pudo reproducir el ejemplo: revisa la conexión",
+  "tajweedFavorites": "Favoritos",
+  "tajweedFavAdd": "Añadir a favoritos",
+  "tajweedFavRemove": "Quitar de favoritos",
+  "tajweedFavNone": "Aún no hay favoritos: toca ⭐ junto a una regla."
 }

@@ -649,5 +649,15 @@
   "connTestDesc": "Muat turun atau main tidak berfungsi? Ujian ini menyemak sambungan ke pelayan pada telefon anda dan menunjukkan di mana gagal.",
   "connTestRun": "Uji sambungan",
   "connTestCopy": "Salin",
-  "goToSearchAll": "Nama surah, halaman atau 18:10"
+  "goToSearchAll": "Nama surah, halaman atau 18:10",
+  "tajweedListen": "Dengar",
+  "tajweedVoiceOf": "Suara",
+  "tajweedVoiceSheikh": "Suara syeikh",
+  "tajweedVoiceWbw": "Rakaman perkataan demi perkataan",
+  "tajweedVoiceVerse": "Ayat penuh, suara syeikh",
+  "tajweedPlayFailed": "Contoh tidak dapat dimainkan — semak sambungan",
+  "tajweedFavorites": "Kegemaran",
+  "tajweedFavAdd": "Tambah ke kegemaran",
+  "tajweedFavRemove": "Buang dari kegemaran",
+  "tajweedFavNone": "Belum ada kegemaran — ketik ⭐ di sebelah mana-mana hukum."
 }

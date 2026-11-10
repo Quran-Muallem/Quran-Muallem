@@ -15,6 +15,7 @@
  * The result has the same shape as `matchLive` (src/lib/quranMatcher.ts), so the Mushaf, the Tasmīʿ
  * screen and Hifz mode (words appear only once recited correctly) work unchanged.
  */
+import { judgeWithTajweed } from "@/lib/tajweedAnalyzer";
 import { useSyncExternalStore } from "react";
 import { assetUrl } from "@/lib/assets";
 import { createSignal } from "@/lib/storage";
@@ -175,7 +176,11 @@ export function matchLivePhonemes(recognized: string, target: string | readonly 
     // The word being spoken right now is judged only once it is complete (or the recitation ended).
     if (t === lastToken && !lastComplete && !final) return;
     const h = heardChars[t]!.join("");
-    const j = judgeWord(exp, h, tolerance);
+    // v35: Tajweed-aware — a stop on this word (sukūn ʿāriḍ), a start after a stop (hamzat al-waṣl) and a
+    // repetition after a breath stop are accepted (src/lib/tajweedAnalyzer.ts).
+    const previous: string[] = [];
+    for (let k = t - 1; k >= 0 && previous.length < 3; k--) { const r = refs[k]; if (r && isWord[k]) previous.unshift(r); }
+    const j = judgeWithTajweed(exp, h, { word: flat[t], previous, next: flat.slice(t + 1).find((_, i) => isWord[t + 1 + i]) }, tolerance);
     statuses[t] = h ? j.status : "ERROR";
     heard[t] = h || null;
     prevStatus = statuses[t]!;

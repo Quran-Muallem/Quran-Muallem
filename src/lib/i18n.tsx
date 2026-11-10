@@ -560,6 +560,16 @@ export const copy = {
   connTestRun: ["اختبار الاتصال", "Test connection"],
   connTestCopy: ["نسخ", "Copy"],
   goToSearchAll: ["اسم السورة، أو صفحة، أو ١٨:١٠", "Surah name, page or 18:10"],
+  tajweedListen: ["استمع", "Listen"],
+  tajweedVoiceOf: ["بصوت", "Voice"],
+  tajweedVoiceSheikh: ["بصوت الشيخ", "Sheikh's voice"],
+  tajweedVoiceWbw: ["تسجيل كلمة بكلمة", "Word-by-word recording"],
+  tajweedVoiceVerse: ["الآية كاملة بصوت الشيخ", "Whole verse, Sheikh's voice"],
+  tajweedPlayFailed: ["تعذّر تشغيل المثال — تحقق من الاتصال", "Could not play the example — check the connection"],
+  tajweedFavorites: ["المفضلة", "Favourites"],
+  tajweedFavAdd: ["أضف إلى المفضلة", "Add to favourites"],
+  tajweedFavRemove: ["أزل من المفضلة", "Remove from favourites"],
+  tajweedFavNone: ["لا قواعد في المفضلة بعد — اضغط ⭐ بجانب أي قاعدة.", "No favourites yet — tap ⭐ next to any rule."],
 } as const;
 export type CopyKey = keyof typeof copy;
 export function translate(language: Language, key: CopyKey): string {

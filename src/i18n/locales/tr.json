@@ -649,5 +649,15 @@
   "connTestDesc": "İndirme ya da oynatma çalışmıyor mu? Bu test telefonunda sunucu bağlantısını denetler ve nerede takıldığını gösterir.",
   "connTestRun": "Bağlantıyı test et",
   "connTestCopy": "Kopyala",
-  "goToSearchAll": "Sure adı, sayfa veya 18:10"
+  "goToSearchAll": "Sure adı, sayfa veya 18:10",
+  "tajweedListen": "Dinle",
+  "tajweedVoiceOf": "Ses",
+  "tajweedVoiceSheikh": "Şeyhin sesi",
+  "tajweedVoiceWbw": "Kelime kelime kayıt",
+  "tajweedVoiceVerse": "Ayetin tamamı, şeyhin sesi",
+  "tajweedPlayFailed": "Örnek çalınamadı — bağlantıyı kontrol edin",
+  "tajweedFavorites": "Favoriler",
+  "tajweedFavAdd": "Favorilere ekle",
+  "tajweedFavRemove": "Favorilerden çıkar",
+  "tajweedFavNone": "Henüz favori yok — bir kuralın yanındaki ⭐ simgesine dokunun."
 }

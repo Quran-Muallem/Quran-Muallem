@@ -296,12 +296,15 @@ function verseTimings(quranComId: number, surah: number, ayah: number): Promise<
   return p;
 }
 
+/** The element `playClip` uses (to wait for its end). */
+export const currentWordAudio = () => wordAudio;
+
 export function stopWordAudio() {
   if (wordStop) { clearTimeout(wordStop); wordStop = null; }
   wordAudio?.pause();
 }
 
-async function playClip(url: string, fromMs = 0, toMs?: number) {
+export async function playClip(url: string, fromMs = 0, toMs?: number) {
   stopWordAudio();
   wordAudio ??= new Audio();
   const a = wordAudio;

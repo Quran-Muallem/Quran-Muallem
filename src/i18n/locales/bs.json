@@ -649,5 +649,15 @@
   "connTestDesc": "Preuzimanje ili puštanje ne radi? Ovaj test provjerava vezu sa serverom na tvom telefonu i pokazuje gdje zapinje.",
   "connTestRun": "Testiraj vezu",
   "connTestCopy": "Kopiraj",
-  "goToSearchAll": "Ime sure, stranica ili 18:10"
+  "goToSearchAll": "Ime sure, stranica ili 18:10",
+  "tajweedListen": "Slušaj",
+  "tajweedVoiceOf": "Glas",
+  "tajweedVoiceSheikh": "Glas šejha",
+  "tajweedVoiceWbw": "Snimak riječ po riječ",
+  "tajweedVoiceVerse": "Cijeli ajet, glas šejha",
+  "tajweedPlayFailed": "Primjer se ne može pustiti — provjeri vezu",
+  "tajweedFavorites": "Omiljeno",
+  "tajweedFavAdd": "Dodaj u omiljeno",
+  "tajweedFavRemove": "Ukloni iz omiljenog",
+  "tajweedFavNone": "Još nema omiljenih — dodirni ⭐ pored pravila."
 }
