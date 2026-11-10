@@ -645,5 +645,8 @@
   "setContinue": "Teruskan",
   "recDownloadFailed": "Muat turun gagal — ketik untuk cuba lagi",
   "recPlayFailed": "Pelayan bacaan (mp3quran.net) tidak dapat dicapai. Semak sambungan dan main semula.",
-  "recConnecting": "Menyambung ke pelayan…"
+  "recConnecting": "Menyambung ke pelayan…",
+  "connTestDesc": "Muat turun atau main tidak berfungsi? Ujian ini menyemak sambungan ke pelayan pada telefon anda dan menunjukkan di mana gagal.",
+  "connTestRun": "Uji sambungan",
+  "connTestCopy": "Salin"
 }

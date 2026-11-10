@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Download, Heart, Loader2, Pause, Play, Search, SkipBack, SkipForward, Trash2, X } from "lucide-react";
 import { GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import { cn } from "@/lib/utils";
+import { ConnectionTestPanel } from "@/components/hub/ConnectionTestPanel";
 import { useI18n } from "@/lib/i18n";
 import { getSurahMeta } from "@/lib/quranService";
 import { formatBytes } from "@/lib/reciterManager";
@@ -112,6 +113,7 @@ export function RecitersHubView() {
         })}
       </ul>
       <p className="mt-4 text-center text-[0.7rem] text-emerald-100/50">{t("recSourceCredit")}</p>
+      <ConnectionTestPanel />
       <MiniPlayer />
     </div>
   );
@@ -223,6 +225,7 @@ function ReciterDetail({ r, m, onMoshaf, onBack }: { r: HubReciter; m: Moshaf; o
         })}
       </ul>
       <p className="mt-4 text-center text-[0.7rem] text-emerald-100/50">{t("recSourceCredit")}</p>
+      <ConnectionTestPanel />
     </div>
   );
 }

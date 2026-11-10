@@ -1,6 +1,8 @@
 # Baut eine installierbare Test-APK (debug) in der Cloud – ohne Android Studio.
 # Start: GitHub → Actions → "Android APK" → "Run workflow".
 # Ergebnis: Release „Quran Muallem - معلم القرآن – Android Test-APK“ mit quran-muallem.apk (Link direkt am Handy öffnen).
+# Mit dem Secret RELEASES_TOKEN (Fine-grained token, Contents: Read and write auf Quran-Muallem/Quran-Muallem1)
+# erscheint die APK zusätzlich als Release „Version-<versionCode>“ in https://github.com/Quran-Muallem/Quran-Muallem1/releases.
 name: Android APK
 
 on:
@@ -12,6 +14,8 @@ permissions:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    env:
+      HAS_RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -25,6 +29,9 @@ jobs:
           java-version: 21
 
       - uses: android-actions/setup-android@v3
+        with:
+          # The default list still asks for the removed package "tools" (sdkmanager exits with 1).
+          packages: platform-tools
 
       - name: Install
         run: npm install --legacy-peer-deps
@@ -51,10 +58,17 @@ jobs:
           ./gradlew assembleDebug --no-daemon
           cp app/build/outputs/apk/debug/app-debug.apk ../quran-muallem.apk
 
+      - name: Version lesen
+        id: ver
+        run: |
+          echo "code=$(node -p "require('./package.json').androidVersionCode")" >> "$GITHUB_OUTPUT"
+          echo "name=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+          cp quran-muallem.apk "Quran-Muallem-v$(node -p "require('./package.json').androidVersionCode").apk"
+
       - uses: actions/upload-artifact@v4
         with:
-          name: quran-muallem-apk
-          path: quran-muallem.apk
+          name: quran-muallem-apk-v${{ steps.ver.outputs.code }}
+          path: Quran-Muallem-v${{ steps.ver.outputs.code }}.apk
 
       - name: Als Release veröffentlichen (Download-Link fürs Handy)
         uses: softprops/action-gh-release@v2
@@ -63,3 +77,13 @@ jobs:
           name: "Quran Muallem - معلم القرآن – Android Test-APK"
           prerelease: true
           files: quran-muallem.apk
+
+      - name: Release in Quran-Muallem1 (wenn RELEASES_TOKEN gesetzt)
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        if: env.HAS_RELEASES_TOKEN == 'true'
+        run: |
+          TAG="Version-${{ steps.ver.outputs.code }}"
+          NOTES="Quran Muallem ${{ steps.ver.outputs.name }} (versionCode ${{ steps.ver.outputs.code }})"
+          gh release view "$TAG" -R Quran-Muallem/Quran-Muallem1 >/dev/null 2>&1 || gh release create "$TAG" -R Quran-Muallem/Quran-Muallem1 --title "$TAG" --notes "$NOTES"
+          gh release upload "$TAG" "Quran-Muallem-v${{ steps.ver.outputs.code }}.apk" -R Quran-Muallem/Quran-Muallem1 --clobber

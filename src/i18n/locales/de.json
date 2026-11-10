@@ -645,5 +645,8 @@
   "setContinue": "Fortfahren",
   "recDownloadFailed": "Download fehlgeschlagen – tippe zum erneuten Versuch",
   "recPlayFailed": "Der Rezitations-Server (mp3quran.net) ist nicht erreichbar. Prüfe die Verbindung und tippe erneut auf Abspielen.",
-  "recConnecting": "Verbinde mit dem Server …"
+  "recConnecting": "Verbinde mit dem Server …",
+  "connTestDesc": "Download oder Abspielen geht nicht? Dieser Test prüft auf deinem Handy die Verbindung zum Rezitations-Server und zeigt, wo es hängt.",
+  "connTestRun": "Verbindung testen",
+  "connTestCopy": "Kopieren"
 }

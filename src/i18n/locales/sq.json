@@ -645,5 +645,8 @@
   "setContinue": "Vazhdo",
   "recDownloadFailed": "Shkarkimi dështoi — prek për ta riprovuar",
   "recPlayFailed": "Serveri i recitimeve (mp3quran.net) nuk arrihet. Kontrollo lidhjen dhe luaj sërish.",
-  "recConnecting": "Po lidhet me serverin…"
+  "recConnecting": "Po lidhet me serverin…",
+  "connTestDesc": "Shkarkimi ose luajtja nuk punon? Ky test kontrollon lidhjen me serverin në telefonin tënd dhe tregon ku ngec.",
+  "connTestRun": "Testo lidhjen",
+  "connTestCopy": "Kopjo"
 }

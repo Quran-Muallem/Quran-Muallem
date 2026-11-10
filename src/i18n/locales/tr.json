@@ -645,5 +645,8 @@
   "setContinue": "Devam",
   "recDownloadFailed": "İndirme başarısız — yeniden dene",
   "recPlayFailed": "Tilavet sunucusuna (mp3quran.net) ulaşılamadı. Bağlantıyı kontrol edip tekrar oynat.",
-  "recConnecting": "Sunucuya bağlanıyor…"
+  "recConnecting": "Sunucuya bağlanıyor…",
+  "connTestDesc": "İndirme ya da oynatma çalışmıyor mu? Bu test telefonunda sunucu bağlantısını denetler ve nerede takıldığını gösterir.",
+  "connTestRun": "Bağlantıyı test et",
+  "connTestCopy": "Kopyala"
 }

@@ -556,6 +556,9 @@ export const copy = {
   recDownloadFailed: ["تعذّر التنزيل — اضغط للمحاولة مجددًا", "Download failed — tap to try again"],
   recPlayFailed: ["تعذّر الوصول إلى خادم التلاوات (mp3quran.net). تحقق من الاتصال ثم اضغط تشغيل مجددًا.", "Could not reach the recitation server (mp3quran.net). Check the connection, then press play again."],
   recConnecting: ["جارٍ الاتصال بالخادم…", "Connecting to the server…"],
+  connTestDesc: ["لا يعمل التنزيل أو التشغيل؟ هذا الاختبار يفحص الاتصال بخادم التلاوات على جهازك ويُظهر أين يتوقف.", "Downloads or playback not working? This test checks the connection to the recitation server on your phone and shows where it fails."],
+  connTestRun: ["اختبار الاتصال", "Test connection"],
+  connTestCopy: ["نسخ", "Copy"],
 } as const;
 export type CopyKey = keyof typeof copy;
 export function translate(language: Language, key: CopyKey): string {

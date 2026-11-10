@@ -645,5 +645,8 @@
   "setContinue": "Continuar",
   "recDownloadFailed": "Falló la descarga — toca para reintentar",
   "recPlayFailed": "No se pudo acceder al servidor (mp3quran.net). Revisa la conexión y vuelve a reproducir.",
-  "recConnecting": "Conectando con el servidor…"
+  "recConnecting": "Conectando con el servidor…",
+  "connTestDesc": "¿No funciona la descarga o la reproducción? Esta prueba revisa la conexión al servidor en tu móvil y muestra dónde falla.",
+  "connTestRun": "Probar conexión",
+  "connTestCopy": "Copiar"
 }

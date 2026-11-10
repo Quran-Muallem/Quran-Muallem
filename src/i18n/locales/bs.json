@@ -645,5 +645,8 @@
   "setContinue": "Nastavi",
   "recDownloadFailed": "Preuzimanje nije uspjelo — dodirni za ponovo",
   "recPlayFailed": "Server učenja (mp3quran.net) nije dostupan. Provjeri vezu pa ponovo pusti.",
-  "recConnecting": "Povezivanje sa serverom…"
+  "recConnecting": "Povezivanje sa serverom…",
+  "connTestDesc": "Preuzimanje ili puštanje ne radi? Ovaj test provjerava vezu sa serverom na tvom telefonu i pokazuje gdje zapinje.",
+  "connTestRun": "Testiraj vezu",
+  "connTestCopy": "Kopiraj"
 }

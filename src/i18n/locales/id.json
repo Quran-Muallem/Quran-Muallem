@@ -645,5 +645,8 @@
   "setContinue": "Lanjutkan",
   "recDownloadFailed": "Unduhan gagal — ketuk untuk coba lagi",
   "recPlayFailed": "Server bacaan (mp3quran.net) tidak terjangkau. Periksa koneksi lalu putar lagi.",
-  "recConnecting": "Menghubungkan ke server…"
+  "recConnecting": "Menghubungkan ke server…",
+  "connTestDesc": "Unduhan atau pemutaran gagal? Tes ini memeriksa koneksi ke server di ponselmu dan menunjukkan letak masalahnya.",
+  "connTestRun": "Tes koneksi",
+  "connTestCopy": "Salin"
 }
