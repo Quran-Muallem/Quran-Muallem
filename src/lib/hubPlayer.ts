@@ -10,6 +10,7 @@
  * native player, iOS and the browser keep the <audio> element.
  */
 import { useSyncExternalStore } from "react";
+import { getSettings } from "@/lib/settings";
 import { backgroundAudio, claimSheikhAudio, detachWebSession, endSession, releaseSheikhAudio, sessionTexts, sheikhAudio, stopSheikhAudio, updateSession, type BackgroundAudioPlugin, type NativePlayerEvent } from "@/lib/audioPlayback";
 import { createSignal } from "@/lib/storage";
 import { getSurahMeta } from "@/lib/quranService";
@@ -24,6 +25,8 @@ export type HubPlayerState = {
 } | null;
 
 const state = createSignal<HubPlayerState>(null);
+/** A surah that has not started playing after this long counts as failed (shown, retry with play). */
+export const LOAD_TIMEOUT_MS = 20000;
 const me = Symbol("reciters-library");
 let token = 0;
 let timing: VerseTiming | null = null;
@@ -98,9 +101,11 @@ async function playNative(p: BackgroundAudioPlugin, my: number, r: HubReciter, m
   await nativeSub;
   detachWebSession(); // the service now belongs to the native playlist
   try {
+    await p.playerControl({ action: "rate", ms: (getSettings().playbackRate || 1) * 1000 }).catch(() => {});
     await p.playerLoad({ items, index: 0, startMs });
   } catch { return false; }
   native = { plugin: p, list };
+  setTimeout(() => { if (my === token && native && state.get()?.loading) patch({ loading: false, failed: true }); }, LOAD_TIMEOUT_MS + 5000);
   void verseTiming(m, surah).then((t) => { if (my !== token || !t) return; timing = t; void p.playerMarks({ index: 0, marks: t.map((v) => v.start) }).catch(() => {}); });
   return true;
 }
@@ -127,7 +132,9 @@ export async function playSurah(r: HubReciter, m: Moshaf, surah: number, startMs
     a.onloadedmetadata = () => { if (my !== token) return; if (startMs) a.currentTime = startMs / 1000; patch({ duration: a.duration || 0 }); };
     a.onended = () => { if (my === token) void advance(1); };
     a.onerror = () => { if (my === token) { patch({ playing: false, loading: false, failed: true }); announce(false); } };
-    await a.play();
+    // v30: a stream that never starts (server not reachable) must not spin forever.
+    const watchdog = setTimeout(() => { if (my === token && state.get()?.loading) { a.pause(); patch({ playing: false, loading: false, failed: true }); } }, LOAD_TIMEOUT_MS);
+    try { await a.play(); } finally { clearTimeout(watchdog); }
     if (my !== token) return;
     patch({ playing: true, loading: false, duration: a.duration || 0 });
     announce(true);

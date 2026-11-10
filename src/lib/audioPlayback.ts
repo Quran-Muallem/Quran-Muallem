@@ -19,6 +19,7 @@
  */
 import { assetUrl } from "@/lib/assets";
 import { platform } from "@/lib/storage";
+import { getSettings, subscribeSettings } from "@/lib/settings";
 
 type NativeAction = { action: "toggle" | "play" | "pause" | "next" | "previous" | "stop" | "seekto"; seekTime?: number };
 type ListenerHandle = { remove: () => Promise<void> };
@@ -34,7 +35,7 @@ export interface BackgroundAudioPlugin {
   cancelDownload(options: { id: string }): Promise<void>;
   /** v29: native playlist player (MediaPlayer in the foreground service). */
   playerLoad(options: { items: NativePlayerItem[]; index: number; startMs: number }): Promise<void>;
-  playerControl(options: { action: "pause" | "resume" | "stop" | "seek" | "next" | "previous" | "index"; ms?: number; index?: number }): Promise<void>;
+  playerControl(options: { action: "pause" | "resume" | "stop" | "seek" | "next" | "previous" | "index" | "rate"; ms?: number; index?: number }): Promise<void>;
   playerMarks(options: { index: number; marks: number[] }): Promise<void>;
   addListener(event: "action", cb: (a: NativeAction) => void): Promise<ListenerHandle>;
   addListener(event: "player", cb: (e: NativePlayerEvent) => void): Promise<ListenerHandle>;
@@ -55,6 +56,7 @@ let element: HTMLAudioElement | null = null;
 
 /** The one <audio> element all Sheikh playback uses; handlers of the previous verse are removed. */
 export function sheikhAudio(src: string): HTMLAudioElement {
+  watchRate();
   element ??= new Audio();
   const a = element;
   a.onended = null; a.onerror = null; a.ontimeupdate = null; a.onloadedmetadata = null;
@@ -62,7 +64,28 @@ export function sheikhAudio(src: string): HTMLAudioElement {
   a.setAttribute("playsinline", "");
   if (a.src !== src) a.src = src;
   else a.currentTime = 0;
+  applyRate(a);
   return a;
+}
+
+/** «سرعة التلاوة» (v30): the Sheikh's playback speed, kept across sources (and pitch preserved). */
+function applyRate(a: HTMLAudioElement) {
+  const r = getSettings().playbackRate || 1;
+  a.defaultPlaybackRate = r; a.playbackRate = r;
+  (a as HTMLAudioElement & { preservesPitch?: boolean }).preservesPitch = true;
+}
+let rateWatch = false;
+function watchRate() {
+  if (rateWatch) return;
+  rateWatch = true;
+  let last = getSettings().playbackRate;
+  subscribeSettings(() => {
+    const r = getSettings().playbackRate;
+    if (r === last) return;
+    last = r;
+    if (element) applyRate(element);
+    void backgroundAudio().then((p) => p?.playerControl({ action: "rate", ms: r * 1000 }).catch(() => {}));
+  });
 }
 
 /**

@@ -42,6 +42,21 @@ export type AppSettings = {
   dailyReminder: boolean;
   /** Its time, "HH:MM" (24 h). */
   dailyReminderTime: string;
+  /** v30 settings. */
+  /** «كشف الأخطاء»: mark wrong / unclear words while reciting (off → no red / orange, no mistake alert). */
+  errorDetection: boolean;
+  /** «تظليل الأخطاء الماضية»: show the saved colours of earlier recitations (red / orange) in the Mushaf. */
+  showPastMistakes: boolean;
+  /** Short sound when a word is marked wrong. */
+  mistakeSound: boolean;
+  mistakeSoundType: "tone" | "click" | "bell";
+  /** Sound / vibration when the microphone starts and stops. */
+  sessionSound: boolean;
+  sessionHaptic: boolean;
+  /** Playback speed of the Sheikh (0.5 – 1.75). */
+  playbackRate: number;
+  /** «حفظ التسجيلات الصوتية»: keep the recordings of your recitation on this device. */
+  saveRecordings: boolean;
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -60,7 +75,16 @@ export const DEFAULT_SETTINGS: AppSettings = {
   hiddenFirstWord: false,
   dailyReminder: false,
   dailyReminderTime: "20:00",
+  errorDetection: true,
+  showPastMistakes: true,
+  mistakeSound: false,
+  mistakeSoundType: "tone",
+  sessionSound: true,
+  sessionHaptic: true,
+  playbackRate: 1,
+  saveRecordings: true,
 };
+export const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 1.75] as const;
 
 const KEY = "hifz.settings";
 const signal = createSignal<AppSettings>(DEFAULT_SETTINGS);
@@ -86,8 +110,10 @@ export function cleanSettings(s: AppSettings & Record<string, unknown>): AppSett
   if (out.recognizer !== "zipformer" && out.recognizer !== "whisper") out.recognizer = "zipformer";
   if (!out.translations || typeof out.translations !== "object") out.translations = {};
   if (!out.tafsirs || typeof out.tafsirs !== "object") out.tafsirs = {};
-  for (const k of ["mistakeVibration", "completionSound", "autoStopSurahEnd", "hiddenFirstWord", "dailyReminder"] as const) if (typeof out[k] !== "boolean") out[k] = DEFAULT_SETTINGS[k];
+  for (const k of ["mistakeVibration", "completionSound", "autoStopSurahEnd", "hiddenFirstWord", "dailyReminder", "errorDetection", "showPastMistakes", "mistakeSound", "sessionSound", "sessionHaptic", "saveRecordings"] as const) if (typeof out[k] !== "boolean") out[k] = DEFAULT_SETTINGS[k];
   if (typeof out.dailyReminderTime !== "string" || !/^\d{2}:\d{2}$/.test(out.dailyReminderTime)) out.dailyReminderTime = DEFAULT_SETTINGS.dailyReminderTime;
+  if (!(PLAYBACK_RATES as readonly number[]).includes(out.playbackRate as number)) out.playbackRate = 1;
+  if (!["tone", "click", "bell"].includes(out.mistakeSoundType as string)) out.mistakeSoundType = "tone";
   delete out["chatProvider"]; delete out["chatModel"];
   return out;
 }
@@ -111,6 +137,9 @@ export async function updateSettings(patch: Partial<AppSettings>): Promise<void>
   signal.set(next);
   await kv.setJson(KEY, next);
 }
+
+/** Called on every settings change (non-React code). */
+export const subscribeSettings = (fn: () => void) => signal.subscribe(fn);
 
 export function useSettings(): AppSettings {
   const value = useSyncExternalStore(signal.subscribe, signal.get, () => DEFAULT_SETTINGS);

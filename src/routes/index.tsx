@@ -139,6 +139,12 @@ export function App() {
     }
   }, []);
   const switchTab = useCallback((t: Tab) => { syncTo(t); setTab(t); }, [syncTo]);
+  // «إدارة التنزيلات» in the settings: open the reciters library.
+  useEffect(() => {
+    const go = () => { setHubSection("reciters" as HubSection); switchTab("hub"); };
+    window.addEventListener("qm:open-reciters", go);
+    return () => window.removeEventListener("qm:open-reciters", go);
+  }, [switchTab]);
   const go = useCallback((t: Tab) => { if (t === "hub") setHubSection(null); switchTab(t); window.scrollTo({ top: 0 }); }, [switchTab]);
   const jump = useCallback((target: { surahId: number; focus?: number | undefined; mark?: string[] | undefined; mode?: PracticeMode | undefined }) => {
     // An explicit target wins over the last recited passage.
@@ -358,11 +364,14 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
     let reached = -1;
     if (live) { match.statuses.forEach((st, i) => { if (isJudged(st)) reached = i; }); if (listening) reached = Math.max(reached, match.cursor); }
     const liveVerses = new Set(owners.slice(0, reached + 1).map(verse));
+    const bad = (st: LiveStatus) => st === "ERROR" || st === "WARNING";
     return tokenKeys.map((k, i) => {
-      if (live && liveVerses.has(verse(owners[i] ?? null))) return match.statuses[i] ?? "PENDING";
-      return (k && colors.get(k)?.st) || "PENDING";
+      // «كشف الأخطاء» off → no red / orange; «تظليل الأخطاء الماضية» off → earlier mistakes not shown.
+      if (live && liveVerses.has(verse(owners[i] ?? null))) { const st = match.statuses[i] ?? "PENDING"; return !settings.errorDetection && bad(st) ? "PENDING" : st; }
+      const st: LiveStatus = (k && colors.get(k)?.st) || "PENDING";
+      return bad(st) && (!settings.showPastMistakes || !settings.errorDetection) ? "PENDING" : st;
     });
-  }, [listening, match.statuses, match.cursor, tokenKeys, colors]);
+  }, [listening, match.statuses, match.cursor, tokenKeys, colors, settings.errorDetection, settings.showPastMistakes]);
   // Light vibration when a word turns red/orange while reciting (recognition keeps running).
   useMistakeHaptics(match.statuses, listening);
   const [wordFix, setWordFix] = useState<WordFix | null>(null);
@@ -547,7 +556,7 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
       // Only the verses actually reached (judged words), so a part never claims verses it did not cover.
       let reachedTo = f;
       { let o = 0; a.forEach((x) => { const n = x.text.split(" ").length; if (m.statuses.slice(o, o + n).some((st) => st && st !== "PENDING")) reachedTo = x.number; o += n; }); }
-      void take().then((kept) => { if (kept) void saveRecording({ surah: target.surahId, fromAyah: f, toAyah: Math.max(f, Math.min(tt, reachedTo)), ...kept, accuracy: accuracyOf(tally(m.statuses)) ?? undefined, mode: target.mode === "MEMORIZATION_MODE" ? "memorization" : "reading" }); });
+      void take().then((kept) => { if (kept && getSettings().saveRecordings) void saveRecording({ surah: target.surahId, fromAyah: f, toAyah: Math.max(f, Math.min(tt, reachedTo)), ...kept, accuracy: accuracyOf(tally(m.statuses)) ?? undefined, mode: target.mode === "MEMORIZATION_MODE" ? "memorization" : "reading" }); });
       const mw = latestMushaf.current;
       store.recordWords(unifiedMode(target.mode), practiceWordResults(target.surahId, a, m.statuses, mw ? (s, x) => mw.words(s, x) : null, unifiedMode(target.mode), latestHints.current));
       // Same colours in the Mushaf; this passage becomes the one the Mushaf opens at.

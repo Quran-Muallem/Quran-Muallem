@@ -207,6 +207,8 @@ function ReciterDetail({ r, m, onMoshaf, onBack }: { r: HubReciter; m: Moshaf; o
                 <span className={cn("block font-arabic text-base", isCur ? "text-amber-200" : "text-emerald-50")}>سورة {meta.nameArabic}</span>
                 {language !== "ar" && st.status !== "downloading" && <span className="block truncate text-[0.7rem] text-emerald-100/55">{meta.nameSimple}</span>}
                 {st.status === "downloading" && <ProgressLine received={st.received} total={st.total} surah={s} />}
+                {st.status === "error" && <span className="block truncate text-[0.68rem] text-red-200" data-rec-surah-error={s}>{t("recDownloadFailed")}{st.message ? ` (${st.message.slice(0, 60)})` : ""}</span>}
+                {isCur && player?.failed && <span className="block truncate text-[0.68rem] text-red-200" data-rec-play-error={s}>{t("recPlayFailed")}</span>}
               </span>
               {st.status === "complete" ? (
                 <button type="button" onClick={() => void deleteSurahFile(r, m, s)} aria-label={t("recDeleteSurah")} data-rec-surah-delete={s} className="flex h-8 w-8 items-center justify-center rounded-lg text-emerald-300"><Check className="h-4 w-4" /></button>
@@ -237,7 +239,7 @@ function ProgressLine({ received, total, surah }: { received: number; total: num
   return (
     <span className="mt-1 block" data-rec-surah-progress={surah} data-percent={pct ?? ""}>
       <span className="block truncate text-[0.7rem] tabular-nums text-amber-200">
-        {pct != null ? t("recDownloadingOf").replace("{p}", String(pct)).replace("{a}", mb(received)).replace("{b}", mb(total)) : `${mb(received)} …`}
+        {pct != null ? t("recDownloadingOf").replace("{p}", String(pct)).replace("{a}", mb(received)).replace("{b}", mb(total)) : received > 0 ? `${mb(received)} …` : t("recConnecting")}
       </span>
       <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-white/10">
         <span className={cn("block h-full rounded-full transition-[width]", pct == null && "w-1/3 animate-pulse")} style={{ ...(pct != null ? { width: `${Math.max(3, pct)}%` } : {}), background: GOLD_GRADIENT }} />
@@ -270,6 +272,7 @@ function MiniPlayer() {
         </button>
         <button type="button" onClick={next} aria-label={t("recNext")} className="flex h-9 w-9 items-center justify-center rounded-full" style={{ color: GOLD_LIGHT }} data-hub-next=""><SkipForward className="h-5 w-5 rtl:rotate-180" /></button>
       </div>
+      {p.failed && <p className="mt-1 text-[0.7rem] leading-snug text-red-200" role="alert" data-hub-player-error="">{t("recPlayFailed")}</p>}
       <div className="mt-1 flex items-center gap-2 text-[0.65rem] tabular-nums text-emerald-100/60" dir="ltr">
         <span>{time(p.position)}</span>
         <input type="range" min={0} max={Math.max(1, p.duration)} step={1} value={Math.min(p.position, p.duration || 0)} onChange={(e) => seek(Number(e.target.value))} aria-label="progress"

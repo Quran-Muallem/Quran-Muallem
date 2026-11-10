@@ -1,7 +1,7 @@
 {
   "name": "quran-muallem",
   "displayName": "Quran Muallem - معلم القرآن",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "private": true,
   "sideEffects": [
     "**/*.css",
@@ -130,5 +130,5 @@
   "engines": {
     "node": ">=22"
   },
-  "androidVersionCode": 29
+  "androidVersionCode": 30
 }

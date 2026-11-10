@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Bookmark, Loader2, RefreshCw, Settings } from "lucide-react";
+import { Bookmark, Loader2, RefreshCw, Search, Settings } from "lucide-react";
 import { MushafPage, type WordKey } from "@/components/mushaf/MushafPage";
 import { ReciteBar, type BarMode } from "@/components/mushaf/ReciteBar";
 import { ReciterSelectModal } from "@/components/ReciterSelectModal";
@@ -8,9 +8,9 @@ import { AyahActionMenu, type AyahAction } from "@/components/mushaf/AyahActionM
 import { GoToModal, type GoToTarget } from "@/components/mushaf/GoToModal";
 import { TafsirModal, type AyahInfoTab } from "@/components/TafsirModal";
 import { useKeepAwake } from "@/lib/wakeLock";
-import { BurgerButton, MushafMenu, SearchButton, type AppTab } from "@/components/mushaf/MushafMenu";
+import { BurgerButton, MushafMenu, type AppTab } from "@/components/mushaf/MushafMenu";
 import { GOLD_B } from "@/components/mushaf/MushafOrnaments";
-import { GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
+import { GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import type { StudyTarget } from "@/components/Dashboard";
 import { TOTAL_PAGES, loadMushaf, type Mushaf } from "@/lib/mushafData";
 import { getSurahMeta, toArabicDigits } from "@/lib/quranService";
@@ -34,7 +34,7 @@ import { colorsFor, mergeLive, reachedVerses } from "@/lib/wordColors";
 import { finishedSurah, pageReadyToTurn, surahEndIndices, tally } from "@/lib/surahCompletion";
 import { hizbOfPage, noteRecentRead, toggleBookmark, useBookmarks } from "@/lib/mushafNav";
 import { cn } from "@/lib/utils";
-import { MIN_EMPTY_PART_SECONDS, SURAH_END_SILENCE_MS, mainPart, recordingParts, type RecordingPart } from "@/lib/recordingParts";
+import { MIN_EMPTY_PART_SECONDS, SURAH_END_SILENCE_MS, addToOpen, mainPart, recordingParts, type OpenParts, type RecordingPart } from "@/lib/recordingParts";
 import { setMicActive } from "@/lib/recordingActivity";
 
 function useMushaf() {
@@ -230,30 +230,41 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
     // Running totals of the continuous session (across automatic page turns).
     store.addPart(tally(m.statuses), pageTurn.current);
     store.recordWords(unifiedMode(mode), wordResults(m.statuses));
+    const turned = pageTurn.current;
     pageTurn.current = false;
-    // v29: this page's part of the recording becomes its own recording (the verses not saved yet by a
-    // mid-page cut at a surah end). A page turn cuts the running recording (the microphone goes on); the
-    // stop takes the rest — earlier pages are never overwritten.
+    // v30: one recording per surah. A page turn only collects this page's verses into the open part of
+    // their surah (the recording goes on, nothing is cut); the stop saves what is open.
     void range;
-    savePart(m, pageTurn.current ? "cut" : "final");
+    if (turned) collect(m);
+    else { collect(m); flush("final"); }
   }, [practice, targets, mode, hints, keys, tokenOfKey, keyOfToken, store, wordResults]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ---------------- recordings: one per page and per surah ---------------- */
-  /** Verses of this page already saved as a recording (a surah finished mid-page). */
+  /* ---------------- recordings: one per surah (across pages) ---------------- */
+  /** Verses of this page already collected into an open part. */
   const savedVerses = useRef(new Set<string>());
+  /** Recited verses per surah not saved yet (collected across page turns). */
+  const openParts = useRef<OpenParts>(new Map());
   const judged = (m: LiveMatch) => keys.map((key, i) => ({ key, status: m.statuses[tokenOfKey[i] ?? -1] }));
-  const keep = (part: RecordingPart, kept: KeptAudio) => void saveRecording({
-    surah: part.surah, fromAyah: part.fromAyah, toAyah: part.toAyah, ...kept,
-    accuracy: part.accuracy ?? undefined, mode: mode === "MEMORIZATION_MODE" ? "memorization" : "reading",
-  });
-  /**
-   * Saves the recited verses not saved yet: "cut" while recording (page turn / surah end / next surah —
-   * the microphone goes on), "final" after the stop. `only` limits a cut to some surahs (the others stay in
-   * the open part).
-   */
-  const savePart = (m: LiveMatch, how: "cut" | "final", only?: (surah: number) => boolean) => {
+  const keep = (part: RecordingPart, kept: KeptAudio) => {
+    if (!getSettings().saveRecordings) return;
+    void saveRecording({
+      surah: part.surah, fromAyah: part.fromAyah, toAyah: part.toAyah, ...kept,
+      accuracy: part.accuracy ?? undefined, mode: mode === "MEMORIZATION_MODE" ? "memorization" : "reading",
+    });
+  };
+  /** This page's judged verses (not collected yet) go into the open part of their surah. */
+  const collect = (m: LiveMatch, only?: (surah: number) => boolean) => {
     const parts = recordingParts(judged(m), savedVerses.current).filter((p) => !only || only(p.surah));
     for (const p of parts) for (const v of p.verses) savedVerses.current.add(v);
+    openParts.current = addToOpen(openParts.current, parts);
+  };
+  /**
+   * Saves the open parts as recordings: "cut" while recording (a surah ended, or the reader moved on to the
+   * next surah — the microphone goes on), "final" after the stop. `only` picks the surahs to save.
+   */
+  const flush = (how: "cut" | "final", only?: (surah: number) => boolean) => {
+    const parts = [...openParts.current.values()].filter((p) => !only || only(p.surah));
+    for (const p of parts) openParts.current.delete(p.surah);
     const take = how === "cut" ? cutRef.current : takeAudioRef.current;
     void take?.().then((kept) => {
       if (!kept) return;
@@ -261,7 +272,7 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
       if (part) { keep(part, kept); return; }
       // Nothing recognised in this part: keep it under the start verse only when something was said for a while.
       const first = practice[0];
-      if (how === "final" && first && kept.seconds >= MIN_EMPTY_PART_SECONDS && !savedAny.current) keep({ surah: first.surah, fromAyah: first.ayah, toAyah: first.ayah, verses: [], words: 0, accuracy: accuracyOf(tally(m.statuses)) }, kept);
+      if (how === "final" && first && kept.seconds >= MIN_EMPTY_PART_SECONDS && !savedAny.current) keep({ surah: first.surah, fromAyah: first.ayah, toAyah: first.ayah, verses: [], words: 0, accuracy: null }, kept);
     });
     if (parts.length) savedAny.current = true;
   };
@@ -292,7 +303,7 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
   // Microphone on: a new session (an automatic page turn keeps the microphone on, so it continues).
   const doneSurahs = useRef(new Set<number>());
   useEffect(() => {
-    if (rec.listening) { setWordFix(null); setMarked(null); setLiveShown(true); setCompleted(null); doneSurahs.current = new Set(); savedVerses.current = new Set(); savedAny.current = false; store.startSession(); }
+    if (rec.listening) { setWordFix(null); setMarked(null); setLiveShown(true); setCompleted(null); doneSurahs.current = new Set(); savedVerses.current = new Set(); openParts.current = new Map(); savedAny.current = false; store.startSession(); }
     else store.endSession();
     setMicActive(rec.listening);
   }, [rec.listening]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -301,26 +312,34 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
   // earlier surah's part is cut off as soon as words of the next surah are judged.
   useEffect(() => {
     if (!rec.listening) return;
-    const parts = recordingParts(judged(rec.match), savedVerses.current);
-    if (parts.length < 2) return;
-    const last = parts[parts.length - 1]!.surah;
-    savePart(rec.match, "cut", (s2) => s2 !== last);
+    // The open parts (earlier pages) and this page's verses: a second surah → the earlier one is done.
+    const here = recordingParts(judged(rec.match), savedVerses.current);
+    const surahs = new Set([...openParts.current.keys(), ...here.map((p) => p.surah)]);
+    if (surahs.size < 2) return;
+    const last = here.length ? here[here.length - 1]!.surah : Math.max(...surahs);
+    collect(rec.match, (s2) => s2 !== last);
+    flush("cut", (s2) => s2 !== last);
   }, [rec.listening, rec.match.statuses]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const active = rec.listening || rec.match.recited > 0;
   const pageKeys = useMemo(() => verses.flatMap((v) => v.words.map((w) => `${v.surah}:${v.ayah}:${w}`)), [verses]);
+  const showPast = settings.showPastMistakes, detectErrors = settings.errorDetection;
   const statuses = useMemo(() => {
     const showLive = rec.listening || rec.processing || liveShown;
-    if (!showLive) return colorsFor(colors, pageKeys);
+    // «تظليل الأخطاء الماضية» off: saved red / orange of earlier recitations are not shown.
+    const saved = () => { const m0 = colorsFor(colors, pageKeys); if (!showPast) for (const [k, st] of m0) if (st === "ERROR" || st === "WARNING") m0.delete(k); return m0; };
+    // «كشف الأخطاء» off: no word is marked red / orange at all.
+    const plain = (m0: Map<string, LiveStatus>) => { if (!detectErrors) for (const [k, st] of m0) if (st === "ERROR" || st === "WARNING") m0.delete(k); return m0; };
+    if (!showLive) return plain(saved());
     // While reciting: live colours for the verses reached (a new recitation replaces their colours),
     // the saved colours for every other verse of the page (before the start verse, not reached yet).
     const live = keys.map((_, i) => rec.match.statuses[tokenOfKey[i] ?? -1] ?? "PENDING");
     const reached = reachedVerses(keys, live, rec.listening ? keyOfToken[rec.match.cursor] ?? 0 : -1);
-    const map = colorsFor(colors, pageKeys);
+    const map = saved();
     for (const [k, st] of mergeLive(colors, keys, live, reached)) map.set(k, st);
     for (const k of keys) if (reached.has(k.slice(0, k.lastIndexOf(":"))) && map.get(k) === "PENDING") map.delete(k);
-    return map;
-  }, [rec.listening, rec.processing, liveShown, colors, pageKeys, keys, tokenOfKey, keyOfToken, rec.match.statuses, rec.match.cursor]);
+    return plain(map);
+  }, [rec.listening, rec.processing, liveShown, colors, pageKeys, keys, tokenOfKey, keyOfToken, rec.match.statuses, rec.match.cursor, showPast, detectErrors]);
   // Remember the view for the next visit of this tab (the colours themselves live in RecitationContext).
   useEffect(() => {
     store.mushaf = { surahId, focusAyah, jumpId, page, mode, selected, hints: [...hints] };
@@ -338,7 +357,8 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
     // v29: the microphone stays on for a moment. The finished surah becomes its own recording now; if the
     // reader goes on into the next surah the recording simply continues, otherwise it stops by itself after
     // 2 s of silence. The completion sound and badges come only once the microphone is off.
-    savePart(rec.match, "cut", (s2) => s2 === s);
+    collect(rec.match, (s2) => s2 === s);
+    flush("cut", (s2) => s2 === s);
     void store.finishSurah(unifiedMode(mode), s, wordResults(rec.match.statuses));
     if (silenceTimer.current) clearTimeout(silenceTimer.current);
     silenceTimer.current = setTimeout(() => {
@@ -519,31 +539,43 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
     <div style={{ paddingBottom: barH + PAGE_GAP_PX }}>
       {/* v29 header bar (like Tarteel): menu · «سورة المطففين | صفحة ٥٨٩ | جزء ٣٠ | حزب ٥٩» with bookmark ·
           search · settings · Sheikh. Tapping the surah / page opens the «اذهب إلى» sheet. */}
-      <div className="mb-1 flex items-center gap-1" dir="rtl" data-mushaf-header="">
+      <div className="mb-1 flex items-center gap-1.5" dir="rtl" data-mushaf-header="">
         <BurgerButton onClick={() => setMenuOpen(true)} label={t("menu")} />
-        <div className="flex min-w-0 flex-1 items-stretch overflow-hidden rounded-xl"
-          style={{ background: alpha("var(--mf-page-deep)", 0.85), boxShadow: `inset 0 0 0 1px ${alpha(GOLD_LIGHT, 0.5)}` }}>
-          <button type="button" onClick={() => setGoToOpen(true)} aria-label={t("goTo")} title={t("goTo")} data-mushaf-header-open=""
-            className="min-w-0 flex-1 px-2 py-0.5 text-start" dir="rtl">
-            <span className="block truncate font-arabic text-[0.95rem] leading-snug" style={{ color: GOLD_B }}>سُورَةُ {getSurahMeta(firstSurah)?.nameArabic}</span>
-            <span className="block truncate text-[0.62rem] leading-tight text-emerald-100/80" dir={language === "ar" || language === "ur" ? "rtl" : "ltr"} data-mushaf-header-info="">
-              {t("hdrPage")} {num(page)} | {t("hdrJuz")} {num(juz)} | {t("hdrHizb")} {num(hizb)}
-            </span>
-          </button>
+        {/* v30 own design: a gold medallion with the surah name (tap → «اذهب إلى»), page · juz · hizb as small
+            seals under it; the tools sit together in one capsule. */}
+        <button type="button" onClick={() => setGoToOpen(true)} aria-label={t("goTo")} title={t("goTo")} data-mushaf-header-open=""
+          className="group relative min-w-0 flex-1 rounded-2xl px-2 pb-1 pt-0.5 text-center"
+          style={{ background: `radial-gradient(120% 140% at 50% 0%, ${alpha(GOLD, 0.22)}, transparent 60%), ${alpha("var(--mf-page-deep)", 0.9)}`, boxShadow: `inset 0 0 0 1px ${alpha(GOLD_LIGHT, 0.55)}, 0 4px 14px -8px rgba(0,0,0,.6)` }}>
+          <span className="flex items-center justify-center gap-1.5">
+            <span className="h-px w-3 shrink-0" style={{ background: GOLD_GRADIENT }} aria-hidden="true" />
+            <span className="truncate font-arabic text-[1.02rem] leading-snug" style={{ color: GOLD_B }}>سُورَةُ {getSurahMeta(firstSurah)?.nameArabic}</span>
+            <span className="h-px w-3 shrink-0" style={{ background: GOLD_GRADIENT }} aria-hidden="true" />
+          </span>
+          <span className="mt-0.5 flex items-center justify-center gap-1" dir={language === "ar" || language === "ur" ? "rtl" : "ltr"} data-mushaf-header-info={`${t("hdrPage")} ${num(page)} | ${t("hdrJuz")} ${num(juz)} | ${t("hdrHizb")} ${num(hizb)}`}>
+            {([["hdrPage", page], ["hdrJuz", juz], ["hdrHizb", hizb]] as const).map(([k, v]) => (
+              <span key={k} className="whitespace-nowrap rounded-full px-1.5 text-[0.6rem] leading-[1.15rem] text-emerald-50/90" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.45)}`, background: "rgba(0,0,0,.18)" }}>
+                {t(k)} <b className="font-semibold" style={{ color: GOLD_LIGHT }}>{num(v)}</b>
+              </span>
+            ))}
+          </span>
+        </button>
+        <div className="flex shrink-0 items-center rounded-2xl px-0.5" style={{ background: alpha("var(--mf-page-deep)", 0.9), boxShadow: `inset 0 0 0 1px ${alpha(GOLD_LIGHT, 0.45)}` }}>
           <button type="button" onClick={() => { const v = verses.find((x) => x.startsOnPage) ?? verses[0]; void toggleBookmark({ page, surah: v?.surah ?? firstSurah, ayah: v?.ayah ?? 1 }); }}
             aria-label={t(bookmarked ? "bookmarkRemove" : "bookmarkAdd")} aria-pressed={bookmarked} data-mushaf-bookmark={bookmarked ? "on" : "off"}
-            className="flex w-8 shrink-0 items-center justify-center text-amber-200">
-            <Bookmark className={cn("h-4 w-4", bookmarked && "fill-current text-amber-300")} aria-hidden="true" />
+            className="flex h-10 w-8 items-center justify-center text-amber-200">
+            <Bookmark className={cn("h-[1.1rem] w-[1.1rem]", bookmarked && "fill-current text-amber-300")} aria-hidden="true" />
           </button>
+          {onSearch && (
+            <button type="button" onClick={onSearch} aria-label={t("searchTitle")} className="flex h-10 w-8 items-center justify-center text-amber-200" data-mushaf-search="">
+              <Search className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
+            </button>
+          )}
+          {onSettings && (
+            <button type="button" onClick={onSettings} aria-label={t("settingsTitle")} data-mushaf-settings="" className="flex h-10 w-8 items-center justify-center text-amber-200">
+              <Settings className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
+            </button>
+          )}
         </div>
-        {onSearch && <SearchButton onClick={onSearch} label={t("searchTitle")} />}
-        {onSettings && (
-          <button type="button" onClick={onSettings} aria-label={t("settingsTitle")} data-mushaf-settings=""
-            className="flex h-10 w-9 shrink-0 items-center justify-center rounded-xl text-amber-200"
-            style={{ background: alpha("var(--mf-page-deep)", 0.85), boxShadow: `inset 0 0 0 1px ${alpha(GOLD_LIGHT, 0.5)}` }}>
-            <Settings className="h-5 w-5" aria-hidden="true" />
-          </button>
-        )}
         {/* Sheikh: play / pause and reciter, always at the top */}
         <SheikhControls compact reciterId={reciter.id} playing={player.playing} loading={player.loading} failed={player.failed}
           onToggle={() => { if (rec.listening) return; player.toggle(); }} onReciter={() => setReciterOpen(true)} />

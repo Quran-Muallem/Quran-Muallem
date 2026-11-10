@@ -77,6 +77,8 @@ public class BackgroundAudioService extends Service {
     private AudioManager audioManager;
     private AudioFocusRequest focusRequest;
     private int ticks = 0;
+    /** «سرعة التلاوة» (v30), applied to every surah. */
+    static volatile float rate = 1f;
     private final Runnable tick = new Runnable() {
         @Override public void run() {
             if (player != null && nativeMode) {
@@ -222,7 +224,7 @@ public class BackgroundAudioService extends Service {
                 preparing = false;
                 durationMs = Math.max(0, p.getDuration());
                 if (startMs > 0) p.seekTo((int) startMs);
-                if (requestFocus()) { p.start(); playing = true; } else playing = false;
+                if (requestFocus()) { p.start(); playing = true; applyRate(p); } else playing = false;
                 applySession(); notifyNow();
                 BackgroundAudioPlugin.emitPlayer(playing ? "playing" : "paused", index, startMs / 1000.0, durationMs / 1000.0);
                 handler.removeCallbacks(tick);
@@ -285,8 +287,14 @@ public class BackgroundAudioService extends Service {
     /** Verse starts (ms) inside item `i`, for previous / next verse on the lock screen. */
     void setMarks(int i, long[] m) { if (i == index) marks = m; }
 
-    /** pause | resume | stop | seek (ms) | next | previous | index (jump to item). */
+    private void applyRate(MediaPlayer p) {
+        if (Build.VERSION.SDK_INT < 23 || p == null || rate == 1f && !p.isPlaying()) return;
+        try { if (p.isPlaying()) p.setPlaybackParams(p.getPlaybackParams().setSpeed(rate)); } catch (Exception ignored) { }
+    }
+
+    /** pause | resume | stop | seek (ms) | next | previous | index (jump to item) | rate (ms = rate × 1000). */
     void control(String action, long ms, int i) {
+        if ("rate".equals(action)) { rate = Math.max(0.25f, Math.min(2f, ms / 1000f)); if (nativeMode && !preparing) applyRate(player); return; }
         if (!nativeMode) return;
         MediaPlayer p = player;
         switch (action) {
@@ -295,7 +303,7 @@ public class BackgroundAudioService extends Service {
                 playing = false;
                 break;
             case "resume":
-                if (p != null && !preparing && requestFocus()) { p.start(); playing = true; handler.removeCallbacks(tick); handler.postDelayed(tick, 1000); }
+                if (p != null && !preparing && requestFocus()) { p.start(); playing = true; applyRate(p); handler.removeCallbacks(tick); handler.postDelayed(tick, 1000); }
                 else if (p == null && items != null) { prepare(index, positionMs); return; }
                 break;
             case "seek":

@@ -235,9 +235,10 @@ public class BackgroundAudioPlugin extends Plugin {
 
     @PluginMethod
     public void playerControl(PluginCall call) {
+        String action = call.getString("action", "");
+        if ("rate".equals(action)) BackgroundAudioService.rate = (float) (call.getDouble("ms", 1000.0) / 1000.0);
         BackgroundAudioService s = BackgroundAudioService.instance;
         if (s == null) { call.resolve(); return; }
-        String action = call.getString("action", "");
         s.control(action, Math.round(call.getDouble("ms", 0.0)), call.getInt("index", -1));
         call.resolve();
     }

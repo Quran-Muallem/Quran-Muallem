@@ -1,14 +1,15 @@
 import { speechEngineFor } from "@/lib/speechEngine";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AlertOctagon, BellRing, BookOpen, BookText, CheckCircle2, ChevronLeft, ChevronRight, Download, ExternalLink, Eye, EyeOff, FileText, Globe, Languages, Loader2, Lock, Mic, MinusCircle, Play, Podcast, ShieldCheck, Sun, Trash2, Upload, XCircle } from "lucide-react";
+import { AlertOctagon, AlertTriangle, BellRing, Highlighter, Info, BookOpen, BookText, CheckCircle2, ChevronLeft, ChevronRight, Download, ExternalLink, Eye, EyeOff, FileText, Globe, Languages, Loader2, Lock, Mic, MinusCircle, Play, Podcast, ShieldCheck, Sun, Trash2, Upload, XCircle } from "lucide-react";
 import { GoldDialog, GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
-import { THEME_COLORS, updateSettings, useSettings, type ThemeId } from "@/lib/settings";
+import { PLAYBACK_RATES, THEME_COLORS, updateSettings, useSettings, type ThemeId } from "@/lib/settings";
 import { BackupError, downloadBackup, importProgressJson } from "@/lib/progressStorage";
 import { cachedSurahIds, downloadWholeQuran } from "@/lib/quranService";
 import { directionFor, useI18n, type CopyKey } from "@/lib/i18n";
 import { ReciterSelectModal } from "@/components/ReciterSelectModal";
-import { ContentSelectModal } from "@/components/ContentSelectModal";
-import { getReciter } from "@/lib/reciterManager";
+import { ContentSelectList } from "@/components/ContentSelectModal";
+import { playMistakeSound } from "@/lib/feedbackSounds";
+import { RECITERS } from "@/lib/reciterManager";
 import { getTafsir, getTranslation } from "@/lib/quranContent";
 import { totalDownloadedBytes, useSurahDownloads } from "@/lib/recitersHub";
 import { deleteAllRecordings, useRecordings } from "@/lib/audioStorage";
@@ -24,18 +25,18 @@ import { VoiceProfilePanel } from "@/components/VoiceProfilePanel";
 import { retryZipformer, useZipformerState, zipformerAvailable, ZIPFORMER_MB } from "@/lib/zipformerEngine";
 
 
-type SettingsPage = "recitation" | "listening" | "mushafLook" | "hidden" | "language" | "theme" | "reminders" | "mistakes" | "session" | "reciters" | "translation" | "tafsir" | "offline" | "data" | "recordings";
+type SettingsPage = "recitation" | "listening" | "mushafLook" | "hidden" | "highlight" | "language" | "theme" | "reminders" | "mistakes" | "session" | "reciters" | "translation" | "tafsir" | "offline" | "data" | "recordings" | "allData";
 type Row = { id: SettingsPage; icon: ReactNode; label: CopyKey };
 const ic = "h-5 w-5";
 /** Grouped like Tarteel's settings: each row opens its own page inside the dialog. */
 const GROUPS: { title: CopyKey; rows: Row[] }[] = [
   { title: "setGroupExperience", rows: [{ id: "recitation", icon: <Mic className={ic} />, label: "setRecitation" }, { id: "listening", icon: <Play className={ic} />, label: "setListening" }] },
-  { title: "setGroupQuranLook", rows: [{ id: "mushafLook", icon: <BookOpen className={ic} />, label: "setMushafLook" }, { id: "hidden", icon: <EyeOff className={ic} />, label: "setHidden" }] },
+  { title: "setGroupQuranLook", rows: [{ id: "mushafLook", icon: <BookOpen className={ic} />, label: "setMushafLook" }, { id: "hidden", icon: <EyeOff className={ic} />, label: "setHidden" }, { id: "highlight", icon: <Highlighter className={ic} />, label: "setHighlight" }] },
   { title: "setGroupAppLook", rows: [{ id: "language", icon: <Globe className={ic} />, label: "languageTitle" }, { id: "theme", icon: <Sun className={ic} />, label: "themeTitle" }] },
   { title: "setGroupNotifications", rows: [{ id: "reminders", icon: <BellRing className={ic} />, label: "setReminders" }] },
   { title: "setGroupSounds", rows: [{ id: "mistakes", icon: <AlertOctagon className={ic} />, label: "setMistakes" }, { id: "session", icon: <Mic className={ic} />, label: "setSession" }] },
   { title: "setGroupDownloads", rows: [{ id: "reciters", icon: <Podcast className={ic} />, label: "setReciters" }, { id: "translation", icon: <Languages className={ic} />, label: "setTranslation" }, { id: "tafsir", icon: <BookText className={ic} />, label: "setTafsir" }, { id: "offline", icon: <Download className={ic} />, label: "offlineTitle" }] },
-  { title: "setGroupPrivacy", rows: [{ id: "data", icon: <Lock className={ic} />, label: "setDataUse" }, { id: "recordings", icon: <MinusCircle className={ic} />, label: "setDeleteRecordings" }] },
+  { title: "setGroupPrivacy", rows: [{ id: "data", icon: <Lock className={ic} />, label: "setDataUse" }, { id: "recordings", icon: <MinusCircle className={ic} />, label: "setDeleteRecordings" }, { id: "allData", icon: <Trash2 className={ic} />, label: "deleteAll" }] },
 ];
 
 /**
@@ -46,6 +47,7 @@ const GROUPS: { title: CopyKey; rows: Row[] }[] = [
 export function SettingsModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { t, language } = useI18n();
   const [page, setPage] = useState<SettingsPage | null>(null);
+  const s0 = useSettings();
   useEffect(() => { if (!open) setPage(null); }, [open]);
   const row = page ? GROUPS.flatMap((g) => g.rows).find((r) => r.id === page) : null;
   const Back = directionFor(language) === "rtl" ? ChevronRight : ChevronLeft;
@@ -78,27 +80,47 @@ export function SettingsModal({ open, onOpenChange }: { open: boolean; onOpenCha
             className="flex items-center gap-1 rounded-full px-3 py-1.5 text-sm text-amber-100" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.5)}` }}>
             <Back className="h-4 w-4" aria-hidden="true" />{t("settingsTitle")}
           </button>
-          {page === "recitation" && (<><SpeechSection /><Section title={t("voiceTitle")}><VoiceProfilePanel /></Section></>)}
-          {page === "listening" && <ListeningSection />}
+          {page === "recitation" && (<>
+            <InfoCard title={t("setModeSwitchTitle")} text={t("setModeSwitchText")} />
+            <Toggle k="errorDetection" label="setErrorDetection" desc="setErrorDetectionDesc" />
+            <SpeechSection /><Section title={t("voiceTitle")}><VoiceProfilePanel /></Section>
+          </>)}
+          {page === "listening" && <ListeningSection onManage={() => { onOpenChange(false); window.dispatchEvent(new Event("qm:open-reciters")); }} />}
           {page === "mushafLook" && (<><p className="rounded-xl bg-black/15 p-3 text-xs leading-relaxed text-emerald-100/75">{t("setMushafLookDesc")}</p><ThemeSection /></>)}
           {page === "hidden" && <Toggle k="hiddenFirstWord" label="setHiddenFirstWord" desc="setHiddenFirstWordDesc" />}
+          {page === "highlight" && <Toggle k="showPastMistakes" label="setPastMistakes" desc="setPastMistakesDesc" />}
           {page === "language" && <LanguageSection />}
           {page === "theme" && <ThemeSection />}
           {page === "reminders" && <ReminderSection />}
-          {page === "mistakes" && <Toggle k="mistakeVibration" label="setMistakeVibration" desc="setMistakeVibrationDesc" />}
-          {page === "session" && (<><Toggle k="autoStopSurahEnd" label="setAutoStop" desc="setAutoStopDesc" /><Toggle k="completionSound" label="setCompletionSound" desc="setCompletionSoundDesc" /></>)}
-          {page === "reciters" && <RecitersDownloadsSection />}
+          {page === "mistakes" && (<>
+            {!s0.errorDetection && <InfoCard warn title={t("setDetectionOffTitle")} text={t("setDetectionOffText")} action={{ label: t("setOpenRecitation"), onClick: () => setPage("recitation") }} />}
+            <Toggle k="mistakeSound" label="setMistakeSound" desc="setMistakeSoundDesc" />
+            {s0.mistakeSound && <SoundPicker />}
+            <Toggle k="mistakeVibration" label="setMistakeVibration" desc="setMistakeVibrationDesc" />
+          </>)}
+          {page === "session" && (<>
+            <Toggle k="sessionSound" label="setSessionSound" desc="setSessionSoundDesc" />
+            <Toggle k="sessionHaptic" label="setSessionHaptic" desc="setSessionHapticDesc" />
+            <Toggle k="autoStopSurahEnd" label="setAutoStop" desc="setAutoStopDesc" />
+            <Toggle k="completionSound" label="setCompletionSound" desc="setCompletionSoundDesc" />
+          </>)}
+          {page === "reciters" && <RecitersDownloadsSection onManage={() => { onOpenChange(false); window.dispatchEvent(new Event("qm:open-reciters")); }} />}
           {(page === "translation" || page === "tafsir") && <ContentSection kind={page === "tafsir" ? "tf" : "tr"} />}
           {page === "offline" && <OfflineSection />}
-          {page === "data" && (<><BackupSection /><LegalSection /></>)}
-          {page === "recordings" && <DeleteRecordingsSection />}
+          {page === "data" && (<>
+            <Toggle k="saveRecordings" label="setSaveRecordings" desc="setSaveRecordingsDesc" />
+            <InfoCard title={t("setNoTrainingTitle")} text={t("setNoTrainingText")} />
+            <BackupSection /><LegalDocsSection />
+          </>)}
+          {page === "recordings" && <DeleteRecordingsSection onDone={() => setPage(null)} />}
+          {page === "allData" && <DeleteAllDataSection />}
         </div>
       )}
     </GoldDialog>
   );
 }
 
-type BoolKey = "mistakeVibration" | "completionSound" | "autoStopSurahEnd" | "hiddenFirstWord";
+type BoolKey = "mistakeVibration" | "completionSound" | "autoStopSurahEnd" | "hiddenFirstWord" | "errorDetection" | "showPastMistakes" | "mistakeSound" | "sessionSound" | "sessionHaptic" | "saveRecordings";
 function Toggle({ k, label, desc }: { k: BoolKey; label: CopyKey; desc: CopyKey }) {
   const { t } = useI18n();
   const s = useSettings();
@@ -117,21 +139,66 @@ function Toggle({ k, label, desc }: { k: BoolKey; label: CopyKey; desc: CopyKey 
   );
 }
 
-function ListeningSection() {
+function InfoCard({ title, text, warn = false, action }: { title: string; text: string; warn?: boolean; action?: { label: string; onClick: () => void } }) {
+  return (
+    <div className={cn("flex gap-3 rounded-2xl p-3.5", warn ? "bg-amber-950/40" : "bg-black/15")} style={{ boxShadow: `inset 0 0 0 1px ${alpha(warn ? "#f59e0b" : GOLD, warn ? 0.6 : 0.3)}` }} data-settings-info="">
+      {warn ? <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" aria-hidden="true" /> : <Info className="mt-0.5 h-5 w-5 shrink-0 text-amber-200" aria-hidden="true" />}
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-amber-100">{title}</p>
+        <p className="mt-1 text-xs leading-relaxed text-emerald-100/70">{text}</p>
+        {action && <button type="button" onClick={action.onClick} className="mt-2 rounded-full px-3 py-1.5 text-xs font-semibold text-emerald-950" style={{ background: GOLD_GRADIENT }}>{action.label}</button>}
+      </div>
+    </div>
+  );
+}
+
+function SoundPicker() {
+  const { t } = useI18n();
+  const s = useSettings();
+  const opts = [["tone", "setSoundTone"], ["click", "setSoundClick"], ["bell", "setSoundBell"]] as const;
+  return (
+    <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label={t("setMistakeSound")} data-settings-sound-type="">
+      {opts.map(([id, key]) => (
+        <button key={id} type="button" role="radio" aria-checked={s.mistakeSoundType === id}
+          onClick={() => { void updateSettings({ mistakeSoundType: id }); playMistakeSound(id); }}
+          className={cn("rounded-xl px-2 py-2.5 text-xs", s.mistakeSoundType === id ? "font-semibold text-emerald-950" : "text-emerald-50")}
+          style={s.mistakeSoundType === id ? { background: GOLD_GRADIENT } : { background: "rgba(0,0,0,.18)", boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
+          {t(key)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ListeningSection({ onManage }: { onManage: () => void }) {
   const { t, language } = useI18n();
   const s = useSettings();
-  const [open, setOpen] = useState(false);
-  const r = getReciter(s.reciterId);
+  const ar = language === "ar" || language === "ur";
   return (
-    <Section title={t("setListeningSheikh")}>
-      <button type="button" onClick={() => setOpen(true)} className="flex w-full items-center gap-3 rounded-2xl bg-black/15 p-3.5 text-start" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
-        <Play className="h-4 w-4 text-amber-200" aria-hidden="true" />
-        <span className="flex-1 text-sm text-emerald-50">{language === "ar" ? r.nameArabic : r.nameEnglish}</span>
-        <span className="text-xs text-amber-200">{t("setChange")}</span>
-      </button>
-      <p className="text-xs leading-relaxed text-emerald-100/60">{t("setListeningDesc")}</p>
-      <ReciterSelectModal open={open} onOpenChange={setOpen} selectedId={s.reciterId} surah={1} onSelect={(id) => void updateSettings({ reciterId: id })} />
-    </Section>
+    <div className="space-y-4">
+      <Section title={t("setListeningSheikh")}>
+        <select value={s.reciterId} onChange={(e) => void updateSettings({ reciterId: e.target.value })} aria-label={t("setListeningSheikh")} data-settings-reciter=""
+          className="h-11 w-full rounded-xl border border-amber-400/40 bg-[var(--mf-page-deep)] px-3 text-sm text-emerald-50">
+          {RECITERS.map((r) => <option key={r.id} value={r.id}>{ar ? r.nameArabic : r.nameEnglish}</option>)}
+        </select>
+        <button type="button" onClick={onManage} data-settings-manage-downloads=""
+          className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-start text-sm text-amber-100" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.5)}` }}>
+          <Download className="h-4 w-4" aria-hidden="true" /><span className="flex-1">{t("setManageDownloads")}</span>
+        </button>
+        <p className="text-xs leading-relaxed text-emerald-100/60">{t("setListeningDesc")}</p>
+      </Section>
+      <Section title={t("setPlaybackSpeed")}>
+        <div className="grid grid-cols-6 gap-1.5" role="radiogroup" aria-label={t("setPlaybackSpeed")} data-settings-speed="">
+          {PLAYBACK_RATES.map((r) => (
+            <button key={r} type="button" role="radio" aria-checked={s.playbackRate === r} onClick={() => void updateSettings({ playbackRate: r })}
+              className={cn("rounded-lg py-2 text-xs tabular-nums", s.playbackRate === r ? "font-semibold text-emerald-950" : "text-emerald-50")}
+              style={s.playbackRate === r ? { background: GOLD_GRADIENT } : { background: "rgba(0,0,0,.18)", boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
+              ×{r.toLocaleString(ar ? "ar-EG" : language)}
+            </button>
+          ))}
+        </div>
+      </Section>
+    </div>
   );
 }
 
@@ -165,7 +232,7 @@ function ReminderSection() {
   );
 }
 
-function RecitersDownloadsSection() {
+function RecitersDownloadsSection({ onManage }: { onManage: () => void }) {
   const { t, language } = useI18n();
   useSurahDownloads();
   const mb = totalDownloadedBytes() / 1e6;
@@ -173,51 +240,50 @@ function RecitersDownloadsSection() {
     <div className="space-y-2 rounded-2xl bg-black/15 p-3.5 text-sm text-emerald-50" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
       <p>{t("setRecitersSize").replace("{mb}", mb.toLocaleString(language === "ar" ? "ar-EG" : language, { maximumFractionDigits: 1 }))}</p>
       <p className="text-xs leading-relaxed text-emerald-100/60">{t("setRecitersDesc")}</p>
+      <button type="button" onClick={onManage} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-emerald-950" style={{ background: GOLD_GRADIENT }}>
+        <Download className="h-4 w-4" aria-hidden="true" />{t("setManageDownloads")}
+      </button>
     </div>
   );
 }
 
 function ContentSection({ kind }: { kind: "tr" | "tf" }) {
-  const { t, language } = useI18n();
+  const { language } = useI18n();
   const s = useSettings();
-  const [open, setOpen] = useState(false);
   const current = kind === "tf" ? getTafsir(s.tafsirs[language], language).option : getTranslation(s.translations[language], language);
+  // v30: the list is shown right here (a separate overlay opened from inside this dialog was cut off).
   return (
-    <div className="space-y-2">
-      <button type="button" onClick={() => setOpen(true)} className="flex w-full items-center gap-3 rounded-2xl bg-black/15 p-3.5 text-start" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
-        {kind === "tf" ? <BookText className="h-4 w-4 text-amber-200" aria-hidden="true" /> : <Languages className="h-4 w-4 text-amber-200" aria-hidden="true" />}
-        <span className="flex-1 text-sm text-emerald-50">{current.name}</span>
-        <span className="text-xs text-amber-200">{t("setChange")}</span>
-      </button>
-      <ContentSelectModal kind={kind} open={open} selectedId={current.id} onClose={() => setOpen(false)}
-        onSelect={(id) => void updateSettings(kind === "tf" ? { tafsirs: { ...s.tafsirs, [language]: id } } : { translations: { ...s.translations, [language]: id } })} />
-    </div>
+    <ContentSelectList kind={kind} selectedId={current.id}
+      onSelect={(id) => void updateSettings(kind === "tf" ? { tafsirs: { ...s.tafsirs, [language]: id } } : { translations: { ...s.translations, [language]: id } })} />
   );
 }
 
-function DeleteRecordingsSection() {
+function DeleteRecordingsSection({ onDone }: { onDone: () => void }) {
   const { t, language } = useI18n();
   const list = useRecordings();
-  const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const n = list.length;
+  const impacts: CopyKey[] = ["setImpactSessions", "setImpactListening", "setImpactManage", "setImpactMistakes"];
   return (
-    <div className="space-y-3 rounded-2xl border border-red-300/30 bg-red-950/20 p-3.5">
-      <p className="text-xs leading-relaxed text-emerald-100/75">{t("setDeleteRecordingsDesc").replace("{n}", language === "ar" ? String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)] ?? d) : String(n))}</p>
-      {!confirm ? (
-        <button type="button" disabled={!n} onClick={() => setConfirm(true)} data-settings-delete-recordings=""
-          className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm text-red-100 hover:bg-red-900/40 disabled:opacity-50" style={{ boxShadow: "inset 0 0 0 1px rgba(252,165,165,.45)" }}>
-          <Trash2 className="h-4 w-4" />{t("setDeleteRecordings")}
+    <div className="space-y-3" data-settings-delete-recordings-sheet="">
+      <div className="flex flex-col items-center gap-2 rounded-2xl bg-red-950/25 p-4 text-center" style={{ boxShadow: "inset 0 0 0 1px rgba(252,165,165,.35)" }}>
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-red-900/50"><Trash2 className="h-6 w-6 text-red-200" aria-hidden="true" /></span>
+        <p className="text-sm font-semibold text-red-100">{t("setDeleteRecordingsHead")}</p>
+        <p className="text-xs leading-relaxed text-emerald-100/70">{t("setDeleteRecordingsDesc").replace("{n}", language === "ar" ? String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)] ?? d) : String(n))}</p>
+      </div>
+      <p className="text-xs font-semibold text-amber-200/90">{t("setImpactTitle")}</p>
+      <ul className="space-y-1.5">
+        {impacts.map((k) => (
+          <li key={k} className="flex items-center gap-2 text-sm text-emerald-50"><XCircle className="h-4 w-4 shrink-0 text-red-300" aria-hidden="true" />{t(k)}</li>
+        ))}
+      </ul>
+      <div className="grid grid-cols-2 gap-2 pt-1">
+        <button type="button" disabled={busy} onClick={onDone} className="rounded-xl px-3 py-2.5 text-sm text-emerald-50 hover:bg-white/10" style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,.25)" }} data-settings-not-now="">{t("setNotNow")}</button>
+        <button type="button" disabled={busy || !n} onClick={() => { setBusy(true); void deleteAllRecordings().finally(() => { setBusy(false); onDone(); }); }} data-settings-continue=""
+          className="flex items-center justify-center gap-2 rounded-xl bg-red-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-50">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}{t("setContinue")}
         </button>
-      ) : (
-        <div className="grid grid-cols-2 gap-2" role="alert">
-          <button type="button" disabled={busy} onClick={() => setConfirm(false)} className="rounded-xl px-3 py-2.5 text-sm text-emerald-50 hover:bg-white/10" style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,.25)" }}>{t("cancel")}</button>
-          <button type="button" disabled={busy} onClick={() => { setBusy(true); void deleteAllRecordings().finally(() => { setBusy(false); setConfirm(false); }); }}
-            className="flex items-center justify-center gap-2 rounded-xl bg-red-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-60">
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}{t("deleteAllYes")}
-          </button>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -399,7 +465,13 @@ function OfflineSection() {
   );
 }
 
-function LegalSection() {
+function LegalDocsSection() {
+  return <LegalSection docs />;
+}
+function DeleteAllDataSection() {
+  return <LegalSection wipeOnly />;
+}
+function LegalSection({ docs = false, wipeOnly = false }: { docs?: boolean; wipeOnly?: boolean }) {
   const { t } = useI18n();
   const [doc, setDoc] = useState<LegalDoc | null>(null);
   const [confirm, setConfirm] = useState(false);
@@ -410,16 +482,16 @@ function LegalSection() {
     window.location.reload();
   };
   return (
-    <Section title={t("legalTitle")}>
-      <div className="grid gap-2">
+    <Section title={wipeOnly ? t("deleteAll") : t("legalTitle")}>
+      {!wipeOnly && <div className="grid gap-2">
         {(Object.keys(LEGAL_TITLES) as LegalDoc[]).map((d) => (
           <button key={d} type="button" onClick={() => setDoc(d)}
             className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-start text-sm text-amber-100 hover:bg-black/30" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.5)}` }}>
             <FileText className="h-4 w-4 shrink-0" />{t(LEGAL_TITLES[d])}
           </button>
         ))}
-      </div>
-      <div className="rounded-2xl border border-red-300/30 bg-red-950/20 p-3">
+      </div>}
+      {!docs && <div className="rounded-2xl border border-red-300/30 bg-red-950/20 p-3" data-settings-delete-all-data="">
         <p className="text-xs leading-relaxed text-emerald-100/70">{t("deleteAllDesc")}</p>
         {!confirm ? (
           <button type="button" onClick={() => setConfirm(true)}
@@ -439,7 +511,7 @@ function LegalSection() {
             </div>
           </div>
         )}
-      </div>
+      </div>}
       <LegalDialog doc={doc} onOpenChange={(o) => { if (!o) setDoc(null); }} />
     </Section>
   );

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { mistakeHaptic } from "@/lib/haptics";
 import { getSettings } from "@/lib/settings";
+import { playMistakeSound } from "@/lib/feedbackSounds";
 import type { LiveStatus } from "@/lib/quranMatcher";
 
 /**
@@ -17,7 +18,11 @@ export function useMistakeHaptics(statuses: readonly LiveStatus[], active: boole
     statuses.forEach((s, i) => {
       if ((s === "ERROR" || s === "WARNING") && !seen.current.has(i)) { seen.current.add(i); fresh = true; }
     });
-    if (fresh && getSettings().mistakeVibration) mistakeHaptic();
+    if (!fresh) return;
+    const st = getSettings();
+    if (!st.errorDetection) return; // «كشف الأخطاء» off: no mistake alerts at all
+    if (st.mistakeVibration) mistakeHaptic();
+    if (st.mistakeSound) playMistakeSound(st.mistakeSoundType);
   }, [statuses, active]);
   /** Forget what was seen (e.g. after an automatic page turn the indexes start again). */
   return () => { seen.current = new Set(); };

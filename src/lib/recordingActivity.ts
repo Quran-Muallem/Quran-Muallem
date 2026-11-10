@@ -10,6 +10,7 @@
 import { useSyncExternalStore } from "react";
 import { createSignal } from "@/lib/storage";
 import { celebrateSurah } from "@/lib/surahCompletion";
+import { sessionFeedback } from "@/lib/feedbackSounds";
 
 const mic = createSignal(false);
 let pending = false;
@@ -25,6 +26,7 @@ export function useMicActive(): boolean { return useSyncExternalStore(mic.subscr
 export function setMicActive(on: boolean) {
   if (mic.get() === on) return;
   mic.set(on);
+  try { sessionFeedback(on); } catch { /* no audio */ }
   if (!on && pending) { pending = false; celebrate(); }
 }
 
