@@ -8,18 +8,16 @@ import { TajweedGuide } from "@/components/TajweedGuide";
 import { RecordingSessionsView } from "@/components/hub/RecordingSessionsView";
 import { RecitersHubView } from "@/components/hub/RecitersHubView";
 import { DuasView } from "@/components/hub/DuasView";
-import { SalatModeView } from "@/components/SalatModeView";
 import { formatCountdown, useNextPrayer } from "@/lib/useNextPrayer";
 import type { PrayerName } from "@/lib/PrayerTimesEngine";
 import type { StudyTarget } from "@/components/Dashboard";
 import { isRtl } from "@/i18n";
 import { useI18n, type CopyKey } from "@/lib/i18n";
 
-export type HubSection = "prayer" | "salat" | "qibla" | "reciters" | "adhkar" | "recordings" | "tajweed" | "hadith";
+export type HubSection = "prayer" | "qibla" | "reciters" | "adhkar" | "recordings" | "tajweed" | "hadith";
 
 const SECTIONS: { id: HubSection; icon: typeof Clock; emoji: string; title: CopyKey; sub: CopyKey; ar: string }[] = [
   { id: "prayer", icon: Clock, emoji: "🕋", title: "hubPrayer", sub: "hubPrayerSub", ar: "مواقيت الصلاة" },
-  { id: "salat", icon: Mic, emoji: "🕌", title: "hubSalat", sub: "hubSalatSub", ar: "وضع الصلاة" },
   { id: "qibla", icon: Compass, emoji: "🧭", title: "navQibla", sub: "hubQiblaSub", ar: "القبلة" },
   { id: "adhkar", icon: SunMoon, emoji: "📿", title: "hubAdhkar", sub: "hubAdhkarSub", ar: "الأذكار والأدعية" },
   { id: "reciters", icon: Headphones, emoji: "🎧", title: "hubReciters", sub: "hubRecitersSub", ar: "المقرئين" },
@@ -45,8 +43,6 @@ export function IslamicHubView({ section, onSection, onRetest }: { section: HubS
   else if (section === "tajweed") body = <TajweedGuide />;
   else if (section === "hadith") body = <HadithLibrary />;
 
-  // Salat Mode is its own full-screen (pitch-black) view.
-  if (section === "salat") return <SalatModeView onClose={() => onSection(null)} />;
   if (current) {
     return (
       <div className="space-y-3" data-hub-section={current.id}>
@@ -72,7 +68,7 @@ export function IslamicHubView({ section, onSection, onRetest }: { section: HubS
       </header>
       <ul className="grid grid-cols-2 gap-3">
         {SECTIONS.map((s, i) => (
-          <li key={s.id} className={i <= 1 ? "col-span-2" : undefined}>
+          <li key={s.id} className={i === 0 ? "col-span-2" : undefined}>
             <button type="button" onClick={() => { onSection(s.id); window.scrollTo({ top: 0 }); }}
               className="flex h-full w-full flex-col items-start gap-2 rounded-2xl p-3.5 text-start transition active:scale-[.99]"
               style={{ background: i === 0 ? `linear-gradient(135deg, ${alpha(GOLD, 0.22)}, rgba(0,0,0,.18))` : "rgba(0,0,0,.18)", boxShadow: `inset 0 0 0 1px ${alpha(GOLD, i === 0 ? 0.6 : 0.33)}` }}>

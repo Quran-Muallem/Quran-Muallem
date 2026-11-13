@@ -18,20 +18,14 @@ const speechErrorKey = (code: SpeechErrorCode | null): CopyKey | null =>
  * recognition where available, otherwise Whisper on the device (optionally live).
  * `onSessionEnd` fires once after each recitation with the final match.
  */
-export function useRecitation(targets: readonly string[], { onSessionEnd, phonemeRefs, forceLive = false, keepAudio = true }: {
+export function useRecitation(targets: readonly string[], { onSessionEnd, phonemeRefs }: {
   onSessionEnd?: (m: LiveMatch) => void;
-  /** Live results even when live feedback is off in the settings (Salat Mode). */
-  forceLive?: boolean;
-  /** Keep the recording so it can be listened to (default); Salat Mode keeps nothing. */
-  keepAudio?: boolean;
   /** Canonical phonemes per flat target token (quranAlignment.phonemeRefs); enables the phoneme engine. */
   phonemeRefs?: readonly (string | null)[] | null;
 } = {}) {
   const settings = useSettings();
   const speech = useSpeechRecognition({ lang: "ar-SA" });
-  const engine = speechEngineFor(settings, speech);
-  const useWhisper = engine.useWhisper;
-  const live = engine.live || forceLive;
+  const { useWhisper, live } = speechEngineFor(settings, speech);
   const recognizer = useRecognizer();
   const phonemes = recognizer === "zipformer" && !!phonemeRefs;
   const [whisperText, setWhisperText] = useState("");
@@ -39,7 +33,7 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
   const [textEngine, setTextEngine] = useState<"phonemes" | "text">("text");
   // The recording is kept (compressed, on the device) so the user can listen back to it.
   const whisper = useTranscribingRecorder((t, _final, kind) => { setWhisperText(t); setTextEngine(kind); },
-    { live, keepAudio, engine: phonemes ? "zipformer" : "whisper" });
+    { live, keepAudio: true, engine: phonemes ? "zipformer" : "whisper" });
   const { stopListening, resetTranscript, startListening } = speech;
 
   const fullTranscript = useWhisper ? whisperText : speech.liveTranscript;
