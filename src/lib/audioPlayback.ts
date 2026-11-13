@@ -272,13 +272,16 @@ export function normalizeSegments(raw: unknown): [number, number, number][] {
   }).filter(([, a, b]) => b > a);
 }
 
-function verseTimings(quranComId: number, surah: number, ayah: number): Promise<Timed | null> {
-  const key = `${quranComId}/${surah}:${ayah}`;
+/** Verse audio of a Sheikh on Quran.com with word timings (ms), or null (no network / no timings). */
+export function verseTimings(quranComId: number, surah: number, ayah: number, withSegments = false): Promise<Timed | null> {
+  // `withSegments` (Salat Mode): asks for the word timings explicitly — without `fields=segments` the API
+  // answers with the file only (word corrections then use the word-by-word voice, as they always did).
+  const key = `${quranComId}/${surah}:${ayah}${withSegments ? "/s" : ""}`;
   let p = timings.get(key);
   if (!p) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 6000);
-    p = fetch(`${QURAN_API}/recitations/${quranComId}/by_ayah/${surah}:${ayah}`, { signal: ctrl.signal })
+    p = fetch(`${QURAN_API}/recitations/${quranComId}/by_ayah/${surah}:${ayah}${withSegments ? "?fields=segments" : ""}`, { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { audio_files?: { url?: string; segments?: unknown }[] } | null) => {
         const f = d?.audio_files?.[0];

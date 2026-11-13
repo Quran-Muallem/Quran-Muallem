@@ -36,6 +36,7 @@ import { SettingsModal } from "@/components/SettingsModal";
 import { Dashboard, type StudyTarget } from "@/components/Dashboard";
 import { MushafReader } from "@/components/MushafReader";
 import { IslamicHubView, type HubSection } from "@/components/IslamicHubView";
+import { SalatModeView } from "@/components/SalatModeView";
 import { BadgesModal } from "@/components/badges/BadgesModal";
 import { BadgeCelebration } from "@/components/badges/BadgeCelebration";
 import { initBadges } from "@/lib/badges";
@@ -307,6 +308,7 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
   const settings = useSettings();
   const list = useSurahList();
   const text = useSurahText(target.surahId);
+  const [salatOpen, setSalatOpen] = useState(false);
   const meta = list[target.surahId - 1];
   const count = text.data?.ayahs.length ?? meta?.versesCount ?? 1;
   const from = Math.min(target.fromAyah, count);
@@ -659,10 +661,18 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
           </span>
         </div>
       )}
-      <div>
-        <h1 className="text-2xl font-semibold">{masked ? t("hifzModeLong") : t("reciteModeLong")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{masked ? t("hifzSub") : t("reciteSub")}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">{masked ? t("hifzModeLong") : t("reciteModeLong")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{masked ? t("hifzSub") : t("reciteSub")}</p>
+        </div>
+        {/* v42: Salat Mode — a silent companion during prayer */}
+        <button type="button" onClick={() => { if (listening) toggleMic(); setSalatOpen(true); }} data-open-salat=""
+          className="flex shrink-0 items-center gap-1.5 rounded-full border border-amber-500/40 px-3 py-1.5 text-xs font-semibold text-amber-200">
+          <span aria-hidden="true">🕌</span><span className="font-arabic">وضع الصلاة</span>
+        </button>
       </div>
+      {salatOpen && <SalatModeView onClose={() => setSalatOpen(false)} />}
 
       {/* Sheikh player at the top: play / pause · Sheikh (same as in the Mushaf) · repeat the range */}
       <SheikhControls reciterId={settings.reciterId} playing={player.playing} loading={player.loading} failed={player.failed}
