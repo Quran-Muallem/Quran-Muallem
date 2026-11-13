@@ -1,13 +1,13 @@
 /**
  * Muezzin voices for the Adhan notification (sources and licences: `public/adhan/CREDITS.md`, also shown in
- * the prayer settings). Voices without a file are prepared slots: they appear as "no licensed recording yet"
- * until an MP3 the app may distribute is added with `scripts/adhan-sounds.mjs` and entered here.
+ * the prayer settings). Only these two voices are offered; ids stored by older versions (e.g. "makkah",
+ * "madinah_cc") are no longer listed and fall back to the default voice in `adhanFileFor`.
  *
  * Files (made by `scripts/adhan-sounds.mjs` from the originals):
  *   public/adhan/<id>.mp3         full Adhan — preview, web, Android notification channel sound (res/raw)
  *   public/adhan/ios/<id>.caf     first 30 s (iOS plays at most 30 s of a notification sound)
  */
-export type AdhanVoiceId = "makkah" | "madinah" | "madinah_cc" | "aqsa" | "alafasy" | "abdulbasit" | "calm";
+export type AdhanVoiceId = "madinah" | "alafasy";
 
 export type AdhanVoice = {
   id: AdhanVoiceId;
@@ -24,11 +24,6 @@ export type AdhanVoice = {
 export const ADHAN_VOICES: AdhanVoice[] = [
   { id: "madinah", ar: "المدينة المنورة — الشيخ محمد مروان قصاص", en: "Madinah — Sheikh Muhammad Marwan Qassas", file: "madinah", fajrFile: "madinah_fajr", credit: "Masjid an-Nabawi · supplied by the app owner" },
   { id: "alafasy", ar: "الشيخ مشاري راشد العفاسي (أذان الفجر)", en: "Sheikh Mishary Rashid Alafasy (Fajr Adhan)", file: null, fajrFile: "alafasy_fajr", credit: "Maqam Hijaz · supplied by the app owner" },
-  { id: "madinah_cc", ar: "المسجد النبوي — تسجيل حر", en: "Masjid an-Nabawi (open recording)", file: "madinah_cc", fajrFile: null, credit: "ejaz215 (freesound) · CC BY 3.0 · Wikimedia Commons" },
-  { id: "makkah", ar: "مكة المكرمة — المسجد الحرام", en: "Makkah (Masjid al-Haram)", file: null, fajrFile: null },
-  { id: "aqsa", ar: "المسجد الأقصى", en: "Al-Aqsa Mosque", file: null, fajrFile: null },
-  { id: "abdulbasit", ar: "الشيخ عبد الباسط عبد الصمد", en: "Sheikh Abdul Basit Abdul Samad", file: null, fajrFile: null },
-  { id: "calm", ar: "أذان قصير هادئ", en: "Traditional short / calm Adhan", file: null, fajrFile: null },
 ];
 
 /** Voice used for Fajr when the chosen voice has no Fajr recording: Fajr always includes «الصلاة خير من النوم». */

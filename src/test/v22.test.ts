@@ -14,7 +14,9 @@ describe("Adhan voices and modes", () => {
     expect(adhanFileFor("alafasy", true)).toBe("alafasy_fajr"); // Fajr-only voice
     // a voice without recording (or Fajr-only, for other prayers) falls back to the default voice
     expect(adhanFileFor("alafasy", false)).toBe("madinah");
-    expect(adhanFileFor("makkah", true)).toBe("madinah_fajr");
+    expect(adhanFileFor("makkah", true)).toBe("madinah_fajr"); // id from an older version
+    expect(adhanFileFor("madinah_cc", false)).toBe("madinah");
+    expect(ADHAN_VOICES.map((v) => v.id)).toEqual(["madinah", "alafasy"]);
     expect(isAvailable(getVoice("alafasy"))).toBe(false);
     expect(channelFor("madinah")).toBe("adhan_madinah_v1");
   });
