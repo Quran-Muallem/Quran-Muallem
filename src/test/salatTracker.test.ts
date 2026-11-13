@@ -138,3 +138,43 @@ describe("SalatPrayerTracker", () => {
     expect(t.tick({ now: 20_000, match: match(st, 2), voiced: 0 })).toEqual([]);
   });
 });
+
+describe("SalatPrayerTracker × motion sensors (v43)", () => {
+  const lex2 = JSON.parse(fs.readFileSync("public/models/quran_phonemes.json", "utf8")).surahs as string[][][];
+  const p = (s: number, a: number) => lex2[s - 1]![a - 1]!.join("");
+  const fat = () => Array.from({ length: 7 }, (_, i) => p(1, i + 1)).join("");
+
+  it("ignores the opening takbīr before al-Fātiḥah", () => {
+    const t = new SalatPrayerTracker();
+    t.start(0);
+    expect(t.onTranscript("phonemes", "ءَللَااهُءَكبَر", 500)).toEqual([]);
+    expect(t.state).toBe("RECITING_FATIHA");
+    expect(t.onTranscript("text", "الله اكبر", 600)).toEqual([]);
+    // … but a takbīr after al-Fātiḥah (its end not heard clearly) still means rukūʿ.
+    expect(t.onTranscript("phonemes", "ءَللَااهُءَكبَر" + p(1, 2) + p(1, 3) + "ءَللَااهُءَكبَر", 900).find((e) => e.type === "state")).toMatchObject({ state: "IN_RUKU_OR_SUJUD" });
+  });
+
+  it("mutes when the sensors see rukūʿ / sujūd and restarts al-Fātiḥah on standing up", () => {
+    const t = new SalatPrayerTracker();
+    t.start(0); t.onTranscript("phonemes", fat(), 1000); t.tick({ now: 2000 });
+    expect(t.state).toBe("ACTIVE_SURAH_TRACKING");
+    expect(t.motionMute(3000, 40).find((e) => e.type === "state")).toMatchObject({ state: "IN_RUKU_OR_SUJUD" });
+    expect(t.motionMute(3500, 0)).toEqual([]);
+    const up = t.motionNewRakah(60_000, 12, 2);
+    expect(up.find((e) => e.type === "state")).toMatchObject({ state: "RECITING_FATIHA", rakah: 2 });
+    // Speech was first: only the number is taken over.
+    expect(t.motionNewRakah(61_000, 30, 2)).toEqual([{ type: "state", state: "RECITING_FATIHA", rakah: 2 }]);
+  });
+
+  it("stays passive after al-Fātiḥah in a Fātiḥah-only rakʿah", () => {
+    const t = new SalatPrayerTracker();
+    t.start(0); t.setPassive(true);
+    t.onTranscript("phonemes", fat(), 1000); t.tick({ now: 2000 });
+    expect(t.state).toBe("ACTIVE_SURAH_TRACKING");
+    t.onLocated({ surah: 112, ayah: 1 }, 2000);
+    const st: LiveStatus[] = ["CORRECT", "CORRECT", "PENDING"];
+    t.onTranscript("phonemes", "قُلهُوَ", 3000);
+    t.tick({ now: 3000, match: match(st, 2), voiced: 1 });
+    expect(t.tick({ now: 30_000, match: match(st, 2), voiced: 0 })).toEqual([]);
+  });
+});

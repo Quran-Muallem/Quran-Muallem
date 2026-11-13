@@ -141,6 +141,8 @@ export class SalatPrayerTracker {
   private lastPromptAt = 0;
   private mistakePromptedAt = -1;
   private pendingFatiha: { pos: number; at: number } | null = null;
+  /** v43: no locating, no prompts (al-Fātiḥah only, e.g. the 3rd / 4th rakʿah of a fard prayer). */
+  passive = false;
 
   constructor(config: Partial<SalatConfig> = {}) { this.config = { ...DEFAULT_SALAT_CONFIG, ...config }; }
 
@@ -192,7 +194,14 @@ export class SalatPrayerTracker {
     // Takbīr / tasmīʿ: always first — the instant it is heard, everything is muted.
     if (this.state === "RECITING_FATIHA" || this.state === "ACTIVE_SURAH_TRACKING") {
       // A takbīr said quietly may be missed; the tasbīḥ of rukūʿ / sujūd that follows tells it, too.
-      const hit = findPhrase(kind, transcript, ["takbir", "samiAllah", "tasbihRuku", "tasbihSujud"], from);
+      // v43: the opening takbīr (takbīrat al-iḥrām) comes before al-Fātiḥah — during al-Fātiḥah only a
+      // takbīr after its first words counts.
+      let scanAt = from;
+      if (this.state === "RECITING_FATIHA") {
+        const begun = findPhrase(kind, transcript, ["hamdala", "fatihaEnd"], from);
+        scanAt = begun ? Math.max(from, begun.end) : Number.POSITIVE_INFINITY;
+      }
+      const hit = Number.isFinite(scanAt) ? findPhrase(kind, transcript, ["takbir", "samiAllah", "tasbihRuku", "tasbihSujud"], scanAt) : null;
       if (hit && !(hit.id === "takbir" && this.akbarExpected(opts.tokens, opts.cursor))) {
         return [...this.enter("IN_RUKU_OR_SUJUD", now), { type: "rebase", pos: hit.end }];
       }
@@ -271,6 +280,7 @@ export class SalatPrayerTracker {
       this.pendingFatiha = null;
       return this.fatihaDone(now, pos);
     }
+    if (this.passive) return []; // v43: Fātiḥah-only rakʿah (3rd / 4th of a fard prayer)
     if (this.state !== "ACTIVE_SURAH_TRACKING" || !this.located || !match) return [];
     if (match.cursor !== this.lastCursor) {
       if (this.lastCursor >= 0 && match.cursor > this.lastCursor) this.recitedSinceLocate = true;
@@ -303,6 +313,28 @@ export class SalatPrayerTracker {
       return [{ type: "prompt", token: match.cursor, reason: "stall", mode: this.config.promptMode }];
     }
     return [];
+  }
+
+  /* ───── v43: the motion sensors (SalatMotionTracker) ───── */
+
+  /** Prompting off / on for this rakʿah. */
+  setPassive(passive: boolean) { this.passive = passive; }
+
+  /** The sensors count the rakʿāt: their number wins over the one counted from speech. */
+  syncRakah(n: number) { if (n > 0) this.rakah = n; }
+
+  /** Rukūʿ / sujūd seen by the sensors: mute the recitation prompting (same as hearing «الله أكبر»). */
+  motionMute(now: number, pos: number): SalatEvent[] {
+    if (this.state !== "RECITING_FATIHA" && this.state !== "ACTIVE_SURAH_TRACKING") return [];
+    return [...this.enter("IN_RUKU_OR_SUJUD", now), { type: "rebase", pos }];
+  }
+
+  /** Stood up for rakʿah `n` (sensors): al-Fātiḥah again, unless speech already started it. */
+  motionNewRakah(now: number, pos: number, n: number): SalatEvent[] {
+    if (this.state === "IDLE") return [];
+    if (this.state === "RECITING_FATIHA") { this.rakah = n; return [{ type: "state", state: this.state, rakah: n }]; }
+    this.rakah = n;
+    return [...this.enter("RECITING_FATIHA", now), { type: "rebase", pos }];
   }
 
   private hamdExpected(tokens?: readonly string[], cursor?: number) {
