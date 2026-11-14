@@ -79,6 +79,8 @@ export type AppSettings = {
   kidsMode: boolean;
   /** v47: the kids storybook theme — «سماء مشرقة» / «حديقة الزمرد» / «قمر الليل الهادئ». */
   kidsTheme: KidsTheme;
+  /** v51 «وضع الخط الكبير لكبار السن»: 130 % text, Atkinson + clear Naskh, one verse per line. */
+  largePrint: boolean;
 };
 /** v45: "lines" = «آية في كل سطر» (each verse on its own row). */
 export type MushafStyle = "madinah" | "clean" | "lines";
@@ -123,6 +125,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   highContrast: false,
   kidsMode: false,
   kidsTheme: "sky",
+  largePrint: false,
 };
 export const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 1.75] as const;
 
@@ -159,6 +162,7 @@ export function cleanSettings(s: AppSettings & Record<string, unknown>): AppSett
   out.appFontScale = Number.isFinite(sc) ? Math.min(FONT_SCALE_RANGE[1], Math.max(FONT_SCALE_RANGE[0], Math.round(sc * 100) / 100)) : 1;
   if (!["default", "uthmani", "naskh", "amiri"].includes(out.quranFont as string)) out.quranFont = "default";
   if (!(KIDS_THEMES as readonly string[]).includes(out.kidsTheme as string)) out.kidsTheme = "sky";
+  out.largePrint = out.largePrint === true;
   if (!["default", "naskh", "cairo"].includes(out.arabicUiFont as string)) out.arabicUiFont = "default";
   if (!["default", "atkinson", "lexend", "opendyslexic", "inter"].includes(out.latinFont as string)) out.latinFont = "default";
   if (!(QURAN_FONT_SIZES as readonly number[]).includes(out.quranFontSize as number)) out.quranFontSize = DEFAULT_SETTINGS.quranFontSize;
@@ -213,4 +217,33 @@ export function useSettings(): AppSettings {
   const value = useSyncExternalStore(signal.subscribe, signal.get, () => DEFAULT_SETTINGS);
   useEffect(() => { void loadSettings(); }, []);
   return value;
+}
+
+/* ───────── v51: one-tap large print for elderly readers ───────── */
+const LARGE_PREV = "qm.largePrint.prev";
+type LargePrev = Pick<AppSettings, "appFontScale" | "latinFont" | "arabicUiFont" | "quranFont" | "mushafStyle" | "quranFontSize">;
+
+/** Turns «وضع الخط الكبير» on (remembering the current look) or off (restoring it). */
+export async function setLargePrint(on: boolean) {
+  const s = getSettings();
+  if (on === s.largePrint) return;
+  if (on) {
+    const prev: LargePrev = { appFontScale: s.appFontScale, latinFont: s.latinFont, arabicUiFont: s.arabicUiFont, quranFont: s.quranFont, mushafStyle: s.mushafStyle, quranFontSize: s.quranFontSize };
+    try { localStorage.setItem(LARGE_PREV, JSON.stringify(prev)); } catch { /* ignore */ }
+    await updateSettings({ largePrint: true, appFontScale: 1.3, latinFont: "atkinson", arabicUiFont: "naskh", quranFont: "naskh", mushafStyle: "lines", quranFontSize: Math.max(32, s.quranFontSize) });
+  } else {
+    let prev: Partial<LargePrev> = {};
+    try { prev = JSON.parse(localStorage.getItem(LARGE_PREV) ?? "{}") as Partial<LargePrev>; } catch { /* ignore */ }
+    await updateSettings({ largePrint: false, appFontScale: prev.appFontScale ?? 1, latinFont: prev.latinFont ?? "default", arabicUiFont: prev.arabicUiFont ?? "default", quranFont: prev.quranFont ?? "default", mushafStyle: prev.mushafStyle ?? "madinah", quranFontSize: prev.quranFontSize ?? s.quranFontSize });
+  }
+}
+
+/** v51 header «A− / A+»: one step through the text-size presets. */
+export function stepAppFontScale(dir: -1 | 1) {
+  const steps: number[] = FONT_SCALE_PRESETS.map(([, v]) => v);
+  const cur = getSettings().appFontScale;
+  let i = steps.findIndex((x) => x >= cur - 0.001);
+  if (i < 0) i = steps.length - 1;
+  const next = steps[Math.max(0, Math.min(steps.length - 1, i + dir))]!;
+  void updateSettings({ appFontScale: next });
 }

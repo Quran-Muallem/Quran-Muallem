@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { BookOpen, RefreshCw, Share2 } from "lucide-react";
-import { GoldFrame, GOLD_LIGHT, Star } from "@/components/ornaments";
+import { BookOpen, Pause, Play, RefreshCw, Share2 } from "lucide-react";
+import { Star } from "@/components/ornaments";
+import { StarLattice, useAyahPlayer } from "@/components/HomeActionCards";
 import { ayahOfTheDay, type AyahRef } from "@/lib/dailyAyah";
 import { loadMushaf } from "@/lib/mushafData";
 import { getSurahMeta, toArabicDigits } from "@/lib/quranService";
@@ -12,6 +13,7 @@ import { useI18n } from "@/lib/i18n";
 export function DailyAyah({ onOpen }: { onOpen: (ref: AyahRef) => void }) {
   const { t, language } = useI18n();
   const [offset, setOffset] = useState(0);
+  const player = useAyahPlayer();
   const [verses, setVerses] = useState<{ n: number; text: string }[] | null>(null);
   const ref = ayahOfTheDay(undefined, offset);
   const meta = getSurahMeta(ref.surah);
@@ -25,34 +27,46 @@ export function DailyAyah({ onOpen }: { onOpen: (ref: AyahRef) => void }) {
     return () => { alive = false; };
   }, [ref.surah, ref.from, ref.to]);
 
-  const label = `${t("surah")} ${language === "ar" ? meta?.nameArabic : meta?.nameSimple} · ${language === "ar" ? toArabicDigits(ref.from) : ref.from}${ref.to > ref.from ? `–${language === "ar" ? toArabicDigits(ref.to) : ref.to}` : ""}`;
+  const label = `${t("surah")} ${language === "ar" ? meta?.nameArabic : meta?.nameSimple} • ${t("verse")} ${language === "ar" ? toArabicDigits(ref.from) : ref.from}${ref.to > ref.from ? `–${language === "ar" ? toArabicDigits(ref.to) : ref.to}` : ""}`;
   const plain = verses?.map((v) => `${v.text} ﴿${toArabicDigits(v.n)}﴾`).join(" ") ?? "";
 
+  const playing = player.playing === "daily";
   return (
-    <GoldFrame className="shadow-[0_0_40px_-16px_rgba(251,191,36,.5)]">
-      <div className="p-5">
-        <p className="flex items-center gap-2 text-xs font-medium" style={{ color: GOLD_LIGHT }}><Star className="h-4 w-4" />{t("dailyAyahTitle")}</p>
-        <p dir="rtl" lang="ar" className="mt-3 min-h-[4.5rem] text-center font-quran text-[1.45rem] leading-[2.3] text-emerald-50">
+    <section className="sx-card relative overflow-hidden p-5" data-daily-ayah="">
+      <StarLattice id="sx-daily-lattice" opacity={0.04} />
+      <div className="relative">
+        <p className="flex items-center gap-2 text-[0.95rem] font-bold" style={{ color: "var(--sx-gold-soft)" }}><Star className="h-4 w-4" />{t("homeAyahReflect")}</p>
+        <p dir="rtl" lang="ar" className="mt-3 min-h-[4.5rem] text-center font-quran text-[1.5rem] leading-[2.3] sx-ink">
           {verses === null ? "…" : verses.length === 0 ? "" : verses.map((v) => (
-            <span key={v.n}>{v.text} <span className="whitespace-nowrap text-[0.85em]" style={{ color: GOLD_LIGHT }}>﴿{toArabicDigits(v.n)}﴾</span> </span>
+            <span key={v.n}>{v.text} <span className="whitespace-nowrap text-[0.85em]" style={{ color: "var(--sx-gold)" }}>﴿{toArabicDigits(v.n)}﴾</span> </span>
           ))}
         </p>
-        <p className="mt-1 text-center text-xs text-emerald-100/65">{label}</p>
-        <div className="mt-3 flex flex-wrap justify-center gap-2">
+        <p className="mt-1 text-center text-[0.9rem] font-semibold sx-ink-soft">{label}</p>
+        <p className="mx-auto mt-2.5 max-w-[30ch] text-center text-[0.95rem] italic leading-relaxed sx-ink-soft">{t("homeReflectPrompt")}</p>
+        <div className="mt-4 grid grid-cols-2 gap-2.5">
+          <button type="button" data-daily-listen="" onClick={() => (playing ? player.stop() : player.play("daily", ref.surah, ref.from, ref.to))}
+            className="qm-native-colors sx-press flex min-h-[52px] items-center justify-center gap-2 rounded-2xl text-[1rem] font-extrabold text-white transition" style={{ background: "linear-gradient(135deg,#0f5132,#1d7b59)" }}>
+            {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 fill-current" />}{playing ? t("homePause") : t("homeListen")}
+          </button>
+          <button type="button" data-daily-share="" onClick={async () => { const txt = `${plain}\n[${label}]\n— ${APP_NAME}`; if (!(await shareNative(txt, ""))) await copyText(txt); }}
+            className="sx-press sx-chip sx-ink flex min-h-[52px] items-center justify-center gap-2 rounded-2xl text-[1rem] font-bold transition">
+            <Share2 className="h-5 w-5" />{t("dailyAyahShare")}
+          </button>
+        </div>
+        <div className="mt-2 flex justify-center gap-1">
           <IconBtn label={t("dailyAyahAnother")} onClick={() => setOffset((o) => o + 1 + Math.floor(Math.random() * 7))}><RefreshCw className="h-4 w-4" /></IconBtn>
           <IconBtn label={t("openInMushaf")} onClick={() => onOpen(ref)}><BookOpen className="h-4 w-4" /></IconBtn>
-          <IconBtn label={t("dailyAyahShare")} onClick={async () => { const txt = `${plain}\n[${label}]\n— ${APP_NAME}`; if (!(await shareNative(txt, ""))) await copyText(txt); }}><Share2 className="h-4 w-4" /></IconBtn>
         </div>
       </div>
-    </GoldFrame>
+    </section>
   );
 }
 
 function IconBtn({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
   return (
     <button type="button" onClick={onClick} aria-label={label} title={label}
-      className="flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border border-amber-300/40 px-3 text-xs text-amber-100 hover:bg-black/20">
-      {children}<span className="hidden min-[380px]:inline">{label}</span>
+      className="flex min-h-[44px] items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[0.9rem] font-semibold sx-ink-soft">
+      {children}<span>{label}</span>
     </button>
   );
 }

@@ -1,4 +1,5 @@
 import { speechEngineFor } from "@/lib/speechEngine";
+import { LargePrintToggle } from "@/components/LargePrintToggle";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Smile, Type } from "lucide-react";
 import { TypographySettings } from "@/components/TypographySettings";
@@ -28,7 +29,7 @@ import { VoiceProfilePanel } from "@/components/VoiceProfilePanel";
 import { retryZipformer, useZipformerState, zipformerAvailable, ZIPFORMER_MB } from "@/lib/zipformerEngine";
 
 
-type SettingsPage = "recitation" | "listening" | "mushafLook" | "hidden" | "highlight" | "language" | "theme" | "reminders" | "mistakes" | "session" | "reciters" | "translation" | "tafsir" | "offline" | "data" | "recordings" | "allData" | "typography" | "kids";
+export type SettingsPage = "recitation" | "listening" | "mushafLook" | "hidden" | "highlight" | "language" | "theme" | "reminders" | "mistakes" | "session" | "reciters" | "translation" | "tafsir" | "offline" | "data" | "recordings" | "allData" | "typography" | "kids";
 type Row = { id: SettingsPage; icon: ReactNode; label: CopyKey };
 const ic = "h-5 w-5";
 /** Grouped like Tarteel's settings: each row opens its own page inside the dialog. */
@@ -47,11 +48,11 @@ const GROUPS: { title: CopyKey; rows: Row[] }[] = [
  * التنزيلات, الخصوصية; a row opens its page, the arrow goes back). Everything stays on the device; no
  * external AI services, no API keys.
  */
-export function SettingsModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function SettingsModal({ open, onOpenChange, initialPage = null }: { open: boolean; onOpenChange: (open: boolean) => void; /** v51: open straight at a page (from the flat menu). */ initialPage?: SettingsPage | null }) {
   const { t, language } = useI18n();
   const [page, setPage] = useState<SettingsPage | null>(null);
   const s0 = useSettings();
-  useEffect(() => { if (!open) setPage(null); }, [open]);
+  useEffect(() => { setPage(open ? initialPage : null); }, [open, initialPage]);
   const row = page ? GROUPS.flatMap((g) => g.rows).find((r) => r.id === page) : null;
   const Back = directionFor(language) === "rtl" ? ChevronRight : ChevronLeft;
   const Next = directionFor(language) === "rtl" ? ChevronLeft : ChevronRight;
@@ -59,6 +60,8 @@ export function SettingsModal({ open, onOpenChange }: { open: boolean; onOpenCha
     <GoldDialog open={open} onOpenChange={onOpenChange} title={row ? t(row.label) : t("settingsTitle")} description={row ? undefined : t("settingsSub")} className="max-w-md">
       {!page ? (
         <div className="space-y-4" data-settings-index="">
+          {/* v51: one tap for elderly readers */}
+          <LargePrintToggle />
           {GROUPS.map((g) => (
             <section key={g.title} className="overflow-hidden rounded-2xl bg-black/15" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
               <h3 className="border-b px-4 py-3 text-sm font-semibold" style={{ color: GOLD_LIGHT, borderColor: alpha(GOLD, 0.25) }}>{t(g.title)}</h3>

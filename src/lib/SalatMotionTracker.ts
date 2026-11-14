@@ -17,6 +17,13 @@
  *  - jacket pocket: like the chest, wider bands, slower filter.
  * A posture counts only after it was held for 1.2 s (0.6 s right after a spoken «الله أكبر»).
  *
+ * v51 trouser pocket («جيب البنطال»), resilient cycle: the angle θ to the calibrated standing gravity works in
+ * any pocket orientation (upside down, screen in or out). θ ≥ 28° mutes the Sheikh at once (rukūʿ / going
+ * down). A rakʿah is complete when the thigh was down (θ ≥ 28°: sujūd, jalsa, sitting) for ≥ 3 s in total
+ * since standing — no need to see the short jalsa between the two sujūd (it often fell between the bands,
+ * which froze the count after rakʿah 1). Rising back to upright (θ < 25° for ≥ 1.2 s) starts the next rakʿah;
+ * after the target → «سبحان الله» at once.
+ *
  * Counting: a rakʿah is complete with its second sujūd. Standing up after it starts the next rakʿah;
  * standing up once the target is complete → «سبحان الله» (too many). Sitting after a second sujūd when the
  * target is not reached: legitimate middle tashahhud (2nd rakʿah of a 3/4-rakʿah prayer, every 2nd in
@@ -43,7 +50,7 @@ type Bands = { tau: number; upright: number; bowMin: number; sujudMin: number; s
 const BANDS: Record<Placement, Bands> = {
   chest: { tau: 0.35, upright: 35, bowMin: 55, sujudMin: 115 },
   jacket: { tau: 0.7, upright: 40, bowMin: 50, sujudMin: 110 },
-  trousers: { tau: 0.35, upright: 18, bowMin: 999, sujudMin: 22, sujudMax: 62, sitMin: 68 },
+  trousers: { tau: 0.35, upright: 25, bowMin: 999, sujudMin: 28, sujudMax: 62, sitMin: 64 },
 };
 const QUIET_LIN = 0.9; // m/s² (smoothed) of acceleration without gravity: turning / swinging the phone
 const QUIET_AV = 0.15; // m/s² up / down (smoothed): even a slow rise from sitting counts as movement
@@ -106,6 +113,12 @@ export class MotionCore {
   private bowed = false;
   private sitSince = 0;
   private reminded = false;
+  // v51 trouser pocket: time with the thigh down since standing, and the immediate mute
+  private downMs = 0;
+  private downMuted = false;
+  /** Trousers: θ from standing at which the Sheikh is muted / the thigh counts as down. */
+  static readonly TROUSER_DOWN = 28;
+  static readonly TROUSER_DOWN_MS = 3000;
 
   constructor(o: { placement: Placement; prayer: PrayerId; target: number | null }) {
     this.placement = o.placement; this.prayer = o.prayer; this.target = o.target;
@@ -175,6 +188,14 @@ export class MotionCore {
       }
     }
 
+    // 3b. Trouser pocket (v51): mute at once when going down; count the time down for the resilient cycle.
+    if (this.placement === "trousers") {
+      if (this.tilt >= MotionCore.TROUSER_DOWN) {
+        this.downMs += dt * 1000;
+        if (!this.downMuted) { this.downMuted = true; out.push({ type: "mute" }); }
+      }
+    }
+
     // 4. Raw posture candidate → stable after the hold time.
     const raw = this.classify();
     if (raw !== this.cand) { this.cand = raw; this.candSince = t; }
@@ -218,15 +239,17 @@ export class MotionCore {
   private onPosture(raw: RawPosture, t: number): MotionEvent[] {
     const out: MotionEvent[] = [];
     if (raw === "STAND") {
+      // v51 trousers: down long enough (sujūd + jalsa + sujūd) but the jalsa was not told apart → still complete.
+      if (this.placement === "trousers" && this.sujud === 1 && this.downMs >= MotionCore.TROUSER_DOWN_MS) this.sujud = 2;
       if (this.sujud >= 2) {
         const completed = this.rakah;
-        this.rakah++; this.sujud = 0; this.bowed = false; this.reminded = false;
+        this.rakah++; this.sujud = 0; this.bowed = false; this.reminded = false; this.downMs = 0; this.downMuted = false;
         this.setHeight(0);
         this.set("QIYAM", out);
         out.push({ type: "newRakah", rakah: this.rakah });
         if (this.target != null && completed >= this.target) out.push({ type: "tooMany", completed });
       } else if (this.bowed && this.sujud === 0) this.set("ITIDAL", out);
-      else if (this.sujud === 0) { this.setHeight(Math.max(this.height, -0.1)); this.set("QIYAM", out); }
+      else if (this.sujud === 0) { this.setHeight(Math.max(this.height, -0.1)); this.set("QIYAM", out); this.downMuted = false; }
     } else if (raw === "BOW") {
       if (this.sujud === 0) { this.bowed = true; this.setHeight(Math.min(this.height, -0.2)); this.set("RUKU", out); out.push({ type: "mute" }); }
     } else if (raw === "PROSTRATE") {

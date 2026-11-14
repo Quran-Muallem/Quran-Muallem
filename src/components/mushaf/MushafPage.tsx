@@ -180,7 +180,7 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, mar
           <span>الجُزْءُ {toArabicDigits(mushaf.juzOfPage(page))}</span>
         </div>
         <div className="h-px w-full" style={{ background: `linear-gradient(90deg, transparent, ${GOLD_A}, transparent)` }} />
-        <div ref={wrap} data-mushaf-text="" data-mushaf-flow="" data-mushaf-per-ayah={flow.perAyah ? "" : undefined} dir="rtl" lang="ar" className="relative mt-1 flex flex-col gap-2 qm-flow" style={{ fontSize: flow.fontSize, color: INK }}>
+        <div ref={wrap} data-mushaf-text="" data-mushaf-flow="" data-mushaf-per-ayah={flow.perAyah ? "" : undefined} dir="rtl" lang="ar" className="relative mt-1 flex flex-col gap-4 qm-flow" style={{ fontSize: flow.fontSize, color: INK }}>
           {blocks.map((b, i) => {
             if (b.kind === "header") return <div key={i} className="flex shrink-0 items-center pt-2" data-surah-banner="" style={{ minHeight: bh }}><SurahBanner name={`سُورَةُ ${getSurahMeta(b.surah)?.nameArabic ?? ""}`} height={bh} /></div>;
             if (b.kind === "basmala") return <BasmalaFlow key={i} fontSize={flow.fontSize} />;

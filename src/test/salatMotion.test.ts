@@ -142,3 +142,30 @@ describe("SalatMotionTracker", () => {
     });
   }
 });
+
+describe("v51 · trouser pocket, resilient rakʿah cycle", () => {
+  const P = "trousers" as Placement;
+  it("does not freeze after rakʿah 1 when the jalsa falls between the bands", () => {
+    // jalsa at 63° (between sujūd ≤ 62° and sitting ≥ 64°) — the old counter waited for it forever
+    const odd: [string, number][] = [["stand", 25], ["sujud", 4], ["mid", 2], ["sujud", 4]];
+    const POSE2 = { ...POSE.trousers, mid: [63, -0.6] as [number, number] };
+    (POSE as Record<string, Record<string, [number, number]>>)["trousers"] = POSE2;
+    try {
+      const { core, events } = run(P, "isha", 4, [...odd, ...odd, ["sit", 20], ...odd, ["sit", 5]]);
+      expect(core.rakah).toBe(3);
+      expect(events.filter((x) => x.e.type === "newRakah").length).toBe(2);
+    } finally { (POSE as Record<string, Record<string, [number, number]>>)["trousers"] = { stand: [0, 0], bow: [6, -0.05], sujud: [42, -0.7], sit: [88, -0.6] }; }
+  });
+  it("mutes the Sheikh as soon as the thigh goes down (≥ 28°)", () => {
+    const { events } = run(P, "fajr", 2, [["stand", 5], ["sujud", 4]]);
+    const mute = events.find((x) => x.e.type === "mute");
+    const sujud = events.find((x) => x.e.type === "posture" && (x.e as { posture: string }).posture === "SUJUD_1");
+    expect(mute).toBeTruthy();
+    expect(mute!.t).toBeLessThan(sujud!.t);
+  });
+  it("«سبحان الله» when rising into a 3rd rakʿah of Fajr", () => {
+    const r = rakah(P);
+    const { events } = run(P, "fajr", 2, [...r, ...r, ["sit", 3], ["stand", 4]]);
+    expect(events.filter((x) => x.e.type === "tooMany")).toHaveLength(1);
+  });
+});

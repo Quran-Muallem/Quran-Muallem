@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { KidsModePill } from "@/components/kids/KidsModePill";
+import { ContinueSpotlight, HomeActionCards, HomeHero } from "@/components/HomeActionCards";
 import { BookOpenText, ChevronLeft, Flame, Mic, RotateCcw, Share2, Sparkles, Target, Trophy } from "lucide-react";
 
 import { DailyAyah } from "@/components/DailyAyah";
@@ -35,43 +35,17 @@ export function Dashboard({ userName, onOpen, onInvite, onBadges }: {
 
   return (
     <div className="space-y-5">
-      <header className="flex items-center gap-3">
-        <AppLogo className="h-14 w-14 shrink-0" />
-        <div className="min-w-0">
-          <AppWordmark className="items-start" />
-          <h1 className="truncate text-sm text-emerald-100/80">
-            {userName ? `${t("welcomeUser")}${directionFor(language) === "rtl" ? "، " : ", "}${userName}` : t("title")}
-          </h1>
-        </div>
-      </header>
-      {/* v46: «وضع الأطفال» right under the logo, never hidden */}
-      <KidsModePill className="-mt-2 w-fit" />
-
-      <DailyAyah onOpen={(r) => onOpen({ surahId: r.surah, fromAyah: r.from, toAyah: r.to, mode: "READING" })} />
-
-      <ContinueCard last={progress.lastPosition} num={num} name={name}
-        onContinue={(p) => onOpen({ surahId: p.surahId, fromAyah: p.ayahId, toAyah: p.ayahId, mode: p.mode })}
-        onStart={() => onOpen({ surahId: 1, fromAyah: 1, toAyah: 7, mode: "READING" })} />
+      {/* v52 Warm Sanctuary: hero welcome, continue spotlight, bento grid; ayah of the day closes the page */}
+      <HomeHero userName={userName} />
+      <ContinueSpotlight onContinue={(surah, ayah) => onOpen({ surahId: surah, fromAyah: ayah, toAyah: ayah, mode: "READING" })} />
+      <HomeActionCards />
 
       <ReviewCard due={due} total={stats.dueToday} num={num} name={name}
         onReview={(r) => onOpen({ surahId: r.surahId, fromAyah: r.fromAyah, toAyah: r.toAyah, mode: "MEMORIZATION_MODE" })} />
 
-      <div className="grid grid-cols-3 gap-2.5">
-        <Metric icon={<Flame className="h-4 w-4" />} value={num(stats.streak)} label={t("streakDays")} highlight={stats.activeToday} />
-        <Metric icon={<Trophy className="h-4 w-4" />} value={num(stats.memorized)} label={t("versesMemorized")} />
-        <Metric icon={<Target className="h-4 w-4" />} value={stats.averageAccuracy == null ? "—" : `${num(stats.averageAccuracy)}${language === "ar" ? "٪" : "%"}`} label={t("avgAccuracy")} />
-      </div>
-
       {onBadges && <BadgesCard onOpen={onBadges} />}
 
       <CompletionCard memorized={stats.memorized} revision={stats.needsRevision} week={stats.week} num={num} />
-
-      <div className="grid grid-cols-2 gap-3">
-        <ModeCard icon={<Mic className="h-5 w-5" />} title={t("reciteMode")} desc={t("reciteDesc")}
-          onClick={() => { const p = progress.lastPosition; onOpen({ surahId: p?.surahId ?? 1, fromAyah: p?.ayahId ?? 1, toAyah: p?.ayahId ?? 1, mode: "RECITATION_MODE" }); }} />
-        <ModeCard icon={<BookOpenText className="h-5 w-5" />} title={t("hifzMode")} desc={t("hifzDesc")}
-          onClick={() => { const p = progress.lastPosition; onOpen({ surahId: p?.surahId ?? 1, fromAyah: p?.ayahId ?? 1, toAyah: p?.ayahId ?? 1, mode: "MEMORIZATION_MODE" }); }} />
-      </div>
 
       {onInvite && (
         <button type="button" onClick={onInvite} className="flex w-full items-center gap-3 rounded-2xl bg-black/15 p-4 text-start transition hover:bg-black/25" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.45)}` }}>
@@ -84,7 +58,8 @@ export function Dashboard({ userName, onOpen, onInvite, onBadges }: {
         </button>
       )}
 
-      <RecentSurahs ids={recentSurahs(progress)} name={name} num={num} onOpen={(id) => onOpen({ surahId: id, fromAyah: 1, toAyah: 1, mode: "READING" })} />
+      {/* v52.1: the per-surah progress list is gone — the hero spotlight already shows the reading progress */}
+      <DailyAyah onOpen={(r) => onOpen({ surahId: r.surah, fromAyah: r.from, toAyah: r.to, mode: "READING" })} />
     </div>
   );
 }

@@ -14,6 +14,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Bluetooth, Headphones, Pause, Play, Smartphone, Square, Volume2, X } from "lucide-react";
+import { GlowStart, StudioCard, StudioShell, StudioSlider, studioChoice } from "@/components/companion/Studio";
 import { useI18n } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useRecitation } from "@/lib/useRecitation";
@@ -343,88 +344,81 @@ export function HandsFreeHifdhView({ onClose, switcher }: { onClose: () => void;
     );
   }
 
-  const chip = (on: boolean) => `rounded-xl border px-3 py-2.5 text-sm ${on ? "border-emerald-500/70 bg-emerald-950/50 text-emerald-100" : "border-neutral-800 text-neutral-400"}`;
+  const btName = devices.find((d) => d.kind === "bluetooth")?.name;
   return (
-    <div className="qm-native-colors fixed inset-0 z-[70] overflow-y-auto bg-neutral-950 text-neutral-200" data-handsfree="setup">
-      <div className="mx-auto flex min-h-full max-w-md flex-col gap-5 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]">
-        {switcher}
-        <div className="flex items-center justify-between">
-          <h1 className="font-arabic text-2xl text-emerald-200">{ar ? "المراجعة الحرة" : t("hfTitle")}</h1>
-          <button type="button" onClick={() => { stopPrompt(); onClose(); }} aria-label={t("close")} className="rounded-full p-2 text-neutral-500 hover:bg-neutral-900" data-hf-close=""><X className="h-5 w-5" /></button>
+    <StudioShell data={{ "data-handsfree": "setup" }} switcher={switcher} onClose={() => { stopPrompt(); onClose(); }} closeLabel={t("close")}
+      title={ar ? "المراجعة الحرة" : t("hfTitle")} intro={t("hfIntro")}>
+      <StudioCard title={t("hfOutput")} icon={<Headphones className="h-4 w-4" />}>
+        <div className="grid grid-cols-3 gap-2.5" role="radiogroup">
+          {(["auto", "bluetooth", "speaker"] as const).map((r) => {
+            const Icon = r === "auto" ? Headphones : r === "bluetooth" ? Bluetooth : Smartphone;
+            return (
+              <button key={r} type="button" role="radio" aria-checked={prefs.route === r} onClick={() => setPrefs({ route: r })} data-hf-route-option={r}
+                className={studioChoice(prefs.route === r, "flex min-h-[5.25rem] flex-col items-center justify-center gap-1.5 text-center text-[0.9rem] leading-tight")}>
+                <Icon className="h-7 w-7" strokeWidth={1.9} />{t(r === "auto" ? "hfRouteAuto" : r === "bluetooth" ? "hfRouteBluetooth" : "hfRouteSpeaker")}
+              </button>
+            );
+          })}
         </div>
-        <p className="text-sm leading-relaxed text-neutral-400">{t("hfIntro")}</p>
+        <p className="flex items-start gap-2 rounded-2xl px-3 py-2.5 text-[0.92rem] font-semibold leading-snug sx-chip" data-hf-route={prefs.route} data-hf-bt={bt ? "yes" : "no"} data-hf-status="">
+          <span aria-hidden="true" className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: prefs.route === "speaker" ? "var(--sx-gold)" : bt ? "#22c55e" : "#f59e0b" }} />
+          {prefs.route === "speaker" ? t("hfStatusSpeaker") : bt ? t("hfStatusBt").replace("{name}", btName ?? t("hfRouteBluetooth")) : t("hfStatusNoBt")}
+        </p>
+        {prefs.route === "bluetooth" && !bt && <p className="text-[0.9rem] font-semibold text-[#b45309]">{t("hfNoBluetooth")}</p>}
+      </StudioCard>
 
-        <section className="space-y-2 rounded-2xl border border-neutral-800 p-4">
-          <p className="text-sm text-neutral-300">{t("hfOutput")}</p>
-          <div className="grid grid-cols-3 gap-2" role="radiogroup">
-            {(["auto", "bluetooth", "speaker"] as const).map((r) => (
-              <button key={r} type="button" role="radio" aria-checked={prefs.route === r} onClick={() => setPrefs({ route: r })} data-hf-route-option={r} className={chip(prefs.route === r)}>
-                {t(r === "auto" ? "hfRouteAuto" : r === "bluetooth" ? "hfRouteBluetooth" : "hfRouteSpeaker")}
-              </button>
-            ))}
-          </div>
-          <div className="pt-1">{routeBadge}</div>
-          {prefs.route === "bluetooth" && !bt && <p className="text-xs text-amber-600">{t("hfNoBluetooth")}</p>}
-        </section>
-
-        <section className="space-y-2 rounded-2xl border border-neutral-800 p-4">
-          <label className="block text-sm text-neutral-300" htmlFor="hf-reciter">{t("salatReciter")}</label>
-          <div className="flex gap-2">
-            <select id="hf-reciter" value={prefs.reciterId} onChange={(e) => setPrefs({ reciterId: e.target.value })} data-hf-reciter=""
-              className="min-w-0 flex-1 rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2.5 text-sm text-neutral-100">
-              {SALAT_RECITERS.map((r) => <option key={r.id} value={r.id}>{ar ? getReciter(r.id).nameArabic : getReciter(r.id).nameEnglish}</option>)}
-            </select>
-            <button type="button" onClick={() => void preview()} data-hf-preview="" className="flex shrink-0 items-center gap-1.5 rounded-xl border border-emerald-700/50 px-3 text-sm text-emerald-200">
-              {previewing ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}{t("salatPreview")}
+      <StudioCard title={t("salatVoiceCard")} icon={<Volume2 className="h-4 w-4" />}>
+        <label className="block text-[0.98rem] font-semibold sx-ink" htmlFor="hf-reciter">{t("salatReciter")}</label>
+        <div className="flex gap-2">
+          <select id="hf-reciter" value={prefs.reciterId} onChange={(e) => setPrefs({ reciterId: e.target.value })} data-hf-reciter=""
+            className="min-h-[52px] min-w-0 flex-1 rounded-2xl border-0 px-3 text-[0.98rem] font-semibold sx-chip sx-ink">
+            {SALAT_RECITERS.map((r) => <option key={r.id} value={r.id}>{ar ? getReciter(r.id).nameArabic : getReciter(r.id).nameEnglish}</option>)}
+          </select>
+          <button type="button" onClick={() => void preview()} data-hf-preview="" className={studioChoice(previewing, "flex shrink-0 items-center gap-1.5")}>
+            {previewing ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current" />}{t("salatPreview")}
+          </button>
+        </div>
+        <StudioSlider id="hf-silence" label={t("salatSilence")} value={prefs.silenceMs} display={`${(prefs.silenceMs / 1000).toFixed(1)} s`}
+          min={SILENCE_RANGE_MS[0]} max={SILENCE_RANGE_MS[1]} step={500} onChange={(v) => setPrefs({ silenceMs: v })} data={{ "data-hf-silence": "" }} />
+        <p className="text-[0.98rem] font-semibold sx-ink">{t("salatPromptLength")}</p>
+        <div className="grid grid-cols-2 gap-2" role="radiogroup">
+          {(["words", "ayah"] as const).map((m) => (
+            <button key={m} type="button" role="radio" aria-checked={prefs.promptMode === m} onClick={() => setPrefs({ promptMode: m })} className={studioChoice(prefs.promptMode === m)} data-hf-mode={m}>
+              <span className="font-arabic">{m === "words" ? "كلمات قليلة" : "آية كاملة"}</span>
             </button>
-          </div>
-        </section>
+          ))}
+        </div>
+        <p className="text-[0.98rem] font-semibold sx-ink">{t("hfIdle")}</p>
+        <div className="grid grid-cols-2 gap-2" role="radiogroup">
+          {IDLE_OPTIONS_MS.map((ms) => (
+            <button key={ms} type="button" role="radio" aria-checked={prefs.idleMs === ms} onClick={() => setPrefs({ idleMs: ms })} className={studioChoice(prefs.idleMs === ms)} data-hf-idle={ms}>{t("hfSeconds").replace("{n}", num(ms / 1000))}</button>
+          ))}
+        </div>
+        <StudioSlider id="hf-volume" label={<><Volume2 className="h-4 w-4" />{t("salatVolume")}</>} value={Math.round(prefs.volume * 100)} display={`${Math.round(prefs.volume * 100)} %`}
+          min={5} max={100} step={5} onChange={(v) => setPrefs({ volume: v / 100 })} data={{ "data-hf-volume": "" }} />
+      </StudioCard>
 
-        <section className="space-y-2 rounded-2xl border border-neutral-800 p-4">
-          <div className="flex items-baseline justify-between text-sm"><span className="text-neutral-300">{t("salatSilence")}</span><span className="tabular-nums text-emerald-300" dir="ltr">{(prefs.silenceMs / 1000).toFixed(1)} s</span></div>
-          <input type="range" min={SILENCE_RANGE_MS[0]} max={SILENCE_RANGE_MS[1]} step={500} value={prefs.silenceMs} onChange={(e) => setPrefs({ silenceMs: Number(e.target.value) })} className="w-full accent-emerald-500" aria-label={t("salatSilence")} data-hf-silence="" />
-          <p className="pt-2 text-sm text-neutral-300">{t("salatPromptLength")}</p>
-          <div className="grid grid-cols-2 gap-2" role="radiogroup">
-            {(["words", "ayah"] as const).map((m) => (
-              <button key={m} type="button" role="radio" aria-checked={prefs.promptMode === m} onClick={() => setPrefs({ promptMode: m })} className={chip(prefs.promptMode === m)} data-hf-mode={m}>
-                <span className="font-arabic">{m === "words" ? "كلمات قليلة" : "آية كاملة"}</span>
-              </button>
-            ))}
-          </div>
-          <p className="pt-2 text-sm text-neutral-300">{t("hfIdle")}</p>
-          <div className="grid grid-cols-2 gap-2" role="radiogroup">
-            {IDLE_OPTIONS_MS.map((ms) => (
-              <button key={ms} type="button" role="radio" aria-checked={prefs.idleMs === ms} onClick={() => setPrefs({ idleMs: ms })} className={chip(prefs.idleMs === ms)} data-hf-idle={ms}>{t("hfSeconds").replace("{n}", num(ms / 1000))}</button>
-            ))}
-          </div>
-          <div className="flex items-baseline justify-between pt-2 text-sm"><span className="flex items-center gap-1.5 text-neutral-300"><Volume2 className="h-4 w-4" />{t("salatVolume")}</span><span className="tabular-nums text-emerald-300" dir="ltr">{Math.round(prefs.volume * 100)} %</span></div>
-          <input type="range" min={5} max={100} step={5} value={Math.round(prefs.volume * 100)} onChange={(e) => setPrefs({ volume: Number(e.target.value) / 100 })} className="w-full accent-emerald-500" aria-label={t("salatVolume")} />
-        </section>
+      <ul className="space-y-1.5 px-1 text-[0.9rem] leading-relaxed sx-ink-soft">
+        <li>• {t("hfNoteGate")}</li>
+        <li>• {t("hfNoteButtons")}</li>
+        <li>• {t("salatNotePrivacy").split(/[.。؛]/)[0]}.</li>
+      </ul>
 
-        <ul className="space-y-1.5 text-xs leading-relaxed text-neutral-500">
-          <li>• {t("hfNoteGate")}</li>
-          <li>• {t("hfNoteButtons")}</li>
-          <li>• {t("salatNotePrivacy").split(/[.。؛]/)[0]}.</li>
-        </ul>
+      {log.length > 0 && (
+        <StudioCard title={t("hfLog")} data-hf-log={String(log.length)}>
+          {log.slice(0, 8).map((e) => (
+            <div key={e.at} className="flex items-center justify-between rounded-2xl px-3 py-2.5 text-[0.85rem] sx-chip">
+              <span className="font-arabic text-[0.98rem] font-bold">سورة {getSurahMeta(e.surah)?.nameArabic} · {num(e.fromAyah)}{e.toAyah > e.fromAyah ? `–${num(e.toAyah)}` : ""}</span>
+              <span dir="ltr" className="sx-ink-soft">{new Date(e.at).toLocaleString(language, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+            </div>
+          ))}
+        </StudioCard>
+      )}
 
-        {log.length > 0 && (
-          <section className="space-y-1.5" data-hf-log={log.length}>
-            <p className="text-sm text-neutral-300">{t("hfLog")}</p>
-            {log.slice(0, 8).map((e) => (
-              <div key={e.at} className="flex items-center justify-between rounded-xl border border-neutral-900 px-3 py-2 text-xs text-neutral-400">
-                <span className="font-arabic text-sm text-neutral-200">سورة {getSurahMeta(e.surah)?.nameArabic} · {num(e.fromAyah)}{e.toAyah > e.fromAyah ? `–${num(e.toAyah)}` : ""}</span>
-                <span dir="ltr">{new Date(e.at).toLocaleString(language, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
-              </div>
-            ))}
-          </section>
-        )}
-
-        <button type="button" onClick={start} disabled={!mushaf} data-hf-start=""
-          className="mt-auto flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-emerald-500 to-emerald-700 py-4 text-lg font-semibold text-white disabled:opacity-40">
-          <Headphones className="h-5 w-5" />{t("hfStart")}
-        </button>
-      </div>
-    </div>
+      <GlowStart onClick={start} disabled={!mushaf} data={{ "data-hf-start": "" }} tone="emerald">
+        <Headphones className="h-7 w-7" />{t("hfStart")}
+      </GlowStart>
+    </StudioShell>
   );
 }
 

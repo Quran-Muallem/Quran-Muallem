@@ -4,6 +4,7 @@
  * «السورة التالية» buttons above and below the surah, plus a colourful surah picker.
  * Tapping a verse opens the kids tafsir drawer (read-aloud + the Sheikh's recitation of that verse).
  */
+import { KidsBadge, Sparkles } from "@/components/kids/KidsArt";
 import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -62,10 +63,10 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
   );
 
   return (
-    <div className="space-y-4" data-kids-mushaf={surah} data-kids-hide={hide ? "on" : "off"}>
+    <div className="space-y-4 pb-[110px]" data-kids-mushaf={surah} data-kids-hide={hide ? "on" : "off"}>
       {nav("top")}
       {/* toolbar: hide the verses to recite from memory */}
-      <div className="kd-card flex items-center gap-2 p-2" dir={ar ? "rtl" : "ltr"}>
+      <div className="kd-card kd-3d flex items-center gap-2 p-2" dir={ar ? "rtl" : "ltr"}>
         <button type="button" role="switch" aria-checked={hide} onClick={toggleHide} data-kids-hide-toggle=""
           className={cn("kd-btn flex-1 text-base", hide ? "kd-btn-mango" : "kd-btn-soft")}>
           <span aria-hidden="true">{hide ? "🙈" : "👀"}</span>{hide ? t("kidsShowAyat") : t("kidsHideAyat")}
@@ -74,11 +75,16 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
           <button type="button" onClick={() => setRevealed(new Set())} className="kd-btn kd-btn-soft !px-4 text-base" aria-label={t("kidsHideAgain")} data-kids-hide-again="">☁️</button>
         )}
       </div>
-      <article className="kd-card overflow-hidden" dir="rtl" lang="ar">
+      <article className="kd-card kd-3d relative overflow-hidden" dir="rtl" lang="ar"
+        style={{ backgroundImage: "radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--kd-ink) 7%, transparent) 1px, transparent 0)", backgroundSize: "18px 18px" }}>
+        {/* v52 storybook: a ribbon bookmark and a sunrise header */}
+        <span aria-hidden="true" className="absolute end-6 top-0 z-[1] h-14 w-7" style={{ background: "linear-gradient(180deg,#fb7185,#e04e66)", clipPath: "polygon(0 0,100% 0,100% 100%,50% 78%,0 100%)" }} />
         {/* surah title — sequential blocks: title → Basmala → verses (never overlapping) */}
-        <header className="relative flex flex-col items-center gap-1 px-4 pb-4 pt-5 text-center" style={{ background: "linear-gradient(180deg, var(--kd-sun), transparent)" }}>
+        <header className="relative flex flex-col items-center gap-1 overflow-hidden px-4 pb-4 pt-5 text-center" style={{ background: "linear-gradient(180deg, var(--kd-sun), color-mix(in srgb, var(--kd-sun) 30%, transparent) 70%, transparent)" }}>
+          <Sparkles count={4} seed={1} />
+          <KidsBadge id="mushaf" className="relative h-16 w-16 kd-float" />
           <button type="button" onClick={() => setPicker(true)} className="kd-btn kd-btn-mango !min-h-0 px-5 py-2 text-sm" data-kids-picker-open="">📖 {t("kidsPickSurah")}</button>
-          <h1 className="mt-2 font-arabic text-4xl font-black leading-snug">سورة {meta?.nameArabic}</h1>
+          <h1 className="relative mt-2 font-arabic text-4xl font-black leading-snug">سورة {meta?.nameArabic}</h1>
           <p className="text-sm font-bold kd-ink-soft" dir={ar ? "rtl" : "ltr"}>{!ar && `${meta?.nameSimple} · `}{t("kidsVersesCount").replace("{n}", num(meta?.versesCount ?? 0))}</p>
         </header>
         {surah !== 1 && surah !== 9 && (

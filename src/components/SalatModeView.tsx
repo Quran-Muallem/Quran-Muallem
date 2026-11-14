@@ -12,7 +12,9 @@
  * faded in softly; recognition pauses while a prompt plays so the prompt is not taken for the reader.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Mic, Play, Square, Volume2, X } from "lucide-react";
+import { Clock3, Play, Smartphone, Square, Volume2 } from "lucide-react";
+import { GlowStart, PlacementCard, PrayerCard, RakahDots, StudioCard, StudioShell, StudioSlider, studioChoice } from "@/components/companion/Studio";
+import { PrayingPersonIcon } from "@/components/icons/PrayingPersonIcon";
 import { useI18n, type CopyKey } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useKeepAwake } from "@/lib/wakeLock";
@@ -98,6 +100,7 @@ async function playSubhanAllah(volume: number): Promise<void> {
 }
 
 const PRAYER_AR: Record<PrayerId, string> = { fajr: "الفجر", dhuhr: "الظهر", asr: "العصر", maghrib: "المغرب", isha: "العشاء", qiyam: "قيام الليل" };
+const PRAYER_NAME_KEY: Record<PrayerId, CopyKey> = { fajr: "spFajr", dhuhr: "spDhuhr", asr: "spAsr", maghrib: "spMaghrib", isha: "spIsha", qiyam: "spQiyam" };
 const PRAYER_KEY: Record<PrayerId, CopyKey> = { fajr: "prayerFajr", dhuhr: "prayerDhuhr", asr: "prayerAsr", maghrib: "prayerMaghrib", isha: "prayerIsha", qiyam: "salatQiyam" };
 const PLACEMENT_KEY: Record<Placement | "none", CopyKey> = { chest: "salatPlaceChest", trousers: "salatPlaceTrousers", jacket: "salatPlaceJacket", none: "salatPlaceNone" };
 const POSTURE_KEY: Record<Posture, CopyKey> = {
@@ -182,6 +185,11 @@ export function SalatModeView({ onClose, switcher }: { onClose: () => void; swit
     const { verses: vs, prefs: p, rec: r } = live.current;
     const span = promptSpan(vs, token, mode, reason);
     if (!span) return;
+    // v51 hard lockout: with the sensors on, prompt only while standing upright (qiyām, θ < 25°) —
+    // never in rukūʿ, sujūd or the tashahhud, whatever the speech engine thinks.
+    const m = motion.current;
+    if (m?.calibrated && (m.posture !== "QIYAM" || m.tilt >= (m.placement === "trousers" ? 25 : 35))) return;
+    if (tracker.current.state === "IN_RUKU_OR_SUJUD") return;
     setPrompting(true);
     if (r.canPause) r.pause();
     try {
@@ -428,108 +436,85 @@ export function SalatModeView({ onClose, switcher }: { onClose: () => void; swit
     );
   }
 
-  /* ── before the prayer ── */
+  /* ── before the prayer: v52 Guided Companion Studio ── */
+  const rk = (p: PrayerId) => (p === "qiyam" ? (prefs.qiyamCount ?? null) : targetRakaat(p, null));
+  const rkLabel = (p: PrayerId) => {
+    const n = rk(p);
+    if (n == null) return t("salatOpen");
+    return ar && n === 2 ? "ركعتان" : t("salatRakaatN").replace("{n}", num(n));
+  };
   return (
-    <div className="qm-native-colors fixed inset-0 z-[70] overflow-y-auto bg-black text-neutral-200" data-salat="setup">
-      <div className="mx-auto flex min-h-full max-w-md flex-col gap-5 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]">
-        {switcher}
-        <div className="flex items-center justify-between">
-          <h1 className="font-arabic text-3xl text-amber-200/90">{ar ? "رفيق الصلاة" : t("hubSalat")}</h1>
-          <button type="button" onClick={() => { stopPrompt(); onClose(); }} aria-label={t("close")} className="rounded-full p-2 text-neutral-500 hover:bg-neutral-900" data-salat-close=""><X className="h-5 w-5" /></button>
+    <StudioShell data={{ "data-salat": "setup" }} switcher={switcher} onClose={() => { stopPrompt(); onClose(); }} closeLabel={t("close")}
+      title={ar ? "رفيق الصلاة" : t("hubSalat")} intro={t("salatIntro")}>
+      {/* v43: which prayer, and where the phone is (motion sensors count the rakʿāt) */}
+      <StudioCard title={ar ? "اختيار الصلاة" : t("salatPrayer")} icon={<Clock3 className="h-4 w-4" />} data-salat-prayer-setup="">
+        <div className="grid grid-cols-3 gap-2.5" role="radiogroup">
+          {PRAYERS.map((p) => (
+            <PrayerCard key={p} on={prefs.prayer === p} latin={!ar} name={ar ? PRAYER_AR[p] : t(PRAYER_NAME_KEY[p])} sub={rkLabel(p)} total={rk(p)} full={p === "qiyam" ? (rk(p) ?? 0) : Math.min(2, rk(p) ?? 0)}
+              onClick={() => setPrefs({ prayer: p })} data={{ "data-salat-prayer": p }} />
+          ))}
         </div>
-        <p className="text-sm leading-relaxed text-neutral-400">{t("salatIntro")}</p>
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.85rem] sx-ink-soft" data-salat-dots-legend="">
+          <span className="inline-flex items-center gap-1.5"><RakahDots total={1} full={1} />{t("salatDotFull")}</span>
+          <span className="inline-flex items-center gap-1.5"><RakahDots total={1} full={0} />{t("salatDotFatiha")}</span>
+        </p>
+        {prefs.prayer === "qiyam" && (
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t("salatQiyamCount")}>
+            {QIYAM_OPTIONS.map((n) => (
+              <button key={String(n)} type="button" role="radio" aria-checked={prefs.qiyamCount === n} onClick={() => setPrefs({ qiyamCount: n })} data-salat-qiyam={n ?? "open"}
+                className={studioChoice(prefs.qiyamCount === n, "min-w-[3.25rem] rounded-full px-4")}>
+                {n == null ? t("salatOpen") : num(n)}
+              </button>
+            ))}
+          </div>
+        )}
+      </StudioCard>
 
-        <section className="space-y-2 rounded-2xl border border-neutral-800 p-4">
-          <label className="block text-sm text-neutral-300" htmlFor="salat-reciter">{ar ? "اختيار القارئ للتذكير الصوتي" : t("salatReciter")}</label>
-          <div className="flex gap-2">
-            <select id="salat-reciter" value={prefs.reciterId} onChange={(e) => setPrefs({ reciterId: e.target.value })} data-salat-reciter=""
-              className="min-w-0 flex-1 rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2.5 text-sm text-neutral-100">
-              {SALAT_RECITERS.map((r) => <option key={r.id} value={r.id}>{reciterName(r.id)}</option>)}
-            </select>
-            <button type="button" onClick={() => void preview()} data-salat-preview=""
-              className="flex shrink-0 items-center gap-1.5 rounded-xl border border-amber-700/50 px-3 text-sm text-amber-200/90 active:bg-neutral-900">
-              {previewing ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}{t("salatPreview")}
+      <StudioCard title={ar ? "مكان وضع الهاتف" : t("salatPlacement")} icon={<Smartphone className="h-4 w-4" />}>
+        <div className="grid grid-cols-2 gap-2.5" role="radiogroup">
+          {PLACEMENTS.map((pl) => (
+            <PlacementCard key={pl} kind={pl} on={prefs.placement === pl} label={t(PLACEMENT_KEY[pl])} onClick={() => setPrefs({ placement: pl })} data={{ "data-salat-placement": pl }} />
+          ))}
+        </div>
+        {prefs.placement !== "none" && <p className="text-[0.9rem] leading-relaxed sx-ink-soft" data-salat-calib-note="">{t("salatCalibrateNote")}</p>}
+      </StudioCard>
+
+      <StudioCard title={t("salatVoiceCard")} icon={<Volume2 className="h-4 w-4" />}>
+        <label className="block text-[0.98rem] font-semibold sx-ink" htmlFor="salat-reciter">{ar ? "اختيار القارئ للتذكير الصوتي" : t("salatReciter")}</label>
+        <div className="flex gap-2">
+          <select id="salat-reciter" value={prefs.reciterId} onChange={(e) => setPrefs({ reciterId: e.target.value })} data-salat-reciter=""
+            className="min-h-[52px] min-w-0 flex-1 rounded-2xl border-0 px-3 text-[0.98rem] font-semibold sx-chip sx-ink">
+            {SALAT_RECITERS.map((r) => <option key={r.id} value={r.id}>{reciterName(r.id)}</option>)}
+          </select>
+          <button type="button" onClick={() => void preview()} data-salat-preview="" className={studioChoice(previewing, "flex shrink-0 items-center gap-1.5")}>
+            {previewing ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current" />}{t("salatPreview")}
+          </button>
+        </div>
+        <StudioSlider id="salat-silence" label={t("salatSilence")} value={prefs.silenceMs} display={`${(prefs.silenceMs / 1000).toFixed(1)} s`}
+          min={SILENCE_RANGE_MS[0]} max={SILENCE_RANGE_MS[1]} step={500} onChange={(v) => setPrefs({ silenceMs: v })} data={{ "data-salat-silence": "" }} />
+        <p className="text-[0.98rem] font-semibold sx-ink">{t("salatPromptLength")}</p>
+        <div className="grid grid-cols-2 gap-2" role="radiogroup">
+          {(["words", "ayah"] as const).map((m) => (
+            <button key={m} type="button" role="radio" aria-checked={prefs.promptMode === m} onClick={() => setPrefs({ promptMode: m })} data-salat-mode={m} className={studioChoice(prefs.promptMode === m)}>
+              <span className="block font-arabic">{m === "words" ? "كلمات قليلة" : "آية كاملة"}</span>
+              {!ar && <span className="block text-xs font-medium opacity-75">{t(m === "words" ? "salatWords" : "salatAyah")}</span>}
             </button>
-          </div>
-        </section>
+          ))}
+        </div>
+        <StudioSlider id="salat-volume" label={<><Volume2 className="h-4 w-4" />{t("salatVolume")}</>} value={Math.round(prefs.volume * 100)} display={`${Math.round(prefs.volume * 100)} %`}
+          min={5} max={100} step={5} onChange={(v) => setPrefs({ volume: v / 100 })} data={{ "data-salat-volume": "" }} />
+      </StudioCard>
 
-        <section className="space-y-2 rounded-2xl border border-neutral-800 p-4">
-          <div className="flex items-baseline justify-between text-sm">
-            <label htmlFor="salat-silence" className="text-neutral-300">{t("salatSilence")}</label>
-            <span className="tabular-nums text-amber-200/90" dir="ltr">{(prefs.silenceMs / 1000).toFixed(1)} s</span>
-          </div>
-          <input id="salat-silence" type="range" min={SILENCE_RANGE_MS[0]} max={SILENCE_RANGE_MS[1]} step={500} value={prefs.silenceMs}
-            onChange={(e) => setPrefs({ silenceMs: Number(e.target.value) })} className="w-full accent-amber-500" data-salat-silence="" />
-        </section>
+      <ul className="space-y-1.5 px-1 text-[0.9rem] leading-relaxed sx-ink-soft">
+        <li>• {t("salatNoteFatiha")}</li>
+        <li>• {t("salatNoteTakbir")}</li>
+        <li>• {t("salatNotePrivacy")}</li>
+      </ul>
 
-        <section className="space-y-2 rounded-2xl border border-neutral-800 p-4">
-          <p className="text-sm text-neutral-300">{t("salatPromptLength")}</p>
-          <div className="grid grid-cols-2 gap-2" role="radiogroup">
-            {(["words", "ayah"] as const).map((m) => (
-              <button key={m} type="button" role="radio" aria-checked={prefs.promptMode === m} onClick={() => setPrefs({ promptMode: m })} data-salat-mode={m}
-                className={`rounded-xl border px-3 py-2.5 text-sm ${prefs.promptMode === m ? "border-amber-600/70 bg-amber-950/40 text-amber-100" : "border-neutral-800 text-neutral-400"}`}>
-                <span className="block font-arabic">{m === "words" ? "كلمات قليلة" : "آية كاملة"}</span>
-                {!ar && <span className="block text-xs opacity-70">{t(m === "words" ? "salatWords" : "salatAyah")}</span>}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="space-y-2 rounded-2xl border border-neutral-800 p-4">
-          <div className="flex items-baseline justify-between text-sm">
-            <label htmlFor="salat-volume" className="flex items-center gap-1.5 text-neutral-300"><Volume2 className="h-4 w-4" />{t("salatVolume")}</label>
-            <span className="tabular-nums text-amber-200/90" dir="ltr">{Math.round(prefs.volume * 100)} %</span>
-          </div>
-          <input id="salat-volume" type="range" min={5} max={100} step={5} value={Math.round(prefs.volume * 100)}
-            onChange={(e) => setPrefs({ volume: Number(e.target.value) / 100 })} className="w-full accent-amber-500" data-salat-volume="" />
-        </section>
-
-        {/* v43: which prayer, and where the phone is (motion sensors count the rakʿāt) */}
-        <section className="space-y-3 rounded-2xl border border-neutral-800 p-4" data-salat-prayer-setup="">
-          <p className="text-sm text-neutral-300">{ar ? "اختيار الصلاة" : t("salatPrayer")}</p>
-          <div className="grid grid-cols-3 gap-2" role="radiogroup">
-            {PRAYERS.map((p) => (
-              <button key={p} type="button" role="radio" aria-checked={prefs.prayer === p} onClick={() => setPrefs({ prayer: p })} data-salat-prayer={p}
-                className={`rounded-xl border px-2 py-2 text-sm ${prefs.prayer === p ? "border-amber-600/70 bg-amber-950/40 text-amber-100" : "border-neutral-800 text-neutral-400"}`}>
-                <span className="block font-arabic">{PRAYER_AR[p]}</span>
-                <span className="block text-[11px] opacity-70">{p === "qiyam" ? (prefs.qiyamCount ? num(prefs.qiyamCount) : t("salatOpen")) : ar && targetRakaat(p, null) === 2 ? "ركعتان" : t("salatRakaatN").replace("{n}", num(targetRakaat(p, null)!))}</span>
-              </button>
-            ))}
-          </div>
-          {prefs.prayer === "qiyam" && (
-            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t("salatQiyamCount")}>
-              {QIYAM_OPTIONS.map((n) => (
-                <button key={String(n)} type="button" role="radio" aria-checked={prefs.qiyamCount === n} onClick={() => setPrefs({ qiyamCount: n })} data-salat-qiyam={n ?? "open"}
-                  className={`rounded-full border px-3 py-1.5 text-sm ${prefs.qiyamCount === n ? "border-amber-600/70 bg-amber-950/40 text-amber-100" : "border-neutral-800 text-neutral-400"}`}>
-                  {n == null ? t("salatOpen") : num(n)}
-                </button>
-              ))}
-            </div>
-          )}
-          <p className="pt-1 text-sm text-neutral-300">{ar ? "مكان وضع الهاتف" : t("salatPlacement")}</p>
-          <div className="grid grid-cols-2 gap-2" role="radiogroup">
-            {PLACEMENTS.map((pl) => (
-              <button key={pl} type="button" role="radio" aria-checked={prefs.placement === pl} onClick={() => setPrefs({ placement: pl })} data-salat-placement={pl}
-                className={`rounded-xl border px-3 py-2 text-start text-sm ${prefs.placement === pl ? "border-amber-600/70 bg-amber-950/40 text-amber-100" : "border-neutral-800 text-neutral-400"}`}>
-                {t(PLACEMENT_KEY[pl])}
-              </button>
-            ))}
-          </div>
-          {prefs.placement !== "none" && <p className="text-xs leading-relaxed text-neutral-500" data-salat-calib-note="">{t("salatCalibrateNote")}</p>}
-        </section>
-
-        <ul className="space-y-1.5 text-xs leading-relaxed text-neutral-500">
-          <li>• {t("salatNoteFatiha")}</li>
-          <li>• {t("salatNoteTakbir")}</li>
-          <li>• {t("salatNotePrivacy")}</li>
-        </ul>
-
-        <button type="button" onClick={start} disabled={!mushaf} data-salat-start=""
-          className="mt-auto flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-amber-400 to-amber-600 py-4 text-lg font-semibold text-black disabled:opacity-40">
-          <Mic className="h-5 w-5" /><span className="font-arabic">ابدأ الصلاة</span>{!ar && <span className="text-base opacity-80">· {t("salatStart")}</span>}
-        </button>
-      </div>
-    </div>
+      <GlowStart onClick={start} disabled={!mushaf} data={{ "data-salat-start": "" }}>
+        <PrayingPersonIcon className="h-7 w-7 shrink-0" />{ar ? <span className="font-arabic">ابدأ رفيق الصلاة</span> : <span>{t("salatStartCompanion")}</span>}
+      </GlowStart>
+    </StudioShell>
   );
 }
 

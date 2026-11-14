@@ -32,7 +32,7 @@ export const MISTAKE_PAUSE_MS = 2000;
 /** Wrong words in a row that count as having slipped into another verse. */
 export const MISTAKE_RUN = 2;
 
-export type PhraseId = "fatihaEnd" | "ameen" | "takbir" | "samiAllah" | "tasbihRuku" | "tasbihSujud" | "basmala" | "hamdala";
+export type PhraseId = "fatihaEnd" | "ameen" | "takbir" | "samiAllah" | "tasbihRuku" | "tasbihSujud" | "tahiyyat" | "basmala" | "hamdala";
 /** Spoken phrases, per engine: Zipformer phonemes (as in quran_phonemes.json) and plain Arabic text. */
 export const PHRASES: Record<PhraseId, Record<LocatorKind, string>> = {
   fatihaEnd: { phonemes: "وَلَضضَااااااللِۦۦۦۦن", text: "ولا الضالين" },
@@ -41,11 +41,13 @@ export const PHRASES: Record<PhraseId, Record<LocatorKind, string>> = {
   samiAllah: { phonemes: "سَمِعَللَااهُلِمَنحَمِدَه", text: "سمع الله لمن حمده" },
   tasbihRuku: { phonemes: "سُبحَاانَرَببِيَلعَظِۦۦۦۦم", text: "سبحان ربي العظيم" },
   tasbihSujud: { phonemes: "سُبحَاانَرَببِيَلءَعلَاا", text: "سبحان ربي الاعلى" },
+  // v51: the tashahhud — heard while sitting, the Sheikh stays silent
+  tahiyyat: { phonemes: "ءَتتَحِييَااتُلِللَااه", text: "التحيات لله" },
   basmala: { phonemes: "بِسمِللَااهِررَحمَاانِررَحِۦۦۦۦم", text: "بسم الله الرحمن الرحيم" },
   hamdala: { phonemes: "ءَلحَمدُلِللَااهِرَببِلعَاالَمِۦۦۦۦن", text: "الحمد لله رب العالمين" },
 };
 /** Allowed edit cost per core character of a phrase (short phrases: at least 1). */
-const TOLERANCE: Record<PhraseId, number> = { fatihaEnd: 0.2, ameen: 0.15, takbir: 0.17, samiAllah: 0.2, tasbihRuku: 0.2, tasbihSujud: 0.2, basmala: 0.2, hamdala: 0.2 };
+const TOLERANCE: Record<PhraseId, number> = { fatihaEnd: 0.2, ameen: 0.15, takbir: 0.17, samiAllah: 0.2, tasbihRuku: 0.2, tasbihSujud: 0.2, tahiyyat: 0.22, basmala: 0.2, hamdala: 0.2 };
 
 export type PhraseHit = { id: PhraseId; start: number; end: number; cost: number };
 
@@ -201,7 +203,7 @@ export class SalatPrayerTracker {
         const begun = findPhrase(kind, transcript, ["hamdala", "fatihaEnd"], from);
         scanAt = begun ? Math.max(from, begun.end) : Number.POSITIVE_INFINITY;
       }
-      const hit = Number.isFinite(scanAt) ? findPhrase(kind, transcript, ["takbir", "samiAllah", "tasbihRuku", "tasbihSujud"], scanAt) : null;
+      const hit = Number.isFinite(scanAt) ? findPhrase(kind, transcript, ["takbir", "samiAllah", "tasbihRuku", "tasbihSujud", "tahiyyat"], scanAt) : null;
       if (hit && !(hit.id === "takbir" && this.akbarExpected(opts.tokens, opts.cursor))) {
         return [...this.enter("IN_RUKU_OR_SUJUD", now), { type: "rebase", pos: hit.end }];
       }

@@ -1,6 +1,10 @@
 import { useEffect, type ReactNode } from "react";
-import { KidsModePill } from "@/components/kids/KidsModePill";
-import { BookOpen, ChevronLeft, ChevronRight, Home, LayoutGrid, Mic, Search, Settings, Share2, Target, X } from "lucide-react";
+import { BellRing, BookOpen, BookOpenCheck, ChevronLeft, ChevronRight, Clock, Compass, Download, Headphones, Home, Library, Mic, Search, Settings, Share2, SunMoon, Target, Type, X } from "lucide-react";
+import { LargePrintToggle } from "@/components/LargePrintToggle";
+import { PrayingPersonIcon } from "@/components/icons/PrayingPersonIcon";
+import { updateSettings } from "@/lib/settings";
+import type { HubSection } from "@/components/IslamicHubView";
+import type { SettingsPage } from "@/components/SettingsModal";
 import { AppLogo, AppWordmark, GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import { TOTAL_PAGES } from "@/lib/mushafData";
 import { SURAH_META, toArabicDigits } from "@/lib/quranService";
@@ -16,9 +20,9 @@ export type AppTab = "home" | "mushaf" | "practice" | "khatma" | "hub";
 export function BurgerButton({ onClick, label }: { onClick: () => void; label: string }) {
   return (
     <button type="button" onClick={onClick} aria-label={label}
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-amber-200"
-      style={{ background: alpha("var(--mf-page-deep)", 0.85), boxShadow: `inset 0 0 0 1px ${alpha(GOLD_LIGHT, 0.5)}` }}>
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      className="flex h-[3.25rem] w-[3.25rem] shrink-0 items-center justify-center rounded-2xl text-[var(--sx-gold-soft)]"
+      style={{ background: "var(--sx-card)", boxShadow: `inset 0 0 0 1.5px var(--sx-card-top), var(--sx-card-shadow)` }}>
+      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
         <path d="M4 7h16M4 12h16M4 17h16" />
       </svg>
     </button>
@@ -40,7 +44,7 @@ export function SearchButton({ onClick, label }: { onClick: () => void; label: s
  * The app's side menu (burger), available on every screen: navigation, surah / juz / page selection
  * (opens the Mushaf there), settings and invite. `current` marks the screen that is open.
  */
-export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, onJuz, onNavigate, onSettings, onInvite, onSearch, onGoTo, current = "mushaf" }: {
+export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, onJuz, onNavigate, onSettings, onInvite, onSearch, onGoTo, onCompanion, onHub, onSettingsPage, profile, current = "mushaf" }: {
   current?: AppTab;
   open: boolean;
   onClose: () => void;
@@ -57,6 +61,11 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
   onSearch?: (() => void) | undefined;
   /** v33: the Mushaf's own «اذهب إلى» dialog (all surahs, search, recently read) instead of the pickers. */
   onGoTo?: (() => void) | undefined;
+  /** v51 flat menu: the companion, a hub section, a settings page, and the account row. */
+  onCompanion?: () => void;
+  onHub?: (s: HubSection) => void;
+  onSettingsPage?: (p: SettingsPage) => void;
+  profile?: ReactNode;
 }) {
   const { t, language } = useI18n();
   const num = (n: number) => (language === "ar" ? toArabicDigits(n) : String(n));
@@ -68,12 +77,34 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
   }, [open, onClose]);
   if (!open) return null;
 
-  const nav: { id: AppTab; label: CopyKey; icon: ReactNode }[] = [
-    { id: "home", label: "start", icon: <Home className="h-5 w-5" /> },
-    { id: "mushaf", label: "navMushaf", icon: <BookOpen className="h-5 w-5" /> },
-    { id: "practice", label: "navPractice", icon: <Mic className="h-5 w-5" /> },
-    { id: "khatma", label: "navKhatma", icon: <Target className="h-5 w-5" /> },
-    { id: "hub", label: "navHub", icon: <LayoutGrid className="h-5 w-5" /> },
+  const ic = "h-7 w-7";
+  type Row = { key: string; icon: ReactNode; title: CopyKey; sub: CopyKey; on: () => void; current?: boolean };
+  const main: Row[] = [
+    { key: "home", icon: <Home className={ic} />, title: "start", sub: "menuHomeSub", on: () => onNavigate("home"), current: current === "home" },
+    { key: "mushaf", icon: <BookOpen className={ic} />, title: "navMushaf", sub: "menuMushafSub", on: () => onNavigate("mushaf"), current: current === "mushaf" },
+    { key: "practice", icon: <Mic className={ic} />, title: "navPractice", sub: "menuReciteSub", on: () => onNavigate("practice"), current: current === "practice" },
+    { key: "companion", icon: <PrayingPersonIcon className={ic} />, title: "navCompanion", sub: "menuCompanionSub", on: onCompanion ?? (() => window.dispatchEvent(new CustomEvent("qm:open-companion"))) },
+    { key: "khatma", icon: <Target className={ic} />, title: "navKhatma", sub: "menuKhatmaSub", on: () => onNavigate("khatma"), current: current === "khatma" },
+  ];
+  const hub = (id: HubSection) => () => { if (onHub) onHub(id); else window.dispatchEvent(new CustomEvent("qm:open-hub", { detail: id })); };
+  const more: Row[] = [
+    { key: "stories", icon: <BookOpenCheck className={ic} />, title: "homeStoriesTitle", sub: "homeStoriesSub", on: hub("stories") },
+    { key: "tajweed", icon: <BookOpenCheck className={ic} />, title: "homeTajweedTitle", sub: "homeTajweedSub", on: hub("tajweed") },
+    { key: "prayer", icon: <Clock className={ic} />, title: "hubPrayer", sub: "hubPrayerSub", on: hub("prayer") },
+    { key: "qibla", icon: <Compass className={ic} />, title: "navQibla", sub: "hubQiblaSub", on: hub("qibla") },
+    { key: "adhkar", icon: <SunMoon className={ic} />, title: "hubAdhkar", sub: "hubAdhkarSub", on: hub("adhkar") },
+    { key: "hadith", icon: <Library className={ic} />, title: "hubHadith", sub: "hubHadithSub", on: hub("hadith") },
+    { key: "reciters", icon: <Headphones className={ic} />, title: "hubReciters", sub: "hubRecitersSub", on: hub("reciters") },
+    { key: "recordings", icon: <Mic className={ic} />, title: "hubRecordings", sub: "hubRecordingsSub", on: hub("recordings") },
+  ];
+  const page2 = (p: SettingsPage) => () => { if (onSettingsPage) onSettingsPage(p); else window.dispatchEvent(new CustomEvent("qm:open-settings", { detail: p })); };
+  const settingsRows: Row[] = [
+    ...(onSearch ? [{ key: "search", icon: <Search className={ic} />, title: "searchTitle" as CopyKey, sub: "menuSearchSub" as CopyKey, on: onSearch }] : []),
+    { key: "typo", icon: <Type className={ic} />, title: "setTypography", sub: "menuTypoSub", on: page2("typography") },
+    { key: "adhan", icon: <BellRing className={ic} />, title: "menuAdhanTitle", sub: "menuAdhanSub", on: page2("reminders") },
+    { key: "downloads", icon: <Download className={ic} />, title: "menuDownloadsTitle", sub: "menuDownloadsSub", on: page2("offline") },
+    { key: "settings", icon: <Settings className={ic} />, title: "settingsTitle", sub: "menuSettingsSub", on: onSettings },
+    { key: "invite", icon: <Share2 className={ic} />, title: "inviteTitle", sub: "menuInviteSub", on: onInvite },
   ];
   const go = (fn: () => void) => () => { fn(); onClose(); };
 
@@ -81,7 +112,7 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
     <div className="fixed inset-0 z-50" dir={directionFor(language)} lang={language}>
       <button type="button" aria-label={t("close")} onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-[2px] animate-in fade-in" />
       <aside role="dialog" aria-modal="true" aria-label={t("menu")}
-        className="absolute inset-y-0 start-0 flex w-[82%] max-w-xs flex-col overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] shadow-2xl animate-in fade-in slide-in-from-right-4 duration-200"
+        className="absolute inset-y-0 start-0 flex w-[86%] max-w-sm flex-col overflow-y-auto [&>*]:shrink-0 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] shadow-2xl animate-in fade-in slide-in-from-right-4 duration-200"
         style={{ background: "linear-gradient(180deg, var(--hq-emerald), var(--hq-emerald-deep))", boxShadow: `inset -1px 0 0 ${alpha(GOLD, 0.6)}` }}>
         <div className="flex items-center gap-3">
           <AppLogo className="h-11 w-11" />
@@ -89,25 +120,28 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
           <button type="button" onClick={onClose} aria-label={t("close")} className="flex h-9 w-9 items-center justify-center rounded-full text-amber-200 hover:bg-white/10"><X className="h-5 w-5" /></button>
         </div>
 
-        {/* v46: «وضع الأطفال» always at the top of the menu */}
-        <KidsModePill wide className="mt-4" />
+        {profile && <div className="mt-3">{profile}</div>}
 
-        <nav className="mt-4 space-y-1">
-          {nav.map((n) => (
-            <button key={n.id} type="button" onClick={go(() => onNavigate(n.id))} aria-current={n.id === current ? "page" : undefined}
-              className={cn("flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-start text-sm transition", n.id === current ? "bg-amber-300/15 text-amber-100" : "text-emerald-50 hover:bg-white/5")}>
-              <span style={{ color: GOLD_LIGHT }}>{n.icon}</span>{t(n.label)}
-            </button>
-          ))}
-        </nav>
+        {/* v51: large print — the first thing in the menu */}
+        <LargePrintToggle className="mt-4" />
+
+        {/* v51: Kids Mode lives here (not in the header), as a clearly labelled card */}
+        <button type="button" onClick={go(() => void updateSettings({ kidsMode: true }))} data-menu-kids=""
+          className="mt-3 flex min-h-[3.5rem] w-full items-center gap-3 rounded-2xl px-4 py-3 text-start text-[#2a1b00]"
+          style={{ background: "linear-gradient(135deg,#fde68a,#fbbf24)", boxShadow: "inset 0 0 0 2px #d97706" }}>
+          <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/70 text-2xl">🧒</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-base font-extrabold leading-snug">{t("kidsSwitchTitle")}</span>
+            <span className="block text-sm leading-snug">{t("kidsSwitchSub")}</span>
+          </span>
+          <span aria-hidden="true" className="text-xl">⭐</span>
+        </button>
+
+        <MenuGroup title={t("menuGroupMain")} rows={main} go={go} t={t} />
+        <MenuGroup title={t("menuGroupMore")} rows={more} go={go} t={t} />
+        <MenuGroup title={t("menuGroupSettings")} rows={settingsRows} go={go} t={t} />
 
         <div className="my-4 h-px" style={{ background: alpha(GOLD, 0.4) }} />
-
-        {onSearch && (
-          <button type="button" onClick={go(onSearch)} className="mb-3 flex w-full items-center gap-3 rounded-xl border border-amber-400/40 px-3 py-2.5 text-start text-sm text-emerald-50 hover:bg-white/5">
-            <Search className="h-5 w-5" style={{ color: GOLD_LIGHT }} />{t("searchTitle")}
-          </button>
-        )}
         {onGoTo && (
           <button type="button" onClick={go(onGoTo)} data-menu-goto="" className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-emerald-950" style={{ background: GOLD_GRADIENT }}>
             <BookOpen className="h-5 w-5" />{t("goTo")}
@@ -140,14 +174,31 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
 
         <div className="my-4 h-px" style={{ background: alpha(GOLD, 0.4) }} />
         <LanguageSelector variant="row" />
-        <button type="button" onClick={go(onSettings)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-emerald-50 hover:bg-white/5">
-          <Settings className="h-5 w-5" style={{ color: GOLD_LIGHT }} />{t("settingsTitle")}
-        </button>
-        <button type="button" onClick={go(onInvite)} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-emerald-950" style={{ background: GOLD_GRADIENT }}>
-          <Share2 className="h-4 w-4" />{t("inviteTitle")}
-        </button>
       </aside>
     </div>
+  );
+}
+
+/** v51: a flat group of large, self-explaining rows (icon ≥ 28 px, title, one-line help, ≥ 52 px tall). */
+function MenuGroup({ title, rows, go, t }: { title: string; rows: { key: string; icon: ReactNode; title: CopyKey; sub: CopyKey; on: () => void; current?: boolean }[]; go: (fn: () => void) => () => void; t: (k: CopyKey) => string }) {
+  return (
+    <section className="mt-5">
+      <h2 className="mb-2 px-1 text-sm font-bold" style={{ color: GOLD_LIGHT }}>{title}</h2>
+      <ul className="space-y-1.5">
+        {rows.map((r) => (
+          <li key={r.key}>
+            <button type="button" onClick={go(r.on)} aria-current={r.current ? "page" : undefined} data-menu-row={r.key}
+              className={cn("flex min-h-[3.25rem] w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-start transition", r.current ? "bg-amber-300/20" : "hover:bg-white/5")}>
+              <span className="shrink-0" style={{ color: GOLD_LIGHT }}>{r.icon}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-base font-bold leading-snug text-[#fbf7ea]">{t(r.title)}</span>
+                <span className="block text-sm leading-snug text-[#dfeee6]">{t(r.sub)}</span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

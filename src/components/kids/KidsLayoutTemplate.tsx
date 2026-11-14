@@ -4,6 +4,7 @@
  * big buttons. Only four destinations: home, Kids Mushaf, tafsir & stories, star journey. No burger menu,
  * no account menu, no search; the gear opens the child-locked «إعدادات الأطفال».
  */
+import { KidsMeadow } from "@/components/kids/KidsArt";
 import type { ReactNode } from "react";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -43,9 +44,10 @@ export function KidsLayoutTemplate({ tab, onTab, onSettings, children }: { tab: 
   const { t, language } = useI18n();
   const ar = language === "ar";
   return (
-    <div className="kd-root relative flex min-h-screen flex-col" data-kids-layout={tab}>
+    <div className="kd-root kd-lush relative isolate flex min-h-screen flex-col" data-kids-layout={tab}>
+      <KidsMeadow />
       <header className="relative overflow-hidden px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))]"
-        style={{ background: "linear-gradient(180deg, var(--kd-sky-2), var(--kd-sky))" }}>
+        style={{ background: "linear-gradient(180deg, var(--kd-sky-2), transparent)" }}>
         <KidsSkyMotif />
         <div className="relative flex items-center gap-3">
           <AppLogo className="h-12 w-12 shrink-0 rounded-2xl" />
@@ -59,7 +61,7 @@ export function KidsLayoutTemplate({ tab, onTab, onSettings, children }: { tab: 
       </header>
       <main key={tab} className="relative flex-1 px-4 pb-32 pt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">{children}</main>
       <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2" data-bottom-nav="kids">
-        <div className="kd-card grid grid-cols-5 gap-0.5 !rounded-[28px] p-1.5">
+        <div className="kd-card kd-3d grid grid-cols-5 gap-0.5 !rounded-[28px] p-1.5">
           {NAV.map((n) => {
             const on = tab === n.id;
             return (

@@ -104,7 +104,7 @@
   --secondary: oklch(0.26 0.035 165);
   --secondary-foreground: oklch(0.96 0.005 160);
   --muted: oklch(0.25 0.03 165);
-  --muted-foreground: oklch(0.72 0.02 160);
+  --muted-foreground: oklch(0.8 0.02 160); /* v51: AAA ≥ 7:1 on background and cards */
   --accent: oklch(0.78 0.13 85);
   --accent-foreground: oklch(0.18 0.02 165);
   --destructive: oklch(0.64 0.21 25);
@@ -148,7 +148,7 @@ html[data-theme="dark"] {
   --secondary: oklch(0.24 0.005 160);
   --secondary-foreground: oklch(0.95 0.005 90);
   --muted: oklch(0.24 0.005 160);
-  --muted-foreground: oklch(0.7 0.01 90);
+  --muted-foreground: oklch(0.8 0.01 90); /* v51 AAA */
   --border: oklch(0.32 0.005 160);
   --input: oklch(0.32 0.005 160);
   --gradient-hero: radial-gradient(120% 90% at 50% 0%, oklch(0.25 0.01 160) 0%, oklch(0.15 0.004 160) 70%);
@@ -179,7 +179,7 @@ html[data-kids="on"] {
   --secondary: oklch(0.93 0.015 85);
   --secondary-foreground: oklch(0.25 0.03 160);
   --muted: oklch(0.93 0.015 85);
-  --muted-foreground: oklch(0.45 0.03 160);
+  --muted-foreground: oklch(0.38 0.03 160); /* v51 AAA */
   --accent: oklch(0.62 0.13 70);
   --accent-foreground: oklch(0.99 0 0);
   --success: oklch(0.52 0.14 155);
@@ -468,6 +468,17 @@ html[data-kids="on"][data-kids-theme="night"] {
   --mf-ink: #fdf6e3; --kd-cloud: 0.16;
 }
 .kd-root { background: var(--kd-sky); color: var(--kd-ink); }
+/* v52 lush storybook: layered sky → horizon glow → meadow, 3D cards, sparkles */
+html[data-kids="on"] { --kd-horizon: #fff6d8; --kd-hill-1: #c8f5d6; --kd-hill-2: #93e6ad; --kd-hill-3: #5bd18a; }
+html[data-kids="on"][data-kids-theme="garden"] { --kd-horizon: #fffbe6; --kd-hill-1: #bdf0cf; --kd-hill-2: #7fdba0; --kd-hill-3: #3fbf74; }
+html[data-kids="on"][data-kids-theme="night"] { --kd-horizon: #3a3f86; --kd-hill-1: #2a3a6a; --kd-hill-2: #22325c; --kd-hill-3: #1a284d; }
+.kd-root.kd-lush { background: linear-gradient(180deg, var(--kd-sky-2) 0%, var(--kd-sky) 38%, var(--kd-horizon) 78%, var(--kd-hill-1) 100%); background-attachment: fixed; }
+.kd-3d { box-shadow: 0 8px 0 rgba(0, 0, 0, 0.08), 0 18px 30px -18px rgba(30, 58, 95, 0.55); }
+@keyframes kd-twinkle { 0%, 100% { opacity: 0.25; transform: scale(0.7) rotate(0deg); } 50% { opacity: 1; transform: scale(1.15) rotate(20deg); } }
+.kd-twinkle { animation: kd-twinkle 2.6s ease-in-out infinite; text-shadow: 0 0 8px rgba(255, 255, 255, 0.9); }
+@keyframes kd-shine { 0% { filter: brightness(1); } 50% { filter: brightness(1.15); } 100% { filter: brightness(1); } }
+.kd-shine { animation: kd-shine 2.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .kd-twinkle, .kd-shine { animation: none !important; } }
 .kd-card {
   background: var(--kd-cream); color: var(--kd-ink); border-radius: 28px;
   border: 2px solid var(--kd-edge); border-bottom: 5px solid var(--kd-edge); box-shadow: var(--kd-card-shadow);
@@ -492,3 +503,71 @@ html[data-kids="on"][data-kids-theme="night"] {
 .kd-float { animation: kd-float 4s ease-in-out infinite; }
 .kd-pop { animation: kd-pop .45s cubic-bezier(.2,.9,.3,1.3) both; }
 @media (prefers-reduced-motion: reduce) { .kd-bounce, .kd-float, .kd-pop, .kids-star { animation: none !important; } }
+
+/* ───────────── v52 «Warm Sanctuary» design system ─────────────
+   Light: warm ivory canvas, white elevated cards, deep emerald + brushed gold.
+   Emerald (dark): velvety midnight-emerald gradient, frosted glass cards with a luminous gold top edge. */
+:root {
+  --sx-canvas: linear-gradient(180deg, #071f18 0%, #0d2e24 100%);
+  --sx-card: rgba(255, 255, 255, 0.06);
+  --sx-card-border: rgba(255, 255, 255, 0.08);
+  --sx-card-top: rgba(212, 175, 55, 0.25);
+  --sx-card-shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.65);
+  --sx-ink: #fbf6e9;
+  --sx-ink-soft: #d7e6dd;
+  --sx-primary: #2fbf8a;
+  --sx-gold: #d4af37;
+  --sx-gold-soft: #f3d27a;
+  --sx-chip: rgba(255, 255, 255, 0.08);
+  --sx-watermark: #d4af37;
+  --sx-nav: rgba(7, 31, 24, 0.94);
+  --sx-header: rgba(7, 31, 24, 0.9);
+  --sx-sheet: #0b2a21;
+  --sx-sheet-top: linear-gradient(180deg, #0f3a2d, #0b2a21);
+}
+html[data-theme="light"] {
+  --sx-canvas: linear-gradient(180deg, #faf7f2 0%, #f6f0e4 100%);
+  --sx-card: #ffffff;
+  --sx-card-border: rgba(15, 81, 50, 0.08);
+  --sx-card-top: rgba(212, 175, 55, 0.35);
+  --sx-card-shadow: 0 10px 30px -10px rgba(16, 48, 38, 0.12);
+  --sx-ink: #12261e;
+  --sx-ink-soft: #3d5248;
+  --sx-primary: #0f5132;
+  --sx-gold: #b8901f;
+  --sx-gold-soft: #8a6a12;
+  --sx-chip: rgba(15, 81, 50, 0.07);
+  --sx-watermark: #0f5132;
+  --sx-nav: rgba(255, 255, 255, 0.95);
+  --sx-header: rgba(250, 247, 242, 0.92);
+  --sx-sheet: #faf7f2;
+  --sx-sheet-top: linear-gradient(180deg, #ffffff, #f6f0e4);
+  --gradient-hero: linear-gradient(180deg, #faf7f2 0%, #f6f0e4 100%);
+}
+html:not([data-theme]) { --gradient-hero: linear-gradient(180deg, #071f18 0%, #0d2e24 60%, #0b291f 100%); }
+.sx-card {
+  background: var(--sx-card);
+  border: 1px solid var(--sx-card-border);
+  border-top-color: var(--sx-card-top);
+  box-shadow: var(--sx-card-shadow);
+  border-radius: 24px;
+  color: var(--sx-ink);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.sx-ink { color: var(--sx-ink); }
+.sx-ink-soft { color: var(--sx-ink-soft); }
+.sx-chip { background: var(--sx-chip); color: var(--sx-ink); }
+.sx-press { transition: transform 0.15s ease, box-shadow 0.2s ease; }
+.sx-press:active { transform: scale(0.98); }
+@keyframes sx-pulse { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(1.06, 1.4); opacity: 0; } }
+.sx-pulse::before, .sx-pulse::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; background: inherit;
+  animation: sx-pulse 2.2s ease-out infinite; z-index: -1;
+}
+.sx-pulse::after { animation-delay: 1.1s; }
+@media (prefers-reduced-motion: reduce) { .sx-pulse::before, .sx-pulse::after { animation: none; display: none; } }
+
+/* v52 studio range: big round gold thumb (≥ 28 px) */
+.sx-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 28px; height: 28px; border-radius: 9999px; background: #fffaf0; border: 3px solid #d4af37; box-shadow: 0 4px 12px -4px rgba(0,0,0,.45); }
+.sx-range::-moz-range-thumb { width: 26px; height: 26px; border-radius: 9999px; background: #fffaf0; border: 3px solid #d4af37; }

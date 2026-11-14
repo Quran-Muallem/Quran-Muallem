@@ -1,4 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { stepAppFontScale } from "@/lib/settings";
+import { chooseLanguage } from "@/components/LanguageSelector";
+import type { SettingsPage } from "@/components/SettingsModal";
+import { AppLogo } from "@/components/ornaments";
 import { PrayingPersonIcon } from "@/components/icons/PrayingPersonIcon";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BookOpen, BookOpenText, Headphones, Home, Star, LayoutGrid, Loader2, PenLine, Mic, Lightbulb, RotateCcw, Search, Settings, Sparkles, Square, Target, Pause, Play } from "lucide-react";
@@ -137,7 +141,10 @@ export function App() {
       jumpRef.current?.({ surahId: d.surah, focus: d.ayah }); setTab("mushaf"); window.scrollTo({ top: 0 });
     };
     window.addEventListener("qm:open-ayah", open);
-    return () => window.removeEventListener("qm:open-ayah", open);
+    // v51: home cards open a tab directly
+    const goTab = (e: Event) => { const d = (e as CustomEvent).detail as Tab; setTab(d); window.scrollTo({ top: 0 }); };
+    window.addEventListener("qm:go", goTab);
+    return () => { window.removeEventListener("qm:open-ayah", open); window.removeEventListener("qm:go", goTab); };
   }, [goKids]);
   useEffect(() => {
     const open = (e: Event) => { const d = (e as CustomEvent).detail; setCompanion(d === "handsfree" || d === "salat" ? d : lastCompanionTab()); };
@@ -153,6 +160,12 @@ export function App() {
   // Welcome screen: on every start, and again right after signing in.
   const [splash, setSplash] = useState<{ reason: "start" | "login"; name?: string | null } | null>({ reason: "start" });
   const [settingsOpen, setSettingsOpen] = useState<"manual" | null>(null);
+  const [settingsPage, setSettingsPage] = useState<SettingsPage | null>(null);
+  useEffect(() => {
+    const onOpen = (e: Event) => { setSettingsPage(((e as CustomEvent).detail as SettingsPage) ?? null); setSettingsOpen("manual"); };
+    window.addEventListener("qm:open-settings", onOpen);
+    return () => window.removeEventListener("qm:open-settings", onOpen);
+  }, []);
   const [inviteOpen, setInviteOpen] = useState(false);
   // Badges overview; `surah` opens that badge's details first.
   const [badgesOpen, setBadgesOpen] = useState<{ surah: number | null } | null>(null);
@@ -201,7 +214,7 @@ export function App() {
     window.addEventListener("qm:open-hub", hub);
     return () => { window.removeEventListener("qm:open-mushaf", mushafTab); window.removeEventListener("qm:open-surah", surah); window.removeEventListener("qm:open-hub", hub); };
   }, [switchTab]);
-  const go = useCallback((t: Tab) => { if (t === "hub") setHubSection(null); switchTab(t); window.scrollTo({ top: 0 }); }, [switchTab]);
+  const go = useCallback((t: Tab) => { setCompanion(null); if (t === "hub") setHubSection(null); switchTab(t); window.scrollTo({ top: 0 }); }, [switchTab]);
   const jump = useCallback((target: { surahId: number; focus?: number | undefined; mark?: string[] | undefined; mode?: PracticeMode | undefined }) => {
     // An explicit target wins over the last recited passage.
     synced.current = Math.max(synced.current, recitationStore.activeRange.get()?.at ?? 0);
@@ -251,13 +264,15 @@ export function App() {
         ) : (
         <div className="mx-auto flex min-h-screen max-w-md flex-col bg-hero">
           {/* Global header on every screen (the full-screen Mushaf has the same burger in its own top row) */}
-          <div className={cn("sticky top-0 z-30 -mb-1 flex items-center gap-2 bg-gradient-to-b from-[var(--hq-emerald-deep)] via-[var(--hq-emerald-deep)]/90 to-transparent px-5 pb-2 pt-[max(1rem,env(safe-area-inset-top))]", tab === "mushaf" && "hidden")}>
-            <BurgerButton onClick={() => setMenuOpen(true)} label={translate(language, "menu")} />
-            {auth.status === "signedIn" ? <AccountMenu session={auth.session} onRename={() => setRenameOpen(true)} /> : <span />}
-            <span className="flex-1" />
-            <TopButton onClick={() => setSearchOpen(true)} label={translate(language, "searchTitle")}><Search className="h-4 w-4" /></TopButton>
-            <TopButton onClick={() => setSettingsOpen("manual")} label={translate(language, "settingsTitle")}><Settings className="h-4 w-4" /></TopButton>
-            <LanguageSelector />
+          {/* v51 clean header: menu · app name · text size (A− / A+); on the home screen also the language switch */}
+          <div className={cn("sticky top-0 z-30 -mb-1 bg-[var(--sx-header)] backdrop-blur-xl shadow-[0_10px_24px_-18px_rgba(16,48,38,.5)] px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]", tab === "mushaf" && "hidden")} data-app-header="">
+            <div className="flex items-center gap-2.5">
+              <BurgerButton onClick={() => setMenuOpen(true)} label={translate(language, "menu")} />
+              <AppLogo className="h-10 w-10 shrink-0" />
+              <span className={cn("min-w-0 flex-1 truncate font-bold leading-tight text-[var(--sx-gold-soft)]", language === "ar" ? "font-arabic text-xl" : "text-lg")}>{language === "ar" ? "معلم القرآن" : "Quran Muallem"}</span>
+              <TextSizeButtons />
+            </div>
+            {tab === "home" && <LanguageQuickSwitch />}
           </div>
           <main key={tab} className={cn("flex-1 pb-28 animate-in fade-in slide-in-from-bottom-2 duration-300", tab === "mushaf" ? "px-1.5 pb-0 pt-[max(0.5rem,env(safe-area-inset-top))]" : "px-5 pt-5")}>
             {tab === "home" && settings.kidsMode && <KidsHome userName={auth.session?.provider === "guest" ? null : auth.session?.name || null} />}
@@ -271,10 +286,11 @@ export function App() {
             {tab === "hub" && <IslamicHubView section={hubSection} onSection={(s) => { if (s === "salat") openCompanion("salat"); else setHubSection(s); }} onRetest={open} />}
           </main>
           {/* Full-screen Mushaf: the tab bar is replaced by the burger menu */}
-          {tab !== "mushaf" && <BottomNav tab={tab} setTab={go} hubSection={hubSection} kids={settings.kidsMode} />}
+          {(tab !== "mushaf" || companion) && <BottomNav tab={companion ? null : tab} setTab={go} hubSection={hubSection} kids={settings.kidsMode} />}
           {companion && <CompanionView tab={companion} onTab={setCompanion} onClose={() => setCompanion(null)} />}
           {tab !== "mushaf" && (
             <MushafMenu open={menuOpen} onClose={() => setMenuOpen(false)} current={tab} page={1} surah={mushaf.surahId} juz={1}
+              profile={auth.status === "signedIn" ? <AccountMenu session={auth.session} onRename={() => setRenameOpen(true)} /> : undefined}
               onPage={openPage} onSurah={(s2) => { jump({ surahId: s2, focus: 1 }); go("mushaf"); }}
               onJuz={(j) => { void loadMushaf().then((m) => openPage(m.juzStartPage(j))).catch(() => {}); }}
               onNavigate={go} onSettings={() => setSettingsOpen("manual")} onInvite={() => setInviteOpen(true)} onSearch={() => setSearchOpen(true)} />
@@ -297,9 +313,37 @@ export function App() {
         {/* v47: in Kids Mode the full settings are replaced by the child-locked «إعدادات الأطفال» */}
         {settings.kidsMode
           ? <KidsSettingsView open={settingsOpen !== null} onClose={() => setSettingsOpen(null)} />
-          : <SettingsModal open={settingsOpen !== null} onOpenChange={(o) => { if (!o) setSettingsOpen(null); }} />}
+          : <SettingsModal open={settingsOpen !== null} initialPage={settingsPage} onOpenChange={(o) => { if (!o) { setSettingsOpen(null); setSettingsPage(null); } }} />}
       </div>
     </KidsModeProvider></BadgeProvider></RecitationProvider></LanguageContext.Provider>
+  );
+}
+
+/** v51: «A− / A+» — one step smaller / larger for the whole app. */
+function TextSizeButtons() {
+  const { t } = useI18n();
+  const cls = "flex h-[3.25rem] min-w-[3.25rem] items-center justify-center rounded-2xl border-2 border-[color:var(--sx-card-top)] bg-[var(--sx-card)] px-2 font-serif font-black text-[var(--sx-gold-soft)] shadow-[var(--sx-card-shadow)] active:scale-95";
+  return (
+    <div className="flex shrink-0 gap-1.5" dir="ltr" data-text-size="">
+      <button type="button" onClick={() => stepAppFontScale(-1)} aria-label={t("textSmaller")} className={cn(cls, "text-base")}>A−</button>
+      <button type="button" onClick={() => stepAppFontScale(1)} aria-label={t("textLarger")} className={cn(cls, "text-xl")}>A+</button>
+    </div>
+  );
+}
+
+/** v51: language quick switch on the home screen — العربية · DE · EN · FR (others in the menu). */
+function LanguageQuickSwitch() {
+  const { language } = useI18n();
+  const opts: { id: Language; label: string }[] = [{ id: "ar", label: "العربية" }, { id: "de", label: "DE" }, { id: "en", label: "EN" }, { id: "fr", label: "FR" }];
+  return (
+    <div role="radiogroup" aria-label="Language" className="mt-2 grid grid-cols-4 gap-1.5" data-lang-quick="">
+      {opts.map((o) => (
+        <button key={o.id} type="button" role="radio" aria-checked={language === o.id} onClick={() => void chooseLanguage(o.id)} data-lang={o.id}
+          className={cn("h-[3.25rem] rounded-2xl text-base font-extrabold transition", o.id === "ar" && "font-arabic text-lg", language === o.id ? "bg-[linear-gradient(135deg,#f3d27a,#d4af37)] text-[#1b1300] shadow-[0_6px_16px_-8px_rgba(212,175,55,.9)]" : "border-2 border-[color:var(--sx-card-border)] bg-[var(--sx-card)] text-[var(--sx-ink)]")}>
+          {o.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -338,48 +382,35 @@ function AccountMenu({ session, onRename }: { session: UserSession; onRename: ()
 /** v46: opens «رفيق الصلاة والمراجعة» at the given tab (handled by the App). */
 export const openCompanion = (tab?: CompanionTab) => window.dispatchEvent(new CustomEvent("qm:open-companion", { detail: tab }));
 
-function BottomNav({ tab, setTab, hubSection, kids }: { tab: Tab; setTab: (t: Tab) => void; hubSection: HubSection | null; kids: boolean }) {
-  const { t } = useI18n();
-  const btn = (key: string, active: boolean, onClick: () => void, Icon: typeof Home, label: string) => (
-    <button type="button" key={key} onClick={onClick} aria-current={active ? "page" : undefined} data-nav={key}
-      className={cn("flex min-w-0 flex-col items-center gap-0.5 rounded-xl py-1.5 text-[0.66rem] leading-tight transition-colors",
-        active ? "text-accent" : "text-muted-foreground hover:text-foreground", kids && "text-[0.78rem] font-semibold")}>
-      <Icon className={kids ? "h-6 w-6" : "h-5 w-5"} />
-      <span className="max-w-full truncate">{label}</span>
-    </button>
-  );
-  const shell = "fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t border-border bg-card/95 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1.5 backdrop-blur";
-  if (kids) {
-    // Kids Mode: only the children's destinations.
-    const kidsHub = (s: HubSection) => () => { openKidsSectionNav(s as "kidsTafsir" | "kidsJourney"); };
+function BottomNav({ tab, setTab, hubSection, kids }: { tab: Tab | null; setTab: (t: Tab) => void; hubSection: HubSection | null; kids: boolean }) {
+  const { t, language } = useI18n();
+  void hubSection; void kids; // v47: Kids Mode has its own layout and navigation
+  // v51: only four large, self-explaining tabs (icon ≥ 28 px + bold label ≥ 14 px, ≥ 52 px tall);
+  // Khatma, the Islamic sections, settings, downloads and Kids Mode live in the flat menu.
+  const label = cn("max-w-full truncate font-bold leading-tight", language === "ar" ? "font-arabic text-[0.95rem]" : "text-[0.875rem]");
+  const btn = (key: Tab, Icon: typeof Home, text: string) => {
+    const active = tab === key;
     return (
-      <nav className={shell} data-bottom-nav="kids">
-        <div className="grid grid-cols-4">
-          {btn("home", tab === "home", () => setTab("home"), Home, t("start"))}
-          {btn("mushaf", tab === "mushaf", openKidsMushafNav, BookOpen, t("navMushaf"))}
-          {btn("kidsTafsir", tab === "hub" && hubSection === "kidsTafsir", kidsHub("kidsTafsir"), BookOpenText, t("kidsNavTafsir"))}
-          {btn("kidsJourney", tab === "hub" && hubSection === "kidsJourney", kidsHub("kidsJourney"), Star, t("kidsNavJourney"))}
-        </div>
-      </nav>
+      <button type="button" key={key} onClick={() => setTab(key)} aria-current={active ? "page" : undefined} data-nav={key}
+        className={cn("flex min-h-[3.75rem] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1.5 transition-colors", active ? "bg-[var(--sx-chip)] text-[var(--sx-primary)] [html:not([data-theme])_&]:text-[#f6d36b] [html[data-theme=dark]_&]:text-[#f6d36b]" : "text-[var(--sx-ink-soft)]")}>
+        <Icon className="h-7 w-7" strokeWidth={active ? 2.4 : 2} />
+        <span className={label}>{text}</span>
+      </button>
     );
-  }
+  };
   return (
-    <nav className={shell} data-bottom-nav="main">
-      <div className="grid grid-cols-6">
-        {btn("home", tab === "home", () => setTab("home"), Home, t("start"))}
-        {btn("mushaf", tab === "mushaf", () => setTab("mushaf"), BookOpen, t("navMushaf"))}
-        {btn("practice", tab === "practice", () => setTab("practice"), Mic, t("navPractice"))}
-        {/* v46: the AI companions — highlighted, right next to التسميع */}
+    <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t border-[color:var(--sx-card-top)] bg-[var(--sx-nav)] shadow-[0_-10px_30px_-12px_rgba(16,48,38,.18)] backdrop-blur-xl px-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-1.5" data-bottom-nav="main">
+      <div className="grid grid-cols-4 gap-1.5">
+        {btn("home", Home, t("start"))}
+        {btn("mushaf", BookOpen, t("navMushaf"))}
+        {btn("practice", Mic, t("navPractice"))}
+        {/* «المرافق»: opens the companion (رفيق الصلاة / المراجعة الحرة) */}
         <button type="button" onClick={() => openCompanion()} data-nav="companion" aria-label={t("companionTitle")}
-          className="flex min-w-0 flex-col items-center gap-0.5 rounded-xl text-[0.66rem] font-semibold leading-tight text-accent">
-          <span className="-mt-5 flex h-12 w-12 items-center justify-center rounded-full text-[#062b22] shadow-lg ring-4 ring-[var(--card)]"
-            style={{ background: GOLD_GRADIENT, boxShadow: "0 0 18px rgba(243,210,122,.55)" }}>
-            <PrayingPersonIcon className="h-9 w-9" />
-          </span>
-          <span className="max-w-full truncate">{t("navCompanion")}</span>
+          className="flex min-h-[3.75rem] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1.5 text-[#1b1300]"
+          style={{ background: "linear-gradient(135deg,#f3d27a,#d4af37)", boxShadow: "0 8px 20px -8px rgba(212,175,55,.9)" }}>
+          <PrayingPersonIcon className="h-8 w-8" />
+          <span className={label}>{t("navCompanion")}</span>
         </button>
-        {btn("khatma", tab === "khatma", () => setTab("khatma"), Target, t("navKhatma"))}
-        {btn("hub", tab === "hub", () => setTab("hub"), LayoutGrid, t("navHub"))}
       </div>
     </nav>
   );
