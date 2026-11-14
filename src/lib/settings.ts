@@ -9,6 +9,8 @@ import { isLanguage, type Language } from "@/i18n";
  */
 export type SpeechEngine = "auto" | "whisper";
 export type ThemeId = "emerald" | "light" | "dark";
+export type KidsTheme = "sky" | "garden" | "night";
+export const KIDS_THEMES: readonly KidsTheme[] = ["sky", "garden", "night"];
 export const THEME_COLORS: Record<ThemeId, string> = { emerald: "#022c22", light: "#f7f0de", dark: "#0e100f" };
 
 export type AppSettings = {
@@ -75,6 +77,8 @@ export type AppSettings = {
   highContrast: boolean;
   /** v45 «وضع الأطفال». */
   kidsMode: boolean;
+  /** v47: the kids storybook theme — «سماء مشرقة» / «حديقة الزمرد» / «قمر الليل الهادئ». */
+  kidsTheme: KidsTheme;
 };
 /** v45: "lines" = «آية في كل سطر» (each verse on its own row). */
 export type MushafStyle = "madinah" | "clean" | "lines";
@@ -118,6 +122,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   latinFont: "default",
   highContrast: false,
   kidsMode: false,
+  kidsTheme: "sky",
 };
 export const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 1.75] as const;
 
@@ -153,6 +158,7 @@ export function cleanSettings(s: AppSettings & Record<string, unknown>): AppSett
   const sc = Number(out.appFontScale);
   out.appFontScale = Number.isFinite(sc) ? Math.min(FONT_SCALE_RANGE[1], Math.max(FONT_SCALE_RANGE[0], Math.round(sc * 100) / 100)) : 1;
   if (!["default", "uthmani", "naskh", "amiri"].includes(out.quranFont as string)) out.quranFont = "default";
+  if (!(KIDS_THEMES as readonly string[]).includes(out.kidsTheme as string)) out.kidsTheme = "sky";
   if (!["default", "naskh", "cairo"].includes(out.arabicUiFont as string)) out.arabicUiFont = "default";
   if (!["default", "atkinson", "lexend", "opendyslexic", "inter"].includes(out.latinFont as string)) out.latinFont = "default";
   if (!(QURAN_FONT_SIZES as readonly number[]).includes(out.quranFontSize as number)) out.quranFontSize = DEFAULT_SETTINGS.quranFontSize;
@@ -178,7 +184,7 @@ export function applyTheme(theme: ThemeId) {
  * follows), font families via data attributes (CSS in styles.css), high contrast, kids theme. Mirrored to
  * localStorage so the app starts with them (index.html reads it before React).
  */
-export function applyTypography(s: Pick<AppSettings, "appFontScale" | "quranFont" | "arabicUiFont" | "latinFont" | "highContrast" | "kidsMode">) {
+export function applyTypography(s: Pick<AppSettings, "appFontScale" | "quranFont" | "arabicUiFont" | "latinFont" | "highContrast" | "kidsMode"> & { kidsTheme?: KidsTheme }) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   root.style.setProperty("--app-font-scale", String(s.appFontScale));
@@ -189,7 +195,8 @@ export function applyTypography(s: Pick<AppSettings, "appFontScale" | "quranFont
   set("latinFont", s.latinFont === "default" ? null : s.latinFont);
   set("contrast", s.highContrast ? "high" : null);
   set("kids", s.kidsMode ? "on" : null);
-  try { localStorage.setItem("hifz.typography", JSON.stringify({ appFontScale: s.appFontScale, quranFont: s.quranFont, arabicUiFont: s.arabicUiFont, latinFont: s.latinFont, highContrast: s.highContrast, kidsMode: s.kidsMode })); } catch { /* ignore */ }
+  set("kidsTheme", s.kidsMode ? s.kidsTheme ?? "sky" : null);
+  try { localStorage.setItem("hifz.typography", JSON.stringify({ appFontScale: s.appFontScale, quranFont: s.quranFont, arabicUiFont: s.arabicUiFont, latinFont: s.latinFont, highContrast: s.highContrast, kidsMode: s.kidsMode, kidsTheme: s.kidsTheme })); } catch { /* ignore */ }
 }
 
 export async function updateSettings(patch: Partial<AppSettings>): Promise<void> {

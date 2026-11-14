@@ -38,6 +38,13 @@ import { MushafReader } from "@/components/MushafReader";
 import { IslamicHubView, type HubSection } from "@/components/IslamicHubView";
 import { CompanionView, lastCompanionTab, type CompanionTab } from "@/components/CompanionView";
 import { KidsHome } from "@/components/kids/KidsHome";
+import { KidsLayoutTemplate, type KidsTab } from "@/components/kids/KidsLayoutTemplate";
+import { KidsHomeView } from "@/components/kids/KidsHomeView";
+import { KidsMushafView, kidsSurah, setKidsSurah } from "@/components/kids/KidsMushafView";
+import { KidsTafsirView } from "@/components/kids/KidsTafsirView";
+import { KidsStarJourney } from "@/components/kids/KidsStarJourney";
+import { KidsSettingsView } from "@/components/kids/KidsSettingsView";
+import { StoriesView } from "@/components/stories/StoriesView";
 import { openKidsMushaf as openKidsMushafNav, openKidsSection as openKidsSectionNav } from "@/components/kids/kidsNav";
 import { KidsModeProvider } from "@/components/kids/KidsModeContext";
 import { KidsPraiseToast } from "@/components/kids/KidsStarJourney";
@@ -103,13 +110,34 @@ export function App() {
   }, [settings.dailyReminder, settings.dailyReminderTime, language]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { document.documentElement.lang = language; document.documentElement.dir = directionFor(language); }, [language]);
   // Apply the theme once the saved settings are loaded (until then app-main.tsx has set the saved one).
-  useEffect(() => { if (settings !== DEFAULT_SETTINGS) applyTheme(settings.theme); }, [settings]);
+  // v47: Kids Mode has its own bright storybook look (light base + kids tokens), whatever the adult theme is.
+  useEffect(() => { if (settings !== DEFAULT_SETTINGS) applyTheme(settings.kidsMode ? "light" : settings.theme); }, [settings]);
   // v45: font scale, fonts, high contrast, kids theme.
   useEffect(() => { if (settings !== DEFAULT_SETTINGS) applyTypography(settings); }, [settings]);
 
   const [tab, setTab] = useState<Tab>("home");
   // v46 «رفيق الصلاة والمراجعة»: one view for the Salat Companion and hands-free Hifdh (null = closed).
   const [companion, setCompanion] = useState<CompanionTab | null>(null);
+  // v47 Kids Mode: its own four destinations and the surah shown in the Kids Mushaf.
+  const [kidsTab, setKidsTab] = useState<KidsTab>("home");
+  const jumpRef = useRef<((t: { surahId: number; focus?: number }) => void) | null>(null);
+  const [kidsSurahId, setKidsSurahId] = useState<number>(() => kidsSurah());
+  const goKids = useCallback((k: KidsTab) => { setKidsTab(k); window.scrollTo({ top: 0 }); }, []);
+  useEffect(() => {
+    const go = (e: Event) => { const d = (e as CustomEvent).detail as { tab: KidsTab; surah?: number }; if (d.surah) { setKidsSurah(d.surah); setKidsSurahId(d.surah); } goKids(d.tab); };
+    window.addEventListener("qm:kids-go", go);
+    return () => window.removeEventListener("qm:kids-go", go);
+  }, [goKids]);
+  // v48 stories: «افتح في المصحف» — the verse in the adult Mushaf, or its surah in the Kids Mushaf.
+  useEffect(() => {
+    const open = (e: Event) => {
+      const d = (e as CustomEvent).detail as { surah: number; ayah: number };
+      if (getSettings().kidsMode) { setKidsSurah(d.surah); setKidsSurahId(d.surah); goKids("mushaf"); return; }
+      jumpRef.current?.({ surahId: d.surah, focus: d.ayah }); setTab("mushaf"); window.scrollTo({ top: 0 });
+    };
+    window.addEventListener("qm:open-ayah", open);
+    return () => window.removeEventListener("qm:open-ayah", open);
+  }, [goKids]);
   useEffect(() => {
     const open = (e: Event) => { const d = (e as CustomEvent).detail; setCompanion(d === "handsfree" || d === "salat" ? d : lastCompanionTab()); };
     window.addEventListener("qm:open-companion", open);
@@ -202,11 +230,24 @@ export function App() {
     window.scrollTo({ top: 0 });
   }, [jump]);
 
+  jumpRef.current = jump;
   return (
     <LanguageContext.Provider value={language}><RecitationProvider><BadgeProvider><KidsModeProvider>
       <div lang={language} dir={directionFor(language)} className="min-h-screen bg-background">
         <AdhanAlert />
         <KidsPraiseToast />
+        {settings.kidsMode ? (
+          <div className="mx-auto min-h-screen max-w-md">
+            {/* v47: Kids Mode is its own storybook layout — no adult header, menu, account or search */}
+            <KidsLayoutTemplate tab={kidsTab} onTab={goKids} onSettings={() => setSettingsOpen("manual")}>
+              {kidsTab === "home" && <KidsHomeView userName={auth.session?.provider === "guest" ? null : auth.session?.name || null} onGo={goKids} />}
+              {kidsTab === "mushaf" && <KidsMushafView surah={kidsSurahId} onSurah={setKidsSurahId} />}
+              {kidsTab === "stories" && <StoriesView kids />}
+              {kidsTab === "tafsir" && <KidsTafsirView />}
+              {kidsTab === "journey" && <KidsStarJourney onOpenSurah={(s2) => { setKidsSurah(s2); setKidsSurahId(s2); goKids("mushaf"); }} />}
+            </KidsLayoutTemplate>
+          </div>
+        ) : (
         <div className="mx-auto flex min-h-screen max-w-md flex-col bg-hero">
           {/* Global header on every screen (the full-screen Mushaf has the same burger in its own top row) */}
           <div className={cn("sticky top-0 z-30 -mb-1 flex items-center gap-2 bg-gradient-to-b from-[var(--hq-emerald-deep)] via-[var(--hq-emerald-deep)]/90 to-transparent px-5 pb-2 pt-[max(1rem,env(safe-area-inset-top))]", tab === "mushaf" && "hidden")}>
@@ -239,6 +280,7 @@ export function App() {
           )}
           <QuranSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} onSelect={onSearchResult} />
         </div>
+        )}
         {/* First launch (no saved session): must choose a method. Later (guest → account): closable. */}
         <WelcomeModal open={!splash && auth.status === "signedOut"} mode="start"
           onDone={(s) => { setSplash({ reason: "login", name: s.name || null }); setTab("home"); }} />
@@ -251,7 +293,10 @@ export function App() {
         <BadgesModal open={badgesOpen !== null} initialSurah={badgesOpen?.surah ?? null} onOpenChange={(o) => { if (!o) setBadgesOpen(null); }}
           onOpenSurah={(s) => { jump({ surahId: s, focus: 1 }); setTab("mushaf"); window.scrollTo({ top: 0 }); }} />
         {!splash && <BadgeCelebration onShowAll={(s) => setBadgesOpen({ surah: s })} />}
-        <SettingsModal open={settingsOpen !== null} onOpenChange={(o) => { if (!o) setSettingsOpen(null); }} />
+        {/* v47: in Kids Mode the full settings are replaced by the child-locked «إعدادات الأطفال» */}
+        {settings.kidsMode
+          ? <KidsSettingsView open={settingsOpen !== null} onClose={() => setSettingsOpen(null)} />
+          : <SettingsModal open={settingsOpen !== null} onOpenChange={(o) => { if (!o) setSettingsOpen(null); }} />}
       </div>
     </KidsModeProvider></BadgeProvider></RecitationProvider></LanguageContext.Provider>
   );

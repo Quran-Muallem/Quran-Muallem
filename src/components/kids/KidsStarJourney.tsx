@@ -57,17 +57,17 @@ export function KidsStarJourney({ onOpenSurah }: { onOpenSurah?: (surah: number)
   return (
     <div className="space-y-4" data-kids-journey={total}>
       <div className="qm-native-colors rounded-[20px] bg-gradient-to-br from-amber-200 via-amber-300 to-amber-400 p-5 text-center text-amber-950 shadow-lg">
-        <p className="text-4xl" aria-hidden="true">🌟</p>
+        <p className="kd-bounce text-5xl" aria-hidden="true">⭐</p>
         <p className="mt-1 text-3xl font-black tabular-nums" data-kids-total="">{num(total)} ⭐</p>
         <p className={cn("mt-1 font-bold", language === "ar" ? "font-arabic text-xl" : "text-lg")} data-kids-praise="">
           {total > 0 ? praiseIn(praise, language) : t("kidsJourneyStart")}
         </p>
       </div>
-      <p className="px-1 text-xs leading-relaxed text-emerald-100/70">{t("kidsJourneyHow")}</p>
+      <p className="kd-card p-3 text-sm font-semibold leading-relaxed">{t("kidsJourneyHow")}</p>
 
       {/* the tree: a winding path of surahs */}
       <ol className="relative mx-auto max-w-sm space-y-3 py-2" data-kids-tree="">
-        <span aria-hidden="true" className="absolute inset-y-0 start-1/2 w-1.5 -translate-x-1/2 rounded-full bg-emerald-700/40" />
+        <span aria-hidden="true" className="absolute inset-y-0 start-1/2 w-2 -translate-x-1/2 rounded-full" style={{ background: "repeating-linear-gradient(180deg, var(--kd-mango, #f59e0b) 0 10px, transparent 10px 20px)" }} />
         {JOURNEY.map((s, i) => {
           const st = stars[s] ?? 0;
           const meta = getSurahMeta(s);
@@ -75,9 +75,8 @@ export function KidsStarJourney({ onOpenSurah }: { onOpenSurah?: (surah: number)
           return (
             <li key={s} className={cn("relative flex w-[78%]", side)} data-kids-surah={s} data-kids-stars={st}>
               <button type="button" onClick={() => onOpenSurah?.(s)}
-                className={cn("qm-native-colors flex w-full items-center gap-3 rounded-[20px] p-3 text-start shadow-md active:scale-[.98]",
-                  st === 3 ? "bg-gradient-to-br from-amber-200 to-amber-300 text-amber-950" : st > 0 ? "bg-emerald-100 text-emerald-950" : "bg-white/80 text-emerald-950")}>
-                <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-black", st === 3 ? "bg-amber-500 text-white" : "bg-emerald-600 text-white")}>{num(s)}</span>
+                className={cn("kd-card flex w-full items-center gap-3 p-3 text-start active:translate-y-[2px]", st === 3 && "!bg-[var(--kd-sun,#fde68a)] !text-[#3b2300]")}>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-black text-white" style={{ background: st === 3 ? "var(--kd-mango, #f59e0b)" : "var(--kd-turquoise, #14b8a6)" }}>{num(s)}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-arabic text-lg leading-snug">{meta?.nameArabic}</span>
                   <span className="mt-0.5 flex gap-0.5 text-lg" aria-label={`${st}/3`}>

@@ -1,12 +1,13 @@
-/** v46: navigation helpers shared by the kids screens (handled in routes/index.tsx). */
-import { updateSettings } from "@/lib/settings";
+/** Navigation helpers shared by the kids screens (handled in routes/index.tsx). */
+import { getSettings, updateSettings } from "@/lib/settings";
 
-/** Kids Mushaf: one verse per line, clear Naskh with full tashkeel, Tajweed colours; tap a verse → kids tafsir. */
+/** v47: Kids Mushaf = its own one-surah-per-page view in the kids layout (turns Kids Mode on if needed). */
 export function openKidsMushaf() {
-  void updateSettings({ mushafStyle: "lines", quranFont: "naskh", tajweedColors: true });
-  window.dispatchEvent(new Event("qm:open-mushaf"));
+  if (!getSettings().kidsMode) void updateSettings({ kidsMode: true });
+  window.dispatchEvent(new CustomEvent("qm:kids-go", { detail: { tab: "mushaf" } }));
 }
 
 export function openKidsSection(section: "kidsTafsir" | "kidsJourney") {
+  if (getSettings().kidsMode) { window.dispatchEvent(new CustomEvent("qm:kids-go", { detail: { tab: section === "kidsTafsir" ? "tafsir" : "journey" } })); return; }
   window.dispatchEvent(new CustomEvent("qm:open-hub", { detail: section }));
 }

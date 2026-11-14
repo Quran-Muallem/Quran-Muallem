@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { StoriesView } from "@/components/stories/StoriesView";
 import { BookOpenCheck, ChevronLeft, ChevronRight, Clock, Compass, Headphones, Library, Mic, SunMoon } from "lucide-react";
 import { GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import { PrayerTimesView } from "@/components/hub/PrayerTimesView";
@@ -19,11 +20,12 @@ import type { StudyTarget } from "@/components/Dashboard";
 import { isRtl } from "@/i18n";
 import { useI18n, type CopyKey } from "@/lib/i18n";
 
-export type HubSection = "prayer" | "salat" | "kidsTafsir" | "kidsJourney" | "qibla" | "reciters" | "adhkar" | "recordings" | "tajweed" | "hadith";
+export type HubSection = "prayer" | "salat" | "stories" | "kidsTafsir" | "kidsJourney" | "qibla" | "reciters" | "adhkar" | "recordings" | "tajweed" | "hadith";
 
 const SECTIONS: { id: HubSection; icon: typeof Clock; emoji: string; title: CopyKey; sub: CopyKey; ar: string }[] = [
   { id: "prayer", icon: Clock, emoji: "🕋", title: "hubPrayer", sub: "hubPrayerSub", ar: "مواقيت الصلاة" },
   { id: "salat", icon: Mic, emoji: "🕌", title: "hubSalat", sub: "hubSalatSub", ar: "رفيق الصلاة" },
+  { id: "stories", icon: BookOpenCheck, emoji: "🗺️", title: "storiesTitle", sub: "storiesSub", ar: "قصص القرآن وقصص الأنبياء" },
   { id: "qibla", icon: Compass, emoji: "🧭", title: "navQibla", sub: "hubQiblaSub", ar: "القبلة" },
   { id: "adhkar", icon: SunMoon, emoji: "📿", title: "hubAdhkar", sub: "hubAdhkarSub", ar: "الأذكار والأدعية" },
   { id: "reciters", icon: Headphones, emoji: "🎧", title: "hubReciters", sub: "hubRecitersSub", ar: "المقرئين" },
@@ -49,6 +51,7 @@ export function IslamicHubView({ section, onSection, onRetest }: { section: HubS
   else if (section === "recordings") body = <RecordingSessionsView onRetest={onRetest} />;
   else if (section === "tajweed") body = <TajweedGuide />;
   else if (section === "hadith") body = <HadithLibrary />;
+  else if (section === "stories") body = <StoriesView />;
   // v45 Kids Mode modules
   else if (section === "kidsTafsir") body = <KidsTafsirView />;
   else if (section === "kidsJourney") body = <KidsStarJourney onOpenSurah={(s) => window.dispatchEvent(new CustomEvent("qm:open-surah", { detail: s }))} />;

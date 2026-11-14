@@ -441,3 +441,54 @@ html[data-kids="on"] .kids-hide { display: none !important; }
   --color-black: #000; --color-white: #f8f6f0;
   --muted-foreground: #d4e4dc; --foreground: #f8f6f0; --border: rgba(212, 175, 55, 0.35);
 }
+
+/* ───────────── v47 Kids Mode: storybook template («KidsLayoutTemplate») ─────────────
+   Its own palette (not a recolour of the adult screens): sunny sky, vanilla cream, turquoise, mango gold, coral.
+   Three looks: sky (default) · garden · night. Components use the --kd-* tokens and the .kd-* classes. */
+html[data-kids="on"] {
+  --kd-sky: #e0f4ff; --kd-sky-2: #c7ecff; --kd-cream: #fffdf7; --kd-ink: #1e3a5f; --kd-ink-soft: #4b6584;
+  --kd-turquoise: #14b8a6; --kd-turquoise-deep: #0d8f81; --kd-mango: #f59e0b; --kd-mango-deep: #c97d00;
+  --kd-coral: #fb7185; --kd-coral-deep: #e04e66; --kd-sun: #fde68a; --kd-edge: rgba(30, 58, 95, 0.16);
+  --kd-card-shadow: 0 10px 24px -14px rgba(30, 58, 95, 0.45);
+  --background: var(--kd-sky); --card: var(--kd-cream); --foreground: var(--kd-ink); --muted-foreground: var(--kd-ink-soft);
+  --border: var(--kd-edge); --accent: var(--kd-mango-deep); --primary: var(--kd-turquoise-deep);
+  --mf-page: var(--kd-cream); --mf-page-hi: #ffffff; --mf-page-deep: var(--kd-sun);
+  --radius: 1.75rem;
+}
+html[data-kids="on"][data-kids-theme="garden"] {
+  --kd-sky: #e3f8ec; --kd-sky-2: #c9f0da; --kd-cream: #fffef8; --kd-ink: #14402e; --kd-ink-soft: #3d6b55;
+  --kd-turquoise: #10b981; --kd-turquoise-deep: #047857; --kd-sun: #fef3c7; --kd-edge: rgba(20, 64, 46, 0.16);
+}
+html[data-kids="on"][data-kids-theme="night"] {
+  color-scheme: dark;
+  --kd-sky: #1b2350; --kd-sky-2: #252f6b; --kd-cream: #2b3577; --kd-ink: #fdf6e3; --kd-ink-soft: #c9cff5;
+  --kd-turquoise: #2dd4bf; --kd-turquoise-deep: #14b8a6; --kd-mango: #fbbf24; --kd-mango-deep: #fbbf24;
+  --kd-coral: #fda4af; --kd-coral-deep: #fb7185; --kd-sun: #fef08a; --kd-edge: rgba(0, 0, 0, 0.35);
+  --kd-card-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.6);
+  --mf-ink: #fdf6e3; --kd-cloud: 0.16;
+}
+.kd-root { background: var(--kd-sky); color: var(--kd-ink); }
+.kd-card {
+  background: var(--kd-cream); color: var(--kd-ink); border-radius: 28px;
+  border: 2px solid var(--kd-edge); border-bottom: 5px solid var(--kd-edge); box-shadow: var(--kd-card-shadow);
+}
+.kd-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 3.25rem;
+  border-radius: 9999px; padding: .65rem 1.25rem; font-weight: 800; color: #fff;
+  background: var(--kd-turquoise); border-bottom: 5px solid var(--kd-turquoise-deep);
+  transition: transform .12s ease, border-bottom-width .12s ease;
+}
+.kd-btn:active { transform: translateY(3px); border-bottom-width: 2px; }
+.kd-btn[disabled] { opacity: .4; pointer-events: none; }
+.kd-btn-mango { background: var(--kd-mango); border-bottom-color: var(--kd-mango-deep); color: #3b2300; }
+.kd-btn-coral { background: var(--kd-coral); border-bottom-color: var(--kd-coral-deep); }
+.kd-btn-soft { background: var(--kd-cream); color: var(--kd-ink); border: 2px solid var(--kd-edge); border-bottom: 5px solid var(--kd-edge); }
+.kd-ink-soft { color: var(--kd-ink-soft); }
+.kd-quran { font-family: var(--font-quran-flow); color: var(--kd-ink); }
+@keyframes kd-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes kd-float { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-5px) rotate(6deg); } }
+@keyframes kd-pop { 0% { transform: scale(.6); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+.kd-bounce { animation: kd-bounce 2.4s ease-in-out infinite; }
+.kd-float { animation: kd-float 4s ease-in-out infinite; }
+.kd-pop { animation: kd-pop .45s cubic-bezier(.2,.9,.3,1.3) both; }
+@media (prefers-reduced-motion: reduce) { .kd-bounce, .kd-float, .kd-pop, .kids-star { animation: none !important; } }

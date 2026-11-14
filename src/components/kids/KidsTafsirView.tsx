@@ -30,7 +30,7 @@ export function KidsTafsirView() {
   if (open) {
     return (
       <div className="space-y-4" data-kids-tafsir-entry={open.id}>
-        <button type="button" onClick={() => { void stopSpeaking(); setOpen(null); }} className="flex items-center gap-1 text-sm text-amber-200">
+        <button type="button" onClick={() => { void stopSpeaking(); setOpen(null); }} className="kd-btn kd-btn-soft !min-h-0 px-4 py-2 text-sm">
           <Back className="h-4 w-4" />{t("kidsTafsirTitle")}
         </button>
         <KidsTafsirCards entry={open} />
@@ -40,16 +40,16 @@ export function KidsTafsirView() {
 
   return (
     <div className="space-y-5" data-kids-tafsir="">
-      <p className="text-sm leading-relaxed text-emerald-100/70">{t("kidsTafsirSub")}</p>
+      <p className="kd-card p-4 text-sm font-semibold leading-relaxed">📚 {t("kidsTafsirSub")}</p>
       {KIDS_GROUPS.map((g) => (
         <section key={g.id} className="space-y-2" data-kids-group={g.id}>
-          <h2 className="px-1 text-base font-bold text-amber-200">{t(GROUP_KEY[g.id]!)}</h2>
+          <h2 className="px-1 text-lg font-black" style={{ color: "var(--kd-coral-deep, #e04e66)" }}>{t(GROUP_KEY[g.id]!)}</h2>
           <ul className="grid grid-cols-2 gap-2.5 min-[480px]:grid-cols-3">
             {g.entries.map((e) => (
               <li key={e.id}>
                 <button type="button" onClick={() => { setOpen(e); window.scrollTo({ top: 0 }); }} data-kids-entry={e.id}
-                  className="qm-native-colors flex h-full w-full flex-col items-center gap-1 rounded-[20px] bg-gradient-to-b from-emerald-50 to-emerald-100 p-3 text-center text-emerald-950 shadow-md active:scale-[.98]">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-300 text-sm font-bold text-amber-950" aria-hidden="true">{language === "ar" ? toArabicDigits(e.surah) : e.surah}</span>
+                  className="kd-card flex h-full w-full flex-col items-center gap-1 p-3 text-center active:translate-y-[2px]">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black text-white" style={{ background: "var(--kd-turquoise, #14b8a6)" }} aria-hidden="true">{language === "ar" ? toArabicDigits(e.surah) : e.surah}</span>
                   <span className="font-arabic text-lg leading-snug">{e.title.ar}</span>
                   {!rtl && <span className="text-xs opacity-75">{e.title[L]}</span>}
                 </button>
@@ -100,7 +100,7 @@ export function KidsTafsirCards({ entry: open }: { entry: KidsTafsirEntry }) {
           </section>
         );
       })}
-      <p className="px-2 text-center text-xs leading-relaxed text-emerald-100/60">{t("kidsTafsirNote")}</p>
+      <p className="px-2 text-center text-xs leading-relaxed text-muted-foreground">{t("kidsTafsirNote")}</p>
     </div>
   );
 }

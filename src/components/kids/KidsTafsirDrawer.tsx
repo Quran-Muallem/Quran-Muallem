@@ -2,14 +2,27 @@
  * v46: in Kids Mode, tapping a verse in the Mushaf opens this drawer — «تفسير مبسّط للأطفال» with the three
  * kids cards and «استمع للتفسير» — instead of the scholarly tafsir / verse menu.
  */
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { getAyahAudioUrl } from "@/lib/reciterManager";
+import { sheikhAudio, stopSheikhAudio } from "@/lib/audioPlayback";
+import { getSettings } from "@/lib/settings";
 import { X } from "lucide-react";
 import { directionFor, useI18n } from "@/lib/i18n";
 import { kidsTafsirFor, stopSpeaking } from "@/lib/kidsTafsir";
 import { getSurahMeta, toArabicDigits } from "@/lib/quranService";
 import { KidsTafsirCards } from "@/components/kids/KidsTafsirView";
 
-export function KidsTafsirDrawer({ surah, ayah, onClose }: { surah: number; ayah: number; onClose: () => void }) {
+export function KidsTafsirDrawer({ surah, ayah, onClose, withSheikh = false }: { surah: number; ayah: number; onClose: () => void; withSheikh?: boolean }) {
+  const [playing, setPlaying] = useState(false);
+  const listen = async () => {
+    if (playing) { stopSheikhAudio(); setPlaying(false); return; }
+    try {
+      const el = sheikhAudio(await getAyahAudioUrl(getSettings().reciterId, surah, ayah));
+      el.onended = () => setPlaying(false); el.onerror = () => setPlaying(false);
+      setPlaying(true); await el.play();
+    } catch { setPlaying(false); }
+  };
+  useEffect(() => () => stopSheikhAudio(), []);
   const { t, language } = useI18n();
   const entry = kidsTafsirFor(surah, ayah);
   const meta = getSurahMeta(surah);
@@ -29,6 +42,10 @@ export function KidsTafsirDrawer({ surah, ayah, onClose }: { surah: number; ayah
           <button type="button" onClick={onClose} aria-label={t("close")} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-foreground/10" data-kids-drawer-close=""><X className="h-5 w-5" /></button>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          {withSheikh && (
+            <button type="button" onClick={() => void listen()} data-kids-sheikh={playing ? "playing" : "idle"}
+              className="kd-btn kd-btn-mango mb-3 w-full text-lg">{playing ? "⏹" : "🎧"} {t("kidsListenSheikh")}</button>
+          )}
           {entry ? <KidsTafsirCards entry={entry} /> : (
             <div className="qm-native-colors my-4 rounded-[20px] bg-amber-100 p-5 text-center text-amber-950" data-kids-no-tafsir="">
               <p className="text-4xl" aria-hidden="true">📚</p>
