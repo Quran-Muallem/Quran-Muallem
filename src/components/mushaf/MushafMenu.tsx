@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from "react";
+import { useBackLayer } from "@/lib/backStack";
 import { BellRing, BookOpen, BookOpenCheck, ChevronLeft, ChevronRight, Clock, Compass, Download, Headphones, Home, Library, Mic, Search, Settings, Share2, SunMoon, Target, Type, X } from "lucide-react";
 import { LargePrintToggle } from "@/components/LargePrintToggle";
 import { PrayingPersonIcon } from "@/components/icons/PrayingPersonIcon";
@@ -75,6 +76,7 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+  useBackLayer(open, onClose);
   if (!open) return null;
 
   const ic = "h-7 w-7";

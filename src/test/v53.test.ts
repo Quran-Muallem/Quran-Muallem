@@ -58,3 +58,19 @@ describe("v53 – instant correction", () => {
     expect(firstNewError(st, ann)).toBe(1);
   });
 });
+
+describe("v53.1 – Android back stack", () => {
+  it("a back press closes the top layer only", async () => {
+    const { renderHook } = await import("@testing-library/react");
+    const { useBackLayer, backStackDepth } = await import("@/lib/backStack");
+    const calls: string[] = [];
+    const a = renderHook(({ on }) => useBackLayer(on, () => calls.push("menu")), { initialProps: { on: true } });
+    const b = renderHook(({ on }) => useBackLayer(on, () => calls.push("settings")), { initialProps: { on: true } });
+    expect(backStackDepth()).toBe(2);
+    await new Promise((r) => setTimeout(r, 5));
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    expect(calls).toEqual(["settings"]);
+    b.rerender({ on: false }); a.unmount();
+    expect(backStackDepth()).toBe(0);
+  });
+});

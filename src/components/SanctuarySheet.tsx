@@ -6,6 +6,7 @@
  *  • header padded by `env(safe-area-inset-top)` so title and ✕ never sit under the clock;
  *  • slides in from the inline end; sub-pages slide with `pageKey` (scroll resets only on page change).
  */
+import { useBackLayer } from "@/lib/backStack";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
@@ -45,6 +46,9 @@ export function SanctuarySheet({ open, onClose, title, subtitle, onBack, backLab
     window.addEventListener("keydown", key);
     return () => { b.style.overflow = prev; window.removeEventListener("keydown", key); };
   }, [open, onBack, onClose, closable]);
+
+  // v53.1: Android back button steps back one level (sub-page → index → closed).
+  useBackLayer(open && closable, () => (onBack ?? onClose)());
 
   // Scroll position: remembered per page; a newly opened sub-page starts at the top, «back» restores.
   useLayoutEffect(() => {

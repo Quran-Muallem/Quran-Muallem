@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useBackLayer } from "@/lib/backStack";
 import { stepAppFontScale } from "@/lib/settings";
 import { chooseLanguage } from "@/components/LanguageSelector";
 import type { SettingsPage } from "@/components/SettingsModal";
@@ -215,6 +216,12 @@ export function App() {
     return () => { window.removeEventListener("qm:open-mushaf", mushafTab); window.removeEventListener("qm:open-surah", surah); window.removeEventListener("qm:open-hub", hub); };
   }, [switchTab]);
   const go = useCallback((t: Tab) => { setCompanion(null); if (t === "hub") setHubSection(null); switchTab(t); window.scrollTo({ top: 0 }); }, [switchTab]);
+  // v53.1 Android back: companion → closes; hub section → hub overview; any other tab → home.
+  useBackLayer(!settings.kidsMode && (companion !== null || tab !== "home"), () => {
+    if (companion) setCompanion(null);
+    else if (tab === "hub" && hubSection) setHubSection(null);
+    else go("home");
+  });
   const jump = useCallback((target: { surahId: number; focus?: number | undefined; mark?: string[] | undefined; mode?: PracticeMode | undefined }) => {
     // An explicit target wins over the last recited passage.
     synced.current = Math.max(synced.current, recitationStore.activeRange.get()?.at ?? 0);
@@ -315,7 +322,8 @@ export function App() {
         {/* v47: in Kids Mode the full settings are replaced by the child-locked «إعدادات الأطفال» */}
         {settings.kidsMode
           ? <KidsSettingsView open={settingsOpen !== null} onClose={() => setSettingsOpen(null)} />
-          : <SettingsModal open={settingsOpen !== null} initialPage={settingsPage} onOpenChange={(o) => { if (!o) { setSettingsOpen(null); setSettingsPage(null); } }} />}
+          : <SettingsModal open={settingsOpen !== null} initialPage={settingsPage} onOpenChange={(o) => { if (!o) { setSettingsOpen(null); setSettingsPage(null); } }}
+              onBackToMenu={() => { setSettingsOpen(null); setSettingsPage(null); setMenuOpen(true); }} />}
       </div>
     </KidsModeProvider></BadgeProvider></RecitationProvider></LanguageContext.Provider>
   );

@@ -2,6 +2,7 @@
  * v48 «قصص القرآن وقصص الأنبياء»: two tabs — the Prophets' journey through time and stories from the Quran —
  * and the story reader. Used in normal mode (المزيد / home) and inside the kids storybook layout.
  */
+import { useBackLayer } from "@/lib/backStack";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ export function StoriesView({ kids = false }: { kids?: boolean }) {
   const look = kids ? KIDS_LOOK : ADULT_LOOK;
   const [tab, setTabState] = useState<Tab>(() => { try { return localStorage.getItem(TAB_KEY) === "quran" ? "quran" : "prophets"; } catch { return "prophets"; } });
   const [open, setOpen] = useState<string | null>(null);
+  useBackLayer(open !== null, () => setOpen(null));
   const setTab = (x: Tab) => { setTabState(x); try { localStorage.setItem(TAB_KEY, x); } catch { /* ignore */ } };
   const story = open ? storyById(open) : null;
   if (story) return <StoryReaderView key={story.id} story={story} look={look} onBack={() => setOpen(null)} onOpen={setOpen} />;

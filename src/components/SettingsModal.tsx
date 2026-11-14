@@ -49,7 +49,7 @@ const GROUPS: { title: CopyKey; rows: Row[] }[] = [
  * التنزيلات, الخصوصية; a row opens its page, the arrow goes back). Everything stays on the device; no
  * external AI services, no API keys.
  */
-export function SettingsModal({ open, onOpenChange, initialPage = null }: { open: boolean; onOpenChange: (open: boolean) => void; /** v51: open straight at a page (from the flat menu). */ initialPage?: SettingsPage | null }) {
+export function SettingsModal({ open, onOpenChange, initialPage = null, onBackToMenu }: { open: boolean; onOpenChange: (open: boolean) => void; /** v51: open straight at a page (from the flat menu). */ initialPage?: SettingsPage | null; /** v53.1: «‹ Menu» on the index page. */ onBackToMenu?: () => void }) {
   const { t, language } = useI18n();
   const [page, setPage] = useState<SettingsPage | null>(null);
   const s0 = useSettings();
@@ -59,7 +59,7 @@ export function SettingsModal({ open, onOpenChange, initialPage = null }: { open
   const Next = directionFor(language) === "rtl" ? ChevronLeft : ChevronRight;
   return (
     <SanctuarySheet open={open} onClose={() => onOpenChange(false)} title={row ? t(row.label) : t("settingsTitle")} subtitle={row ? undefined : t("settingsSub")}
-      onBack={page ? () => setPage(null) : undefined} backLabel={t("settingsTitle")} pageKey={page ?? undefined} dataAttr={{ "data-settings-sheet": page ?? "index" }}>
+      onBack={page ? () => setPage(null) : onBackToMenu} backLabel={page ? t("settingsTitle") : t("menu")} pageKey={page ?? undefined} dataAttr={{ "data-settings-sheet": page ?? "index" }}>
       {!page ? (
         <div className="space-y-4" data-settings-index="">
           {/* v51: one tap for elderly readers */}
