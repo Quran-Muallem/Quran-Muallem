@@ -1,0 +1,2 @@
+UthmanicHafs1Ver18.woff2 — "KFGQPC Uthmanic Script HAFS", King Fahd Glorious Qur'an Printing Complex (qurancomplex.gov.sa). Distributed free of charge for non-commercial Qur'an use; not modified.
+Other fonts (Noto Naskh Arabic, Amiri Quran, Cairo, Atkinson Hyperlegible, Lexend, Inter, OpenDyslexic) are bundled via @fontsource under the SIL Open Font License 1.1.

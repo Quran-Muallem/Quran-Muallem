@@ -37,6 +37,9 @@ import { Dashboard, type StudyTarget } from "@/components/Dashboard";
 import { MushafReader } from "@/components/MushafReader";
 import { IslamicHubView, type HubSection } from "@/components/IslamicHubView";
 import { SalatModeView } from "@/components/SalatModeView";
+import { HandsFreeHifdhView } from "@/components/HandsFreeHifdhView";
+import { KidsModeProvider } from "@/components/kids/KidsModeContext";
+import { KidsPraiseToast } from "@/components/kids/KidsStarJourney";
 import { BadgesModal } from "@/components/badges/BadgesModal";
 import { BadgeCelebration } from "@/components/badges/BadgeCelebration";
 import { initBadges } from "@/lib/badges";
@@ -49,7 +52,7 @@ import { WhisperModelStatus } from "@/components/WhisperModelStatus";
 import { GOLD_GRADIENT, GOLD_LIGHT } from "@/components/ornaments";
 import { useAuth } from "@/lib/useAuth";
 import { type UserSession } from "@/lib/authService";
-import { DEFAULT_SETTINGS, applyTheme, getSettings, updateSettings, useSettings } from "@/lib/settings";
+import { DEFAULT_SETTINGS, applyTheme, applyTypography, getSettings, updateSettings, useSettings } from "@/lib/settings";
 import { loadProgress, recordAttempt } from "@/lib/progressStorage";
 import { accuracyOf, recordingForRange, saveRecording, useRecordings } from "@/lib/audioStorage";
 import { RecitationPlayerBar } from "@/components/RecitationPlayerBar";
@@ -100,6 +103,8 @@ export function App() {
   useEffect(() => { document.documentElement.lang = language; document.documentElement.dir = directionFor(language); }, [language]);
   // Apply the theme once the saved settings are loaded (until then app-main.tsx has set the saved one).
   useEffect(() => { if (settings !== DEFAULT_SETTINGS) applyTheme(settings.theme); }, [settings]);
+  // v45: font scale, fonts, high contrast, kids theme.
+  useEffect(() => { if (settings !== DEFAULT_SETTINGS) applyTypography(settings); }, [settings]);
 
   const [tab, setTab] = useState<Tab>("home");
   /** Open section of the Islamic hub (null = the hub's overview). */
@@ -149,6 +154,14 @@ export function App() {
     window.addEventListener("qm:open-reciters", go);
     return () => window.removeEventListener("qm:open-reciters", go);
   }, [switchTab]);
+  // v45 Kids Mode: «المصحف للأطفال» and a surah from the star journey open the Mushaf.
+  useEffect(() => {
+    const mushafTab = () => { switchTab("mushaf"); window.scrollTo({ top: 0 }); };
+    const surah = (e: Event) => { const s = Number((e as CustomEvent).detail); if (s >= 1 && s <= 114) { jump({ surahId: s, focus: 1 }); } mushafTab(); };
+    window.addEventListener("qm:open-mushaf", mushafTab);
+    window.addEventListener("qm:open-surah", surah);
+    return () => { window.removeEventListener("qm:open-mushaf", mushafTab); window.removeEventListener("qm:open-surah", surah); };
+  }, [switchTab]);
   const go = useCallback((t: Tab) => { if (t === "hub") setHubSection(null); switchTab(t); window.scrollTo({ top: 0 }); }, [switchTab]);
   const jump = useCallback((target: { surahId: number; focus?: number | undefined; mark?: string[] | undefined; mode?: PracticeMode | undefined }) => {
     // An explicit target wins over the last recited passage.
@@ -180,9 +193,10 @@ export function App() {
   }, [jump]);
 
   return (
-    <LanguageContext.Provider value={language}><RecitationProvider><BadgeProvider>
+    <LanguageContext.Provider value={language}><RecitationProvider><BadgeProvider><KidsModeProvider>
       <div lang={language} dir={directionFor(language)} className="min-h-screen bg-background">
         <AdhanAlert />
+        <KidsPraiseToast />
         <div className="mx-auto flex min-h-screen max-w-md flex-col bg-hero">
           {/* Global header on every screen (the full-screen Mushaf has the same burger in its own top row) */}
           <div className={cn("sticky top-0 z-30 -mb-1 flex items-center gap-2 bg-gradient-to-b from-[var(--hq-emerald-deep)] via-[var(--hq-emerald-deep)]/90 to-transparent px-5 pb-2 pt-[max(1rem,env(safe-area-inset-top))]", tab === "mushaf" && "hidden")}>
@@ -227,7 +241,7 @@ export function App() {
         {!splash && <BadgeCelebration onShowAll={(s) => setBadgesOpen({ surah: s })} />}
         <SettingsModal open={settingsOpen !== null} onOpenChange={(o) => { if (!o) setSettingsOpen(null); }} />
       </div>
-    </BadgeProvider></RecitationProvider></LanguageContext.Provider>
+    </KidsModeProvider></BadgeProvider></RecitationProvider></LanguageContext.Provider>
   );
 }
 
@@ -309,6 +323,7 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
   const list = useSurahList();
   const text = useSurahText(target.surahId);
   const [salatOpen, setSalatOpen] = useState(false);
+  const [handsFreeOpen, setHandsFreeOpen] = useState(false);
   const meta = list[target.surahId - 1];
   const count = text.data?.ayahs.length ?? meta?.versesCount ?? 1;
   const from = Math.min(target.fromAyah, count);
@@ -673,6 +688,16 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
         </button>
       </div>
       {salatOpen && <SalatModeView onClose={() => setSalatOpen(false)} />}
+      {/* v45 «المراجعة الحرة»: hands-free Hifdh (pocket / screen off / Bluetooth) */}
+      <button type="button" onClick={() => { if (listening) toggleMic(); setHandsFreeOpen(true); }} data-open-handsfree=""
+        className="kids-hide flex w-full items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-950/30 p-3 text-start">
+        <span aria-hidden="true" className="text-2xl">🎧</span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold text-emerald-50">{t("hfCard")}</span>
+          <span className="mt-0.5 block text-xs leading-relaxed text-emerald-100/60">{t("hfCardSub")}</span>
+        </span>
+      </button>
+      {handsFreeOpen && <HandsFreeHifdhView onClose={() => setHandsFreeOpen(false)} />}
 
       {/* Sheikh player at the top: play / pause · Sheikh (same as in the Mushaf) · repeat the range */}
       <SheikhControls reciterId={settings.reciterId} playing={player.playing} loading={player.loading} failed={player.failed}

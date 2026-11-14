@@ -25,13 +25,15 @@ export type WordKey = string; // "surah:ayah:word"
  * with the original line breaks, surah banners and Basmala in their line slots, ornate verse medallions.
  * Words can be coloured (recitation), hidden (memorization) and verses highlighted (audio / selection).
  */
-export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, marked, highlight, verseStatus, recorded, onVerseTap, onWordTap, maxTextHeight, tajweed, flow }: {
+export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, marked, highlight, verseStatus, recorded, onVerseTap, onWordTap, onWordPlay, maxTextHeight, tajweed, flow }: {
   /** v38 «ألوان أحكام التجويد»: coloured segments per word (words not judged by a recitation use them). */
   tajweed?: Map<WordKey, TajweedSeg[]> | undefined;
   /** v38 «نص قرآني سلس»: flowing text at this font size instead of the 15 justified lines of print. */
-  flow?: { fontSize: number } | undefined;
+  flow?: { fontSize: number; perAyah?: boolean } | undefined;
   /** Tap on a word judged wrong or almost right (e.g. to add it to the voice profile). */
   onWordTap?: ((key: WordKey) => void) | undefined;
+  /** v45 Kids Mode: a tap on any word plays it (word-by-word audio). */
+  onWordPlay?: ((key: WordKey) => void) | undefined;
   /** Verses with a saved recording of the user get a small dot on their marker. */
   recorded?: ((surah: number, ayah: number) => boolean) | undefined;
   /** Words shown via the hint button. */
@@ -128,7 +130,7 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, mar
         const isHidden = !measuring && hidden?.has(k) && st !== "CORRECT" && st !== "WARNING" && st !== "ERROR";
         tokens.push(
           <span key={k} data-word={measuring ? undefined : k} data-status={st} data-cursor={!measuring && cursor === k ? "" : undefined}
-            onClick={measuring ? undefined : onWordTap && (st === "ERROR" || st === "WARNING") ? () => onWordTap(k) : onVerseTap ? (e) => onVerseTap(seg.surah, seg.ayah, { x: e.clientX, y: e.clientY }) : undefined}
+            onClick={measuring ? undefined : onWordTap && (st === "ERROR" || st === "WARNING") ? () => onWordTap(k) : onWordPlay ? () => onWordPlay(k) : onVerseTap ? (e) => onVerseTap(seg.surah, seg.ayah, { x: e.clientX, y: e.clientY }) : undefined}
             className={cn("relative inline-block cursor-pointer whitespace-nowrap rounded-[0.25em] px-[0.04em] transition-colors duration-300",
               isHi && "bg-amber-200/15 shadow-[0_0_0_0.12em_rgba(253,230,138,.12)]",
               st === "CORRECT" && "text-emerald-300",
@@ -177,10 +179,30 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, mar
           <span>الجُزْءُ {toArabicDigits(mushaf.juzOfPage(page))}</span>
         </div>
         <div className="h-px w-full" style={{ background: `linear-gradient(90deg, transparent, ${GOLD_A}, transparent)` }} />
-        <div ref={wrap} data-mushaf-text="" data-mushaf-flow="" dir="rtl" lang="ar" className="relative mt-1 font-arabic" style={{ fontSize: flow.fontSize, color: INK }}>
+        <div ref={wrap} data-mushaf-text="" data-mushaf-flow="" data-mushaf-per-ayah={flow.perAyah ? "" : undefined} dir="rtl" lang="ar" className="relative mt-1 qm-flow" style={{ fontSize: flow.fontSize, color: INK }}>
           {blocks.map((b, i) => {
             if (b.kind === "header") return <div key={i} className="flex items-center" style={{ height: fh }}><SurahBanner name={`سُورَةُ ${getSurahMeta(b.surah)?.nameArabic ?? ""}`} height={fh * 0.92} /></div>;
             if (b.kind === "basmala") return <BasmalaLine key={i} height={fh} />;
+            if (flow.perAyah) {
+              // v45 «آية في كل سطر»: every verse (its part on this page) on its own row.
+              const verses: { key: string; line: Extract<ReturnType<Mushaf["page"]>[number], { type: "text" }> }[] = [];
+              for (const line of b.lines) for (const seg of line.segments) {
+                const key = `${seg.surah}:${seg.ayah}`;
+                const last = verses[verses.length - 1];
+                if (last?.key === key) last.line.segments.push(seg); else verses.push({ key, line: { type: "text", segments: [seg] } });
+              }
+              return (
+                <div key={i} className="flex flex-col">
+                  {verses.map((v) => (
+                    <div key={v.key} data-ayah-row={v.key}
+                      className={cn("flex flex-wrap items-center justify-start gap-x-[0.3em] border-b px-1 py-[0.35em]", highlight === v.key && "rounded-xl bg-amber-200/10")}
+                      style={{ lineHeight: 2.3, borderColor: `color-mix(in srgb, ${GOLD_A} 22%, transparent)` }}>
+                      {renderTokens(v.line, false)}
+                    </div>
+                  ))}
+                </div>
+              );
+            }
             return (
               <div key={i} className="flex flex-wrap items-center justify-start gap-x-[0.3em]" style={{ lineHeight: `${fh}px` }}>
                 {b.lines.map((line, li) => <Fragment key={li}>{renderTokens(line, false)}</Fragment>)}

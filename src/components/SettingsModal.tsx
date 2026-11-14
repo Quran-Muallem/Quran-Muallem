@@ -1,5 +1,7 @@
 import { speechEngineFor } from "@/lib/speechEngine";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Smile, Type } from "lucide-react";
+import { TypographySettings } from "@/components/TypographySettings";
 import { AlertOctagon, AlertTriangle, BellRing, Highlighter, Info, BookOpen, BookText, CheckCircle2, ChevronLeft, ChevronRight, Download, ExternalLink, Eye, EyeOff, FileText, Globe, Languages, Loader2, Lock, Mic, MinusCircle, Play, Podcast, ShieldCheck, Sun, Trash2, Upload, XCircle } from "lucide-react";
 import { GoldDialog, GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import { PLAYBACK_RATES, QURAN_FONT_SIZES, THEME_COLORS, updateSettings, useSettings, type MushafStyle, type ThemeId } from "@/lib/settings";
@@ -26,14 +28,14 @@ import { VoiceProfilePanel } from "@/components/VoiceProfilePanel";
 import { retryZipformer, useZipformerState, zipformerAvailable, ZIPFORMER_MB } from "@/lib/zipformerEngine";
 
 
-type SettingsPage = "recitation" | "listening" | "mushafLook" | "hidden" | "highlight" | "language" | "theme" | "reminders" | "mistakes" | "session" | "reciters" | "translation" | "tafsir" | "offline" | "data" | "recordings" | "allData";
+type SettingsPage = "recitation" | "listening" | "mushafLook" | "hidden" | "highlight" | "language" | "theme" | "reminders" | "mistakes" | "session" | "reciters" | "translation" | "tafsir" | "offline" | "data" | "recordings" | "allData" | "typography" | "kids";
 type Row = { id: SettingsPage; icon: ReactNode; label: CopyKey };
 const ic = "h-5 w-5";
 /** Grouped like Tarteel's settings: each row opens its own page inside the dialog. */
 const GROUPS: { title: CopyKey; rows: Row[] }[] = [
   { title: "setGroupExperience", rows: [{ id: "recitation", icon: <Mic className={ic} />, label: "setRecitation" }, { id: "listening", icon: <Play className={ic} />, label: "setListening" }] },
   { title: "setGroupQuranLook", rows: [{ id: "mushafLook", icon: <BookOpen className={ic} />, label: "setMushafLook" }, { id: "hidden", icon: <EyeOff className={ic} />, label: "setHidden" }, { id: "highlight", icon: <Highlighter className={ic} />, label: "setHighlight" }] },
-  { title: "setGroupAppLook", rows: [{ id: "language", icon: <Globe className={ic} />, label: "languageTitle" }, { id: "theme", icon: <Sun className={ic} />, label: "themeTitle" }] },
+  { title: "setGroupAppLook", rows: [{ id: "language", icon: <Globe className={ic} />, label: "languageTitle" }, { id: "theme", icon: <Sun className={ic} />, label: "themeTitle" }, { id: "typography", icon: <Type className={ic} />, label: "setTypography" }, { id: "kids", icon: <Smile className={ic} />, label: "setKids" }] },
   { title: "setGroupNotifications", rows: [{ id: "reminders", icon: <BellRing className={ic} />, label: "setReminders" }] },
   { title: "setGroupSounds", rows: [{ id: "mistakes", icon: <AlertOctagon className={ic} />, label: "setMistakes" }, { id: "session", icon: <Mic className={ic} />, label: "setSession" }] },
   { title: "setGroupDownloads", rows: [{ id: "reciters", icon: <Podcast className={ic} />, label: "setReciters" }, { id: "translation", icon: <Languages className={ic} />, label: "setTranslation" }, { id: "tafsir", icon: <BookText className={ic} />, label: "setTafsir" }, { id: "offline", icon: <Download className={ic} />, label: "offlineTitle" }] },
@@ -61,7 +63,7 @@ export function SettingsModal({ open, onOpenChange }: { open: boolean; onOpenCha
             <section key={g.title} className="overflow-hidden rounded-2xl bg-black/15" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
               <h3 className="border-b px-4 py-3 text-sm font-semibold" style={{ color: GOLD_LIGHT, borderColor: alpha(GOLD, 0.25) }}>{t(g.title)}</h3>
               <ul>
-                {g.rows.map((r, i) => (
+                {g.rows.filter((r) => !(s0.kidsMode && r.id === "recitation")).map((r, i) => (
                   <li key={r.id} className={cn(i > 0 && "border-t")} style={{ borderColor: alpha(GOLD, 0.12) }}>
                     <button type="button" onClick={() => setPage(r.id)} data-settings-row={r.id}
                       className="flex w-full items-center gap-3 px-4 py-3.5 text-start text-sm text-emerald-50 hover:bg-white/5">
@@ -98,6 +100,11 @@ export function SettingsModal({ open, onOpenChange }: { open: boolean; onOpenCha
           {page === "highlight" && <Toggle k="showPastMistakes" label="setPastMistakes" desc="setPastMistakesDesc" />}
           {page === "language" && <LanguageSection />}
           {page === "theme" && <ThemeSection />}
+          {page === "typography" && <TypographySettings />}
+          {page === "kids" && (<>
+            <InfoCard title={t("kidsInfoTitle")} text={t("kidsInfoText")} />
+            <Toggle k="kidsMode" label="setKidsMode" desc="setKidsModeDesc" />
+          </>)}
           {page === "reminders" && <ReminderSection />}
           {page === "mistakes" && (<>
             {!s0.errorDetection && <InfoCard warn title={t("setDetectionOffTitle")} text={t("setDetectionOffText")} action={{ label: t("setOpenRecitation"), onClick: () => setPage("recitation") }} />}
@@ -127,7 +134,7 @@ export function SettingsModal({ open, onOpenChange }: { open: boolean; onOpenCha
   );
 }
 
-type BoolKey = "mistakeVibration" | "completionSound" | "autoStopSurahEnd" | "hiddenFirstWord" | "errorDetection" | "showPastMistakes" | "mistakeSound" | "sessionSound" | "sessionHaptic" | "saveRecordings" | "tajweedColors";
+type BoolKey = "mistakeVibration" | "completionSound" | "autoStopSurahEnd" | "hiddenFirstWord" | "errorDetection" | "showPastMistakes" | "mistakeSound" | "sessionSound" | "sessionHaptic" | "saveRecordings" | "tajweedColors" | "kidsMode";
 function Toggle({ k, label, desc }: { k: BoolKey; label: CopyKey; desc: CopyKey }) {
   const { t } = useI18n();
   const s = useSettings();
@@ -154,6 +161,7 @@ function MushafStyleSection() {
   const styles: { id: MushafStyle; label: CopyKey; desc: CopyKey; font: string }[] = [
     { id: "madinah", label: "mushafStyleMadinah", desc: "mushafStyleMadinahDesc", font: "font-quran" },
     { id: "clean", label: "mushafStyleClean", desc: "mushafStyleCleanDesc", font: "font-arabic" },
+    { id: "lines", label: "mushafStyleLines", desc: "mushafStyleLinesDesc", font: "font-arabic" },
   ];
   return (
     <div className="space-y-2" role="radiogroup" aria-label={t("setMushafStyle")} data-settings-mushaf-style={s.mushafStyle}>
@@ -172,7 +180,7 @@ function MushafStyleSection() {
           </button>
         );
       })}
-      {s.mushafStyle === "clean" && (
+      {(s.mushafStyle === "clean" || s.mushafStyle === "lines") && (
         <div className="rounded-2xl bg-black/15 p-3" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
           <p className="text-sm text-emerald-50">{t("setQuranFontSize")}</p>
           <div className="mt-2 flex flex-wrap gap-1.5" role="radiogroup" aria-label={t("setQuranFontSize")}>

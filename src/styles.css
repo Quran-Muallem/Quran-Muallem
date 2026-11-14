@@ -9,6 +9,19 @@
 @import "@fontsource/outfit/400.css";
 @import "@fontsource/outfit/500.css";
 @import "@fontsource/outfit/600.css";
+/* v45 accessibility fonts (bundled, offline) */
+@import "@fontsource/noto-naskh-arabic/400.css";
+@import "@fontsource/noto-naskh-arabic/700.css";
+@import "@fontsource/cairo/400.css";
+@import "@fontsource/cairo/700.css";
+@import "@fontsource/atkinson-hyperlegible/400.css";
+@import "@fontsource/atkinson-hyperlegible/700.css";
+@import "@fontsource/lexend/400.css";
+@import "@fontsource/lexend/600.css";
+@import "@fontsource/opendyslexic/400.css";
+@import "@fontsource/opendyslexic/700.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/600.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -152,7 +165,8 @@ html[data-theme="dark"] {
 }
 
 /* Theme: light (parchment & gold) */
-html[data-theme="light"] {
+html[data-theme="light"],
+html[data-kids="on"] {
   color-scheme: light;
   --background: oklch(0.97 0.012 85);
   --foreground: oklch(0.25 0.03 160);
@@ -325,7 +339,8 @@ html[lang="ar"] nav { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
   --tj-idgham-shafawi: #8be15a; --tj-iqlab: #5fd3ff; --tj-idgham-ghunnah: #4fd1a5; --tj-idgham-wo-ghunnah: #7cd66b;
   --tj-idgham-mutajanis: #b9b9b9; --tj-ghunnah: #ffa24c;
 }
-html[data-theme="light"] {
+html[data-theme="light"],
+html[data-kids="on"] {
   --tj-silent: #8c8c8c; --tj-madd-normal: #537fff; --tj-madd-permissible: #4050ff; --tj-madd-necessary: #000ebc;
   --tj-madd-obligatory: #2144c1; --tj-qalqalah: #dd0008; --tj-ikhfa-shafawi: #d500b7; --tj-ikhfa: #9400a8;
   --tj-idgham-shafawi: #58b800; --tj-iqlab: #1aa7e0; --tj-idgham-ghunnah: #169777; --tj-idgham-wo-ghunnah: #169200;
@@ -350,3 +365,61 @@ html[data-theme="light"] {
 .tjb-madda_obligatory { background: var(--tj-madd-obligatory); } .tjb-qalaqah { background: var(--tj-qalqalah); }
 .tjb-ikhafa { background: var(--tj-ikhfa); } .tjb-iqlab { background: var(--tj-iqlab); }
 .tjb-idgham_ghunnah { background: var(--tj-idgham-ghunnah); } .tjb-ghunnah { background: var(--tj-ghunnah); }
+
+/* ───────────── v45: typography, visual comfort, kids theme ───────────── */
+
+/* KFGQPC Uthmanic Script Hafs (King Fahd Glorious Quran Printing Complex) — the Madinah Mushaf's own script. */
+@font-face {
+  font-family: "KFGQPC Uthmanic Hafs";
+  src: url("/fonts/UthmanicHafs1Ver18.woff2") format("woff2");
+  font-display: swap;
+}
+:root { --font-quran-flow: "Scheherazade New", "Amiri", serif; }
+.qm-flow { font-family: var(--font-quran-flow); }
+
+/* Quran text font (Madinah page and flowing text alike) */
+html[data-quran-font="uthmani"] { --font-quran: "KFGQPC Uthmanic Hafs", "Amiri Quran", serif; --font-quran-flow: "KFGQPC Uthmanic Hafs", "Amiri Quran", serif; }
+html[data-quran-font="naskh"] { --font-quran: "Noto Naskh Arabic", "Scheherazade New", serif; --font-quran-flow: "Noto Naskh Arabic", "Scheherazade New", serif; }
+html[data-quran-font="amiri"] { --font-quran: "Amiri Quran", "Amiri", serif; --font-quran-flow: "Amiri Quran", "Amiri", serif; }
+/* Arabic interface / tafsir font */
+html[data-ar-font="naskh"] { --font-arabic: "Noto Naskh Arabic", "Scheherazade New", serif; }
+html[data-ar-font="cairo"] { --font-arabic: "Cairo", "Noto Naskh Arabic", sans-serif; }
+/* Latin interface font */
+html[data-latin-font="atkinson"] { --font-ui: "Atkinson Hyperlegible", system-ui, sans-serif; }
+html[data-latin-font="lexend"] { --font-ui: "Lexend", system-ui, sans-serif; }
+html[data-latin-font="opendyslexic"] { --font-ui: "OpenDyslexic", system-ui, sans-serif; }
+html[data-latin-font="inter"] { --font-ui: "Inter", system-ui, sans-serif; }
+
+/* «تباين عالٍ» — dim helper texts and thin borders become clear */
+html[data-contrast="high"] {
+  --muted-foreground: var(--foreground);
+  --border: color-mix(in oklab, var(--foreground) 55%, transparent);
+  --input: color-mix(in oklab, var(--foreground) 55%, transparent);
+}
+html[data-contrast="high"] :is([class*="text-emerald-100/"], [class*="text-emerald-200/"], [class*="text-emerald-50/"], [class*="text-white/"], [class*="text-amber-100/"], [class*="text-amber-200/"]) { color: var(--color-emerald-50) !important; }
+html[data-contrast="high"] :is(.text-muted-foreground, .text-neutral-500, .text-neutral-600, .text-neutral-700) { color: var(--foreground) !important; }
+html[data-contrast="high"] [data-mushaf-text] { font-weight: 600; }
+
+/* «وضع الأطفال» — warm cream & sand, emerald, golden stars, rounder and larger touch targets */
+html[data-kids="on"] {
+  --radius: 1.4rem;
+  --background: oklch(0.96 0.03 85);
+  --card: oklch(0.99 0.02 90);
+  --hq-emerald: #fbf1d8;
+  --hq-emerald-hi: #fff8e6;
+  --hq-emerald-deep: #f3e2b8;
+  --hq-gold: #c27803;
+  --hq-gold-light: #e5a50a;
+  --mf-page: #fff8e6;
+  --mf-page-hi: #fffdf4;
+  --mf-page-deep: #f6e7bf;
+  --tj-silent: #8c8c8c; --tj-madd-normal: #537fff; --tj-madd-permissible: #4050ff; --tj-madd-necessary: #000ebc;
+  --tj-madd-obligatory: #2144c1; --tj-qalqalah: #dd0008; --tj-ikhfa-shafawi: #d500b7; --tj-ikhfa: #9400a8;
+  --tj-idgham-shafawi: #58b800; --tj-iqlab: #1aa7e0; --tj-idgham-ghunnah: #169777; --tj-idgham-wo-ghunnah: #169200;
+  --tj-idgham-mutajanis: #a1a1a1; --tj-ghunnah: #ff7e1e;
+}
+html[data-kids="on"] button { min-height: 2.75rem; }
+html[data-kids="on"] .kids-hide { display: none !important; }
+@keyframes kids-star { 0% { transform: scale(0) rotate(-30deg); opacity: 0; } 60% { transform: scale(1.25) rotate(8deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+.kids-star { animation: kids-star 700ms cubic-bezier(.2,.9,.3,1.3) both; }
+

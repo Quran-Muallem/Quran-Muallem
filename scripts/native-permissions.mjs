@@ -40,6 +40,8 @@ const ANDROID_PERMISSIONS = [
   // Sheikh recitation keeps playing with the screen off (native/android/BackgroundAudio*.java)
   "android.permission.FOREGROUND_SERVICE",
   "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+  // v45 hands-free Hifdh: the microphone keeps listening with the screen off (native/android/HandsFreeMicService.java)
+  "android.permission.FOREGROUND_SERVICE_MICROPHONE",
   "android.permission.WAKE_LOCK",
   "android.permission.POST_NOTIFICATIONS",
   // Adhan notifications at the exact prayer time (@capacitor/local-notifications, src/lib/prayerNotifications.ts)
@@ -123,6 +125,11 @@ if (existsSync(manifestPath)) {
     xml = xml.replace(/(\s*)<\/application>/, `\n        <service android:name="${APP_ID}.BackgroundAudioService" android:exported="false" android:foregroundServiceType="mediaPlayback" />$1</application>`);
     changed++;
   }
+  // v45: microphone foreground service of the hands-free Hifdh mode.
+  if (!xml.includes("HandsFreeMicService")) {
+    xml = xml.replace(/(\s*)<\/application>/, `\n        <service android:name="${APP_ID}.HandsFreeMicService" android:exported="false" android:foregroundServiceType="microphone" />$1</application>`);
+    changed++;
+  }
   writeFileSync(manifestPath, xml);
   console.log(`✓ Android: ${manifestPath}`);
   const setString = (file, name, value) => {
@@ -139,7 +146,7 @@ if (existsSync(manifestPath)) {
   // Local plugin for background recitation playback: copy its sources and register it in MainActivity
   // (this also replaces the code an older version of this script added for a login plugin).
   if (existsSync(pkgDir)) {
-    for (const f of ["BackgroundAudioPlugin.java", "BackgroundAudioService.java"]) copyFileSync(`native/android/${f}`, `${pkgDir}/${f}`);
+    for (const f of ["BackgroundAudioPlugin.java", "BackgroundAudioService.java", "HandsFreeMicService.java"]) copyFileSync(`native/android/${f}`, `${pkgDir}/${f}`);
     const wanted = `package ${APP_ID};\n\nimport android.os.Bundle;\nimport com.getcapacitor.BridgeActivity;\n\npublic class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        registerPlugin(BackgroundAudioPlugin.class);\n        super.onCreate(savedInstanceState);\n    }\n}\n`;
     if (!existsSync(mainActivity) || readFileSync(mainActivity, "utf8") !== wanted) {
       writeFileSync(mainActivity, wanted);

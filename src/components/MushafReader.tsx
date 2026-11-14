@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Bookmark, ChevronDown, Loader2, RefreshCw, Settings } from "lucide-react";
+import { Bookmark, ChevronDown, Loader2, RefreshCw, Rows3, Settings } from "lucide-react";
 import { MushafPage, type WordKey } from "@/components/mushaf/MushafPage";
 import { ReciteBar, type BarMode } from "@/components/mushaf/ReciteBar";
 import { ReciterSelectModal } from "@/components/ReciterSelectModal";
@@ -25,7 +25,8 @@ import { ayahResults } from "@/lib/practiceResults";
 import { accuracyOf, covers, recordingForVerse, saveRecording, useRecordings } from "@/lib/audioStorage";
 import { RecitationPlayerBar } from "@/components/RecitationPlayerBar";
 import type { KeptAudio } from "@/lib/use-transcribing-recorder";
-import { getSettings, updateSettings, useSettings } from "@/lib/settings";
+import { QURAN_FONT_SIZES, getSettings, updateSettings, useSettings, type MushafStyle } from "@/lib/settings";
+import { playWord } from "@/lib/audioPlayback";
 import type { LiveMatch, LiveStatus } from "@/lib/quranMatcher";
 import { useI18n } from "@/lib/i18n";
 import { VoiceWordFix, type WordFix } from "@/components/VoiceWordFix";
@@ -619,6 +620,15 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
             className="flex h-10 w-8 items-center justify-center text-amber-200">
             <Bookmark className={cn("h-[1.1rem] w-[1.1rem]", bookmarked && "fill-current text-amber-300")} aria-hidden="true" />
           </button>
+          {/* v45 «عرض سطر لكل آية» */}
+          <button type="button" aria-pressed={settings.mushafStyle === "lines"} aria-label={t("ayahPerLine")} title={t("ayahPerLine")} data-mushaf-lines={settings.mushafStyle === "lines" ? "on" : "off"}
+            onClick={() => {
+              if (settings.mushafStyle === "lines") { let prev: MushafStyle = "madinah"; try { const v = localStorage.getItem("qm.mushaf.prevStyle"); if (v === "clean" || v === "madinah") prev = v; } catch { /* ignore */ } void updateSettings({ mushafStyle: prev }); }
+              else { try { localStorage.setItem("qm.mushaf.prevStyle", settings.mushafStyle); } catch { /* ignore */ } void updateSettings({ mushafStyle: "lines", quranFontSize: Math.max(settings.quranFontSize, 28) }); }
+            }}
+            className={cn("flex h-10 w-8 items-center justify-center", settings.mushafStyle === "lines" ? "text-amber-300" : "text-amber-200")}>
+            <Rows3 className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
+          </button>
           {onSettings && (
             <button type="button" onClick={onSettings} aria-label={t("settingsTitle")} data-mushaf-settings="" className="flex h-10 w-8 items-center justify-center text-amber-200">
               <Settings className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
@@ -629,6 +639,20 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
         <SheikhControls compact reciterId={reciter.id} playing={player.playing} loading={player.loading} failed={player.failed}
           onToggle={() => { if (rec.listening) return; player.toggle(); }} onReciter={() => setReciterOpen(true)} />
       </div>
+      {/* v45: Quran font size (22–54 px) right at hand in the flowing / one-verse-per-line views */}
+      {(settings.mushafStyle === "lines" || settings.mushafStyle === "clean") && (
+        <div className="mb-1 flex items-center justify-center gap-2" dir="ltr" data-mushaf-fontsize={settings.quranFontSize}>
+          {([-1, 1] as const).map((d) => {
+            const i = QURAN_FONT_SIZES.indexOf(settings.quranFontSize as (typeof QURAN_FONT_SIZES)[number]);
+            const next = QURAN_FONT_SIZES[Math.min(QURAN_FONT_SIZES.length - 1, Math.max(1, i + d))]!;
+            return (
+              <button key={d} type="button" onClick={() => void updateSettings({ quranFontSize: next })} aria-label={t(d < 0 ? "fontSmaller" : "fontLarger")} data-mushaf-font={d < 0 ? "minus" : "plus"}
+                className="rounded-full px-3 py-0.5 text-amber-200" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.45)}`, background: "rgba(0,0,0,.25)", fontSize: d < 0 ? "0.8rem" : "1.05rem" }}>A{d < 0 ? "−" : "+"}</button>
+            );
+          })}
+          <span className="text-xs tabular-nums text-emerald-100/70">{num(settings.quranFontSize)}</span>
+        </div>
+      )}
       {/* page · juz · hizb on their own line, readable */}
       <button type="button" onClick={() => setGoToOpen(true)} className="mb-1 flex w-full items-center justify-center gap-1.5" dir={language === "ar" || language === "ur" ? "rtl" : "ltr"}
         data-mushaf-header-info={`${t("hdrPage")} ${num(page)} | ${t("hdrJuz")} ${num(juz)} | ${t("hdrHizb")} ${num(hizb)}`} aria-label={t("goTo")}>
@@ -662,8 +686,9 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
         }}>
         <div key={page} className="animate-in fade-in duration-300">
           <MushafPage mushaf={mushaf} page={page} maxTextHeight={textHeight} tajweed={settings.tajweedColors ? tajweed : undefined}
-            flow={settings.mushafStyle === "clean" ? { fontSize: settings.quranFontSize } : undefined} statuses={statuses} hidden={hidden} hinted={hints} cursor={cursor} marked={marked ?? undefined}
+            flow={settings.mushafStyle === "clean" || settings.mushafStyle === "lines" ? { fontSize: settings.quranFontSize, perAyah: settings.mushafStyle === "lines" } : undefined} statuses={statuses} hidden={hidden} hinted={hints} cursor={cursor} marked={marked ?? undefined}
             highlight={playingKey ?? (rec.listening ? null : selected)}
+            onWordPlay={settings.kidsMode && !rec.listening ? (k) => { const [ws, wa, ww] = k.split(":").map(Number); if (ws && wa && ww) void playWord({ quranComId: null, surah: ws, ayah: wa, word: ww }).catch(() => {}); } : undefined}
             verseStatus={(s, a) => verseStatus(progress, s, a)}
             recorded={(s, a) => recordings.some((r) => covers(r, s, a))}
             onWordTap={rec.listening ? undefined : (k) => {

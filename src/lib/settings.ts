@@ -63,9 +63,27 @@ export type AppSettings = {
   quranFontSize: number;
   /** «ألوان أحكام التجويد»: colour the Tajweed rules in the Quran text (Mushaf and Tasmīʿ). */
   tajweedColors: boolean;
+  /** v45 «حجم الخط في التطبيق»: scale of ALL interface text (0.85 – 1.6). */
+  appFontScale: number;
+  /** v45 Quran text font: default (Madinah page Amiri Quran, flowing text Scheherazade) or one for both. */
+  quranFont: QuranFont;
+  /** v45 Arabic interface / tafsir font. */
+  arabicUiFont: ArabicUiFont;
+  /** v45 Latin interface font (German, English, …). */
+  latinFont: LatinFont;
+  /** v45 «تباين عالٍ». */
+  highContrast: boolean;
+  /** v45 «وضع الأطفال». */
+  kidsMode: boolean;
 };
-export type MushafStyle = "madinah" | "clean";
-export const QURAN_FONT_SIZES = [20, 24, 28, 32, 36, 40, 44] as const;
+/** v45: "lines" = «آية في كل سطر» (each verse on its own row). */
+export type MushafStyle = "madinah" | "clean" | "lines";
+export const QURAN_FONT_SIZES = [20, 22, 24, 28, 32, 36, 40, 44, 48, 54] as const;
+export type QuranFont = "default" | "uthmani" | "naskh" | "amiri";
+export type ArabicUiFont = "default" | "naskh" | "cairo";
+export type LatinFont = "default" | "atkinson" | "lexend" | "opendyslexic" | "inter";
+export const FONT_SCALE_PRESETS = [["S", 0.9], ["M", 1], ["L", 1.15], ["XL", 1.3], ["XXL", 1.5]] as const;
+export const FONT_SCALE_RANGE = [0.85, 1.6] as const;
 
 export const DEFAULT_SETTINGS: AppSettings = {
   language: "ar",
@@ -94,6 +112,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
   mushafStyle: "madinah",
   quranFontSize: 28,
   tajweedColors: false,
+  appFontScale: 1,
+  quranFont: "default",
+  arabicUiFont: "default",
+  latinFont: "default",
+  highContrast: false,
+  kidsMode: false,
 };
 export const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 1.75] as const;
 
@@ -121,11 +145,16 @@ export function cleanSettings(s: AppSettings & Record<string, unknown>): AppSett
   if (out.recognizer !== "zipformer" && out.recognizer !== "whisper") out.recognizer = "zipformer";
   if (!out.translations || typeof out.translations !== "object") out.translations = {};
   if (!out.tafsirs || typeof out.tafsirs !== "object") out.tafsirs = {};
-  for (const k of ["mistakeVibration", "completionSound", "autoStopSurahEnd", "hiddenFirstWord", "dailyReminder", "errorDetection", "showPastMistakes", "mistakeSound", "sessionSound", "sessionHaptic", "saveRecordings", "tajweedColors"] as const) if (typeof out[k] !== "boolean") out[k] = DEFAULT_SETTINGS[k];
+  for (const k of ["mistakeVibration", "completionSound", "autoStopSurahEnd", "hiddenFirstWord", "dailyReminder", "errorDetection", "showPastMistakes", "mistakeSound", "sessionSound", "sessionHaptic", "saveRecordings", "tajweedColors", "highContrast", "kidsMode"] as const) if (typeof out[k] !== "boolean") out[k] = DEFAULT_SETTINGS[k];
   if (typeof out.dailyReminderTime !== "string" || !/^\d{2}:\d{2}$/.test(out.dailyReminderTime)) out.dailyReminderTime = DEFAULT_SETTINGS.dailyReminderTime;
   if (!(PLAYBACK_RATES as readonly number[]).includes(out.playbackRate as number)) out.playbackRate = 1;
   if (!["tone", "click", "bell"].includes(out.mistakeSoundType as string)) out.mistakeSoundType = "tone";
-  if (out.mushafStyle !== "madinah" && out.mushafStyle !== "clean") out.mushafStyle = "madinah";
+  if (out.mushafStyle !== "madinah" && out.mushafStyle !== "clean" && out.mushafStyle !== "lines") out.mushafStyle = "madinah";
+  const sc = Number(out.appFontScale);
+  out.appFontScale = Number.isFinite(sc) ? Math.min(FONT_SCALE_RANGE[1], Math.max(FONT_SCALE_RANGE[0], Math.round(sc * 100) / 100)) : 1;
+  if (!["default", "uthmani", "naskh", "amiri"].includes(out.quranFont as string)) out.quranFont = "default";
+  if (!["default", "naskh", "cairo"].includes(out.arabicUiFont as string)) out.arabicUiFont = "default";
+  if (!["default", "atkinson", "lexend", "opendyslexic", "inter"].includes(out.latinFont as string)) out.latinFont = "default";
   if (!(QURAN_FONT_SIZES as readonly number[]).includes(out.quranFontSize as number)) out.quranFontSize = DEFAULT_SETTINGS.quranFontSize;
   delete out["chatProvider"]; delete out["chatModel"];
   return out;
@@ -142,6 +171,25 @@ export function applyTheme(theme: ThemeId) {
   if (theme === "emerald") delete document.documentElement.dataset["theme"]; else document.documentElement.dataset["theme"] = theme;
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLORS[theme]);
   try { localStorage.setItem("hifz.theme", theme); } catch { /* ignore */ }
+}
+
+/**
+ * v45: typography + visual comfort on the page root — font scale (rem-based, so ALL interface text
+ * follows), font families via data attributes (CSS in styles.css), high contrast, kids theme. Mirrored to
+ * localStorage so the app starts with them (index.html reads it before React).
+ */
+export function applyTypography(s: Pick<AppSettings, "appFontScale" | "quranFont" | "arabicUiFont" | "latinFont" | "highContrast" | "kidsMode">) {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  root.style.setProperty("--app-font-scale", String(s.appFontScale));
+  root.style.fontSize = s.appFontScale === 1 ? "" : `${Math.round(s.appFontScale * 1000) / 10}%`;
+  const set = (k: string, v: string | null) => { if (v) root.dataset[k] = v; else delete root.dataset[k]; };
+  set("quranFont", s.quranFont === "default" ? null : s.quranFont);
+  set("arFont", s.arabicUiFont === "default" ? null : s.arabicUiFont);
+  set("latinFont", s.latinFont === "default" ? null : s.latinFont);
+  set("contrast", s.highContrast ? "high" : null);
+  set("kids", s.kidsMode ? "on" : null);
+  try { localStorage.setItem("hifz.typography", JSON.stringify({ appFontScale: s.appFontScale, quranFont: s.quranFont, arabicUiFont: s.arabicUiFont, latinFont: s.latinFont, highContrast: s.highContrast, kidsMode: s.kidsMode })); } catch { /* ignore */ }
 }
 
 export async function updateSettings(patch: Partial<AppSettings>): Promise<void> {

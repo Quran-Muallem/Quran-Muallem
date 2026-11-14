@@ -4,6 +4,8 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.AudioDeviceInfo;
+import android.media.AudioManager;
 import android.os.Build;
 
 import java.io.File;
@@ -52,6 +54,15 @@ public class BackgroundAudioPlugin extends Plugin {
     @Override
     public void load() {
         instance = this;
+    }
+
+    /** v45 hands-free: headset / AirPods / car button → web layer ("handsfree" event: play, pause, toggle, repeat). */
+    static void emitHandsFree(String action) {
+        BackgroundAudioPlugin p = instance;
+        if (p == null) return;
+        JSObject data = new JSObject();
+        data.put("action", action);
+        p.notifyListeners("handsfree", data, true);
     }
 
     /** Lock screen / notification / headset button: tell the web layer (play, pause, next, previous, stop, seekto). */
@@ -259,5 +270,115 @@ public class BackgroundAudioPlugin extends Plugin {
     public void stop(PluginCall call) {
         getContext().stopService(new Intent(getContext(), BackgroundAudioService.class));
         call.resolve();
+    }
+
+    /* ───────────── v45: hands-free Hifdh (microphone service, audio routing) ───────────── */
+
+    @PluginMethod
+    public void startHandsFree(PluginCall call) {
+        Context ctx = getContext();
+        if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            call.reject("microphone permission missing");
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= 33 && !askedForNotifications && getActivity() != null
+                && ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            askedForNotifications = true;
+            ActivityCompat.requestPermissions(getActivity(), new String[] { Manifest.permission.POST_NOTIFICATIONS }, 7302);
+        }
+        Intent i = new Intent(ctx, HandsFreeMicService.class)
+                .putExtra(HandsFreeMicService.EXTRA_TITLE, call.getString("title", "Quran Muallem"))
+                .putExtra(HandsFreeMicService.EXTRA_TEXT, call.getString("text", "المراجعة الحرة نشطة - في انتظار التلاوة"));
+        try {
+            ContextCompat.startForegroundService(ctx, i);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("Could not start the microphone service: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void updateHandsFree(PluginCall call) {
+        HandsFreeMicService s = HandsFreeMicService.instance;
+        if (s != null) s.update(call.getString("title"), call.getString("text"));
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void stopHandsFree(PluginCall call) {
+        getContext().stopService(new Intent(getContext(), HandsFreeMicService.class));
+        call.resolve();
+    }
+
+    private static String deviceKind(int type) {
+        switch (type) {
+            case AudioDeviceInfo.TYPE_BLUETOOTH_SCO: case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP: return "bluetooth";
+            case AudioDeviceInfo.TYPE_WIRED_HEADSET: case AudioDeviceInfo.TYPE_WIRED_HEADPHONES: case AudioDeviceInfo.TYPE_USB_HEADSET: return "wired";
+            case AudioDeviceInfo.TYPE_BUILTIN_SPEAKER: case AudioDeviceInfo.TYPE_BUILTIN_EARPIECE: case AudioDeviceInfo.TYPE_BUILTIN_MIC: return "phone";
+            default:
+                if (Build.VERSION.SDK_INT >= 31 && (type == AudioDeviceInfo.TYPE_BLE_HEADSET || type == AudioDeviceInfo.TYPE_BLE_SPEAKER)) return "bluetooth";
+                return "other";
+        }
+    }
+
+    /** Connected audio devices: [{kind: bluetooth | wired | phone | other, name, input, output}]. */
+    @PluginMethod
+    public void audioDevices(PluginCall call) {
+        AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+        JSArray list = new JSArray();
+        if (am != null) {
+            for (AudioDeviceInfo d : am.getDevices(AudioManager.GET_DEVICES_ALL)) {
+                JSObject o = new JSObject();
+                o.put("kind", deviceKind(d.getType()));
+                o.put("name", d.getProductName() == null ? "" : d.getProductName().toString());
+                o.put("input", d.isSource());
+                o.put("output", d.isSink());
+                list.put(o);
+            }
+        }
+        JSObject res = new JSObject();
+        res.put("devices", list);
+        call.resolve(res);
+    }
+
+    /**
+     * «سماعة البلوتوث / مكبر الصوت / تلقائي»: route the microphone (and the voice path) to the Bluetooth headset
+     * (headset / car microphone), to the phone, or leave it to the system. Media output follows the system
+     * (A2DP to Bluetooth when connected).
+     */
+    @PluginMethod
+    public void setAudioRoute(PluginCall call) {
+        String route = call.getString("route", "auto");
+        AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+        if (am == null) { call.reject("no audio manager"); return; }
+        boolean ok = true;
+        try {
+            if ("bluetooth".equals(route)) {
+                am.setMode(AudioManager.MODE_IN_COMMUNICATION);
+                if (Build.VERSION.SDK_INT >= 31) {
+                    AudioDeviceInfo bt = null;
+                    for (AudioDeviceInfo d : am.getAvailableCommunicationDevices()) if ("bluetooth".equals(deviceKind(d.getType()))) { bt = d; break; }
+                    ok = bt != null && am.setCommunicationDevice(bt);
+                } else {
+                    am.startBluetoothSco();
+                    am.setBluetoothScoOn(true);
+                }
+                if (!ok) am.setMode(AudioManager.MODE_NORMAL);
+            } else if ("speaker".equals(route)) {
+                if (Build.VERSION.SDK_INT >= 31) am.clearCommunicationDevice(); else { am.stopBluetoothSco(); am.setBluetoothScoOn(false); }
+                am.setMode(AudioManager.MODE_NORMAL);
+                am.setSpeakerphoneOn(true);
+            } else {
+                if (Build.VERSION.SDK_INT >= 31) am.clearCommunicationDevice(); else { am.stopBluetoothSco(); am.setBluetoothScoOn(false); }
+                am.setSpeakerphoneOn(false);
+                am.setMode(AudioManager.MODE_NORMAL);
+            }
+        } catch (Exception e) {
+            ok = false;
+        }
+        JSObject res = new JSObject();
+        res.put("ok", ok);
+        res.put("route", route);
+        call.resolve(res);
     }
 }
