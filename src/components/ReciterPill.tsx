@@ -88,7 +88,7 @@ export function SheikhControls({ reciterId, playing, loading, failed = false, on
         <ReciterAvatar reciter={r} selected={playing} className="h-8 w-8 text-sm" />
         {!compact && (
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-semibold text-emerald-50">{name}</span>
+            <span className="block truncate text-sm font-semibold text-[#ecfdf5]">{name}</span>
             <span className={cn("block truncate text-[0.7rem]", failed ? "text-red-300" : "")} style={failed ? undefined : { color: alpha(GOLD_LIGHT, 0.85) }}>
               {failed ? t("audioError") : detail ?? (playing ? t("reciterPlaying") : t("reciterChange"))}
             </span>

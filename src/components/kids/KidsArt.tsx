@@ -5,6 +5,16 @@
 import { useId } from "react";
 import { cn } from "@/lib/utils";
 
+/** v53: classic five-pointed star path (no four-pointed "AI sparkles" anywhere in the app). */
+export function star5(cx: number, cy: number, r: number): string {
+  const pts: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.45 : r;
+    pts.push(`${(cx + rr * Math.cos(a)).toFixed(2)} ${(cy + rr * Math.sin(a)).toFixed(2)}`);
+  }
+  return `M${pts.join("L")}Z`;
+}
+
 export type KidsBadgeId = "mushaf" | "stories" | "tafsir" | "journey";
 
 export function KidsBadge({ id, className }: { id: KidsBadgeId; className?: string }) {
@@ -33,7 +43,7 @@ export function KidsBadge({ id, className }: { id: KidsBadgeId; className?: stri
         <path d="M50 40 Q62 33 78 36 V64 Q62 61 50 68 Z" fill="#fffdf5" stroke={`url(#${g("teal")})`} strokeWidth="3" strokeLinejoin="round" />
         <path d="M28 44 Q37 42 45 46 M28 50 Q37 48 45 52 M28 56 Q37 54 45 58 M55 46 Q63 42 72 44 M55 52 Q63 48 72 50 M55 58 Q63 54 72 56" stroke="#0d8f81" strokeWidth="1.8" strokeLinecap="round" opacity=".55" fill="none" />
         <path d="M58 36 V50 L61 47 L64 50 V35" fill="#fb7185" />
-        <path d="M50 18 l2.2 5 5 2.2-5 2.2-2.2 5-2.2-5-5-2.2 5-2.2z" fill={`url(#${g("gold")})`} className="kd-float" style={{ transformOrigin: "50px 25px" }} />
+        <path d={star5(50, 24, 7)} fill={`url(#${g("gold")})`} className="kd-float" style={{ transformOrigin: "50px 25px" }} />
         <circle cx="30" cy="26" r="2" fill="#fbbf24" /><circle cx="72" cy="24" r="2.4" fill="#fbbf24" />
       </>)}
       {id === "stories" && (<>
@@ -65,7 +75,7 @@ export function KidsBadge({ id, className }: { id: KidsBadgeId; className?: stri
         <path d="M62 64 L68 86 L58 80 L52 88 L50 66 Z" fill="#14b8a6" />
         <path d="M50 16 L59 36 L81 38 L64 52 L69 74 L50 62 L31 74 L36 52 L19 38 L41 36 Z" fill={`url(#${g("gold")})`} stroke="#c97d00" strokeWidth="2.5" strokeLinejoin="round" />
         <path d="M44 32 L48 24" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity=".8" />
-        <path d="M78 20 l1.6 3.6 3.6 1.6-3.6 1.6-1.6 3.6-1.6-3.6-3.6-1.6 3.6-1.6z" fill="#f59e0b" className="kd-float" style={{ transformOrigin: "78px 25px" }} />
+        <path d={star5(78, 24, 5)} fill="#f59e0b" className="kd-float" style={{ transformOrigin: "78px 25px" }} />
       </>)}
     </svg>
   );
@@ -91,7 +101,7 @@ export function Sparkles({ count = 4, seed = 0 }: { count?: number; seed?: numbe
   return (
     <span aria-hidden="true" className="pointer-events-none absolute inset-0">
       {spots.slice(0, count).map(([x, y], i) => (
-        <span key={i} className="kd-twinkle absolute text-white" style={{ left: `${x}%`, top: `${y}%`, fontSize: 10 + ((i + seed) % 3) * 5, animationDelay: `${((i + seed) * 0.55) % 2.4}s` }}>✦</span>
+        <span key={i} className="kd-twinkle absolute text-[#fbbf24]" style={{ left: `${x}%`, top: `${y}%`, fontSize: 10 + ((i + seed) % 3) * 5, animationDelay: `${((i + seed) * 0.55) % 2.4}s` }}>★</span>
       ))}
     </span>
   );

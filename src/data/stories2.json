@@ -555,7 +555,7 @@
  {
   "id": "isa",
   "kind": "prophet",
-  "emoji": "✨🌴",
+  "emoji": "🕊️🌴",
   "name": {
    "ar": "عيسى عليه السلام",
    "de": "ʿIsa (Friede sei mit ihm)",
@@ -639,7 +639,7 @@
  {
   "id": "muhammad",
   "kind": "prophet",
-  "emoji": "🕋🌙✨",
+  "emoji": "🕋",
   "final": true,
   "name": {
    "ar": "محمد ﷺ",

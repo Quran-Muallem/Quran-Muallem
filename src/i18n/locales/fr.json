@@ -325,7 +325,7 @@
   "tajweedNone": "Aucun résultat — essaie un autre mot",
   "tajweedExamples": "Exemples",
   "tajweedScholarTitle": "À noter",
-  "tajweedScholar": "Ce guide présente les règles du tajwid pour apprendre ; il ne remplace pas l’apprentissage et la correction auprès d’un enseignant qualifié. Pour le tafsir ou les avis religieux (fatwas), consulte des savants qualifiés (ʿulamāʾ) et des ouvrages reconnus.",
+  "tajweedScholar": "Ce guide sert à apprendre les règles du Tajwid et ne remplace pas l'apprentissage oral direct ni la correction auprès d'un cheikh qualifié.",
   "badgesTitle": "Badges et réussites",
   "badgesSub": "Un badge par sourate : argent pour l’avoir lue en entier, or pour l’avoir récitée en entier de mémoire",
   "badgeGold": "Or",
@@ -847,7 +847,7 @@
   "kidsNextSurah": "Sourate suivante",
   "kidsPickSurah": "Choisir une sourate",
   "kidsListenSheikh": "Écouter le cheikh",
-  "kidsTapAyahHint": "Touche un verset pour savoir ce qu'il veut dire et l'écouter 🌟",
+  "kidsTapAyahHint": "Touche un verset pour savoir ce qu'il veut dire et l'écouter ⭐",
   "kidsLetsGo": "C'est parti !",
   "kidsVersesCount": "{n} versets",
   "kidsLoading": "Préparation de la sourate…",
@@ -942,5 +942,14 @@
   "spQiyam": "Qiyam al-Layl",
   "hfStatusNoBt": "Aucun appareil Bluetooth connecté — micro du téléphone utilisé",
   "hfStatusBt": "Connecté : {name}",
-  "hfStatusSpeaker": "Haut-parleur et micro du téléphone"
+  "hfStatusSpeaker": "Haut-parleur et micro du téléphone",
+  "storyContext": "Contexte historique",
+  "storyNarrative": "Récit détaillé et épreuves",
+  "storyVerses": "Versets liés, récités par le cheikh",
+  "storyReflections": "Réflexions et leçons",
+  "storyMiracle": "Le miracle du prophète",
+  "tajAnnounce": "Remarque de tajwid : {rule}. Écoute la bonne prononciation.",
+  "tajCheckWord": "attention à ce mot",
+  "setInstantCorrection": "Correction immédiate pendant la récitation",
+  "setInstantCorrectionDesc": "À un mot erroné, il s'arrête aussitôt : le mot devient rouge avec sa règle, la règle est annoncée et le cheikh prononce le mot. Touche un mot rouge pour l'écouter."
 }

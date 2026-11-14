@@ -11,9 +11,18 @@ import part2 from "@/data/kidsTafsir2.json";
 import part3 from "@/data/kidsTafsir3.json";
 import { isNativePlatform } from "@/lib/storage";
 
-export type Tri = { ar: string; de: string; en: string; fr: string };
+export type Tri = Record<"ar" | "de" | "en" | "fr" | "es" | "tr" | "ur" | "id" | "ms" | "ru" | "bn" | "sq" | "bs", string>;
 export type KidsTafsirEntry = { id: string; surah: number; ayah?: number; title: Tri; say: Tri; story: Tri; deed: Tri };
 export const KIDS_TAFSIR: KidsTafsirEntry[] = [...part1, ...part2, ...part3] as KidsTafsirEntry[];
+/** v53: the other app languages (es, tr, ur, id, ms, ru, bn, sq, bs) — one overlay file per language. */
+const KT_OVERLAYS = import.meta.glob<{ default: Record<string, { title: string; say: string; story: string; deed: string }> }>("../data/kidsTafsirI18n/*.json", { eager: true });
+for (const [path, mod] of Object.entries(KT_OVERLAYS)) {
+  const lang = path.slice(path.lastIndexOf("/") + 1, -5) as keyof Tri;
+  for (const e of KIDS_TAFSIR) {
+    const o = mod.default[e.id];
+    if (o) { e.title[lang] = o.title; e.say[lang] = o.say; e.story[lang] = o.story; e.deed[lang] = o.deed; }
+  }
+}
 export type KidsGroup = { id: "fatiha" | "kursi" | "kahf" | "tabarak" | "amma"; entries: KidsTafsirEntry[] };
 export const KIDS_GROUPS: KidsGroup[] = [
   { id: "fatiha", entries: KIDS_TAFSIR.filter((e) => e.surah === 1) },
@@ -22,8 +31,9 @@ export const KIDS_GROUPS: KidsGroup[] = [
   { id: "tabarak", entries: KIDS_TAFSIR.filter((e) => e.surah >= 67 && e.surah <= 77) },
   { id: "amma", entries: KIDS_TAFSIR.filter((e) => e.surah >= 78) },
 ];
-export type KidsLang = "ar" | "de" | "en" | "fr";
-export const kidsLang = (lang: string): KidsLang => (lang === "ar" || lang === "de" || lang === "fr" ? lang : "en");
+export type KidsLang = "ar" | "de" | "en" | "fr" | "es" | "tr" | "ur" | "id" | "ms" | "ru" | "bn" | "sq" | "bs";
+const KIDS_LANGS: string[] = ["ar", "de", "en", "fr", "es", "tr", "ur", "id", "ms", "ru", "bn", "sq", "bs"];
+export const kidsLang = (lang: string): KidsLang => (KIDS_LANGS.includes(lang) ? (lang as KidsLang) : "en");
 
 /**
  * Reads `text` aloud (stops what was being read). Resolves when finished.

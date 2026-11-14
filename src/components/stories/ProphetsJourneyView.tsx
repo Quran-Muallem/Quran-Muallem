@@ -6,6 +6,7 @@
  */
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { MiracleIcon } from "@/components/stories/MiracleIcon";
 import { PROPHETS, continueStation, storyLang, useStoryProgress } from "@/lib/stories";
 import { toArabicDigits } from "@/lib/quranService";
 import type { StoryLook } from "@/components/stories/StoryReaderView";
@@ -16,11 +17,11 @@ const xOf = (i: number) => (i % 2 === 0 ? 24 : 76);
 export function ProphetsJourneyView({ look, kids, onOpen }: { look: StoryLook; kids: boolean; onOpen: (id: string) => void }) {
   const { t, language } = useI18n();
   const L = storyLang(language);
-  const rtl = L === "ar";
+  const rtl = L === "ar" || L === "ur";
   const p = useStoryProgress();
   const here = continueStation(p);
   const doneCount = PROPHETS.filter((s) => p.done[s.id]).length;
-  const num = (n: number) => (rtl ? toArabicDigits(n) : String(n));
+  const num = (n: number) => (L === "ar" ? toArabicDigits(n) : String(n));
   const H = PROPHETS.length * ROW;
   // a smooth winding path through all station centres (x in %, y in px; the SVG stretches horizontally)
   const pts = PROPHETS.map((_, i) => [xOf(i), i * ROW + ROW / 2] as const);
@@ -70,9 +71,8 @@ export function ProphetsJourneyView({ look, kids, onOpen }: { look: StoryLook; k
                   boxShadow: s.final ? "0 0 0 6px rgba(247,201,72,.35), 0 0 34px rgba(247,201,72,.9)" : done ? "0 0 18px rgba(247,201,72,.65)" : undefined,
                   ["--tw-ring-color" as string]: kids ? "var(--kd-coral)" : "var(--accent)",
                 }}>
-                <span aria-hidden="true" className="leading-none">{s.final ? "🕋" : s.emoji.split(/(?=\p{Extended_Pictographic})/u)[0]}</span>
+                <MiracleIcon id={s.id} bg={false} className="h-[52px] w-[52px]" />
                 <span className="mt-0.5 text-[0.7rem] font-black" style={{ color: s.final || done ? "#3b2300" : undefined }}>{num(i + 1)}</span>
-                {s.final && <span aria-hidden="true" className="absolute -top-4 text-2xl">👑</span>}
                 {done && !s.final && <span aria-hidden="true" className="kids-star absolute -end-1 -top-1 text-xl">⭐</span>}
               </button>
               <button type="button" onClick={() => onOpen(s.id)} data-station-card={s.id}

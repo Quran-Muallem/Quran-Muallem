@@ -325,7 +325,7 @@
   "tajweedNone": "Sin resultados: prueba otra palabra",
   "tajweedExamples": "Ejemplos",
   "tajweedScholarTitle": "Ten en cuenta",
-  "tajweedScholar": "Esta guía explica las reglas del tajwid para aprender; no sustituye el aprendizaje y la corrección con un maestro cualificado. Para el tafsir o dictámenes religiosos (fatwas), consulta a sabios cualificados (ʿulamāʾ) y libros reconocidos.",
+  "tajweedScholar": "Esta guía sirve para aprender las reglas del tayuid y no sustituye el aprendizaje oral directo ni la corrección de un jeque cualificado.",
   "badgesTitle": "Insignias y logros",
   "badgesSub": "Una insignia por sura: plata por leerla entera, oro por recitarla entera de memoria",
   "badgeGold": "Oro",
@@ -847,7 +847,7 @@
   "kidsNextSurah": "Sura siguiente",
   "kidsPickSurah": "Elige una sura",
   "kidsListenSheikh": "Escuchar al jeque",
-  "kidsTapAyahHint": "Toca una aleya para saber qué significa y escucharla 🌟",
+  "kidsTapAyahHint": "Toca una aleya para saber qué significa y escucharla ⭐",
   "kidsLetsGo": "¡Vamos!",
   "kidsVersesCount": "{n} aleyas",
   "kidsLoading": "Preparando la sura…",
@@ -942,5 +942,14 @@
   "spQiyam": "Qiyam al-Layl",
   "hfStatusNoBt": "Ningún dispositivo Bluetooth conectado — se usa el micrófono del teléfono",
   "hfStatusBt": "Conectado: {name}",
-  "hfStatusSpeaker": "Altavoz y micrófono del teléfono"
+  "hfStatusSpeaker": "Altavoz y micrófono del teléfono",
+  "storyContext": "Contexto histórico",
+  "storyNarrative": "Relato detallado y pruebas",
+  "storyVerses": "Aleyas relacionadas con la voz del jeque",
+  "storyReflections": "Reflexiones y lecciones",
+  "storyMiracle": "El milagro del profeta",
+  "tajAnnounce": "Nota de tayuid: {rule}. Escucha la pronunciación correcta.",
+  "tajCheckWord": "revisa esta palabra",
+  "setInstantCorrection": "Corrección inmediata al recitar",
+  "setInstantCorrectionDesc": "Ante una palabra errónea se detiene al instante: la palabra se pone roja con su regla, se anuncia la regla y el jeque la pronuncia. Toca una palabra roja para oírla."
 }

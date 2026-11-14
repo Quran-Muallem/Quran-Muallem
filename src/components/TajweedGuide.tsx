@@ -147,7 +147,7 @@ export function TajweedGuide() {
 export function ScholarNotice() {
   const { t } = useI18n();
   return (
-    <aside role="note" className="rounded-2xl p-3.5 text-[0.8rem] leading-relaxed text-amber-50"
+    <aside role="note" data-tajweed-disclaimer="" className="rounded-2xl p-3.5 text-[0.8rem] leading-relaxed text-[var(--sx-ink)]"
       style={{ background: "linear-gradient(135deg, rgba(120,53,15,.35), rgba(6,78,59,.35))", boxShadow: `inset 0 0 0 1px ${alpha(GOLD_LIGHT, 0.55)}` }}>
       <p className="font-semibold" style={{ color: GOLD_LIGHT }}>{t("tajweedScholarTitle")}</p>
       <p className="mt-1">{t("tajweedScholar")}</p>

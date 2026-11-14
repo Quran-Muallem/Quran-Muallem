@@ -18,7 +18,7 @@ export function KidsHome({ userName }: { userName?: string | null }) {
   const cards = [
     { id: "mushaf", emoji: "📗", arTitle: "مصحف الأطفال", title: t("kidsMushafTitle"), sub: t("kidsMushafSub"), cls: "from-emerald-300 to-emerald-500 text-emerald-950", go: openKidsMushaf },
     { id: "kidsTafsir", emoji: "📚", arTitle: "تفسير للأطفال", title: t("kidsTafsirTitle"), sub: t("kidsTafsirSub"), cls: "from-sky-200 to-sky-400 text-sky-950", go: () => openKidsSection("kidsTafsir") },
-    { id: "kidsJourney", emoji: "🌟", arTitle: "رحلة النجوم للحفظ", title: t("kidsJourneyTitle"), sub: t("kidsJourneySub"), cls: "from-amber-200 to-amber-400 text-amber-950", go: () => openKidsSection("kidsJourney") },
+    { id: "kidsJourney", emoji: "⭐", arTitle: "رحلة النجوم للحفظ", title: t("kidsJourneyTitle"), sub: t("kidsJourneySub"), cls: "from-amber-200 to-amber-400 text-amber-950", go: () => openKidsSection("kidsJourney") },
   ] as const;
   return (
     <div className="space-y-5" data-kids-home="">

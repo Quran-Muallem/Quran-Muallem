@@ -57,7 +57,7 @@ export function ReciteBar({ mode, onMode, listening, busy, onMic, paused = false
   }, []);
   const reciterName = player ? (language === "ar" ? player.reciter.nameArabic : player.reciter.nameEnglish) : "";
   return (
-    <div ref={box} data-recite-bar="" className={cn("fixed inset-x-0 z-30 mx-auto w-[calc(100%-1.5rem)] max-w-md", docked ? "bottom-[max(0.6rem,env(safe-area-inset-bottom))]" : "bottom-[4.6rem]")}>
+    <div ref={box} data-recite-bar="" className={cn("fixed inset-x-0 z-30 mx-auto w-[calc(100%-1.5rem)] max-w-md", "bottom-[max(calc(var(--qm-nav-h,0px)+0.4rem),env(safe-area-inset-bottom))]")}>
       <div className="rounded-[2rem] border border-white/15 bg-[var(--hq-glass)] px-4 pb-2.5 pt-2 [@media(max-height:719px)]:pb-1.5 [@media(max-height:719px)]:pt-1.5 shadow-[0_20px_50px_-15px_rgba(0,0,0,.8)] backdrop-blur-xl"
         style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.12), 0 20px 50px -15px rgba(0,0,0,.8)" }}>
         {extra && <div className="mb-1.5">{extra}</div>}

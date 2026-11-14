@@ -3,12 +3,19 @@
  * premium / enhanced / network voices first, robotic defaults last), splits text into sentences and speaks
  * them with storyteller pauses (≈350–500 ms between sentences, 700 ms after a question or exclamation) and
  * a warm tuning for children (pitch 1.08, rate × 0.92). Native text-to-speech in the app, Web Speech in the
- * browser. Languages: Arabic, German, English, French.
+ * browser. v53: all 13 app languages (see VOICE_LOCALE).
  */
 import { Capacitor } from "@capacitor/core";
 
-export type VoiceLang = "ar" | "de" | "en" | "fr";
-export const VOICE_LOCALE: Record<VoiceLang, string> = { ar: "ar-SA", de: "de-DE", en: "en-GB", fr: "fr-FR" };
+export type VoiceLang = "ar" | "de" | "en" | "fr" | "es" | "tr" | "ur" | "id" | "ms" | "ru" | "bn" | "sq" | "bs";
+/** v53: BCP-47 speech locale per app language — narration always follows the selected UI language. */
+export const VOICE_LOCALE: Record<VoiceLang, string> = {
+  ar: "ar-SA", de: "de-DE", en: "en-US", fr: "fr-FR", es: "es-ES", tr: "tr-TR", ur: "ur-PK", id: "id-ID", ms: "ms-MY", ru: "ru-RU", bn: "bn-BD", sq: "sq-AL", bs: "bs-BA",
+};
+export const VOICE_LANGS = Object.keys(VOICE_LOCALE) as VoiceLang[];
+export const isVoiceLang = (l: string): l is VoiceLang => (VOICE_LANGS as string[]).includes(l);
+/** Close relatives used when a device has no voice for the language itself (e.g. Bosnian → Croatian / Serbian). */
+const VOICE_FALLBACK: Partial<Record<VoiceLang, string[]>> = { bs: ["hr", "sr"], ms: ["id"], ur: ["hi"] };
 const native = () => Capacitor.isNativePlatform();
 const synth = () => (globalThis as { speechSynthesis?: SpeechSynthesis }).speechSynthesis;
 
@@ -17,7 +24,11 @@ type V = { name: string; lang: string; localService?: boolean; voiceURI?: string
 /** Higher = more natural. */
 export function voiceScore(v: V, lang: VoiceLang): number {
   const l = v.lang.toLowerCase().replace("_", "-");
-  if (!l.startsWith(lang)) return -1;
+  if (!l.startsWith(lang)) {
+    const alt = VOICE_FALLBACK[lang]?.findIndex((x) => l.startsWith(x)) ?? -1;
+    if (alt < 0) return -1;
+    return 0.5 - alt * 0.1; // usable, but any voice of the language itself wins
+  }
   const n = `${v.name} ${v.voiceURI ?? ""}`.toLowerCase();
   let s = 1;
   if (/neural|natural|premium|enhanced|wavenet|studio|journey|polyglot/.test(n)) s += 6;
@@ -26,7 +37,8 @@ export function voiceScore(v: V, lang: VoiceLang): number {
   if (/siri|samantha|daniel|anna|thomas|amelie|majed|tarik|laila|maged/.test(n)) s += 2; // good Apple voices
   if (/compact|espeak|robot|novelty|whisper|bad news|bells|zarvox|bubbles/.test(n)) s -= 6;
   // preferred regional voices for storytelling
-  if (lang === "en" && /en-gb|en-us/.test(l)) s += 1;
+  if (lang === "en" && /en-us|en-gb/.test(l)) s += 1;
+  if (l === VOICE_LOCALE[lang].toLowerCase()) s += 1;
   if (lang === "fr" && /fr-fr/.test(l)) s += 1;
   if (lang === "de" && /de-de/.test(l)) s += 1;
   if (lang === "ar" && /ar-sa|ar-eg|ar-ae|ar-xa/.test(l)) s += 1;

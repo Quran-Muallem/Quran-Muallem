@@ -114,7 +114,7 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
               </li>
             ) : (
               <li key={a.number} className={cn("relative", sparkle === a.number && "kd-pop")}>
-                {sparkle === a.number && <span aria-hidden="true" className="pointer-events-none absolute -top-1 start-3 z-10 text-2xl kids-star">✨</span>}
+                {sparkle === a.number && <span aria-hidden="true" className="pointer-events-none absolute -top-1 start-3 z-10 text-2xl kids-star">⭐</span>}
                 <button type="button" onClick={() => setTapped(a.number)} data-kids-ayah={a.number}
                   className={cn("kd-quran block w-full rounded-[22px] px-3 py-3 text-start transition", tapped === a.number ? "bg-[var(--kd-sun)]" : "active:bg-[var(--kd-sky)]")}
                   style={{ fontSize: size, lineHeight: 2.25 }}>

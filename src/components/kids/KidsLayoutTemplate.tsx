@@ -4,7 +4,7 @@
  * big buttons. Only four destinations: home, Kids Mushaf, tafsir & stories, star journey. No burger menu,
  * no account menu, no search; the gear opens the child-locked «إعدادات الأطفال».
  */
-import { KidsMeadow } from "@/components/kids/KidsArt";
+import { KidsMeadow, star5 } from "@/components/kids/KidsArt";
 import type { ReactNode } from "react";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -25,7 +25,7 @@ export function KidsSkyMotif({ className }: { className?: string }) {
         <path className="kd-float" style={{ transformOrigin: "352px 34px" }} d="M352 18a20 20 0 1 0 14 34 16 16 0 1 1-14-34Z" />
         {[[140, 26, 7], [238, 46, 5], [110, 92, 4.5], [372, 82, 5], [22, 104, 4]].map(([x, y, r], i) => (
           <path key={i} className="kd-float" style={{ transformOrigin: `${x}px ${y}px`, animationDelay: `${i * 0.6}s` }}
-            d={`M${x} ${y! - r!}l${r! * 0.3} ${r! * 0.7} ${r! * 0.7} ${r! * 0.3}-${r! * 0.7} ${r! * 0.3}-${r! * 0.3} ${r! * 0.7}-${r! * 0.3}-${r! * 0.7}-${r! * 0.7}-${r! * 0.3} ${r! * 0.7}-${r! * 0.3}Z`} />
+            d={star5(x!, y!, r! * 1.15)} />
         ))}
       </g>
     </svg>

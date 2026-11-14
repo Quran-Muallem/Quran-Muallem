@@ -135,7 +135,7 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, mar
               isHi && "bg-amber-200/15 shadow-[0_0_0_0.12em_rgba(253,230,138,.12)]",
               st === "CORRECT" && "text-emerald-300",
               st === "WARNING" && "bg-orange-950/45 text-orange-300 shadow-[inset_0_0_0_1px_rgba(251,146,60,.35)]",
-              st === "ERROR" && "bg-red-950/60 text-red-300 shadow-[inset_0_0_0_1px_rgba(248,113,113,.4)]",
+              st === "ERROR" && "bg-[#DC2626]/20 text-[#DC2626] [html:not([data-theme=light])_&]:text-[#ff6b6b] shadow-[inset_0_0_0_1.5px_#DC2626] rounded-md",
               isHidden && "text-transparent",
               !measuring && !isHidden && st !== "CORRECT" && st !== "WARNING" && st !== "ERROR" && hinted?.has(k) && "text-amber-300 underline decoration-dotted decoration-1 underline-offset-[0.4em]",
               !measuring && marked?.has(k) && !isHidden && "bg-amber-300/25 shadow-[0_0_0_0.1em_rgba(252,211,77,.75)]",

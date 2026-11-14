@@ -1,3 +1,4 @@
+import { firstNewError } from "@/lib/liveMistakes";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Bookmark, ChevronDown, Loader2, RefreshCw, Rows3, Settings } from "lucide-react";
 import { MushafPage, type WordKey } from "@/components/mushaf/MushafPage";
@@ -377,6 +378,26 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
     flush("cut", (s2) => s2 !== last);
   }, [rec.listening, rec.match.statuses]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // v53 instant correction: the moment a word is confirmed wrong (the reciter moved past it) the session
+  // pauses, the word turns red with its Tajweed note, the rule is announced and the Sheikh says the word.
+  const announced = useRef(new Set<number>());
+  useEffect(() => { if (rec.listening && !rec.paused) return; if (!rec.listening) announced.current = new Set(); }, [rec.listening, rec.paused]);
+  useEffect(() => {
+    if (!rec.listening || rec.paused || !settings.errorDetection || !settings.instantCorrection) return;
+    const tk = firstNewError(rec.liveStatuses, announced.current);
+    if (tk < 0) return;
+    announced.current.add(tk);
+    const i = keyOfToken[tk];
+    const k = i != null ? keys[i] : undefined;
+    if (!k || !mushaf) return;
+    const [s2, a2, w2] = k.split(":").map(Number);
+    const word = mushaf.words(s2!, a2!)[w2! - 1] ?? "";
+    if (!word) return;
+    // Audio would be heard by the microphone: interrupt only where the session can pause (on-device engines).
+    if (rec.canPause) rec.pause();
+    setWordFix({ id: k, word, heard: rec.match.heard[tk] ?? null, surah: s2, ayah: a2, status: "ERROR", auto: rec.canPause ? "announce" : undefined });
+  }, [rec.liveStatuses]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const active = rec.listening || rec.match.recited > 0;
   const pageKeys = useMemo(() => verses.flatMap((v) => v.words.map((w) => `${v.surah}:${v.ayah}:${w}`)), [verses]);
   const showPast = settings.showPastMistakes, detectErrors = settings.errorDetection;
@@ -599,11 +620,11 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
   return (
     // Bottom padding = the floating bar: when everything fits there is nothing to scroll; on a phone in
     // landscape (15 lines can't fit) the page scrolls and its end is never hidden behind the bar.
-    <div style={{ paddingBottom: barH + PAGE_GAP_PX }}>
+    <div style={{ paddingBottom: `calc(${barH + PAGE_GAP_PX}px + var(--qm-nav-h, 0px))` }}>
       {/* v29 header bar (like Tarteel): menu · «سورة المطففين | صفحة ٥٨٩ | جزء ٣٠ | حزب ٥٩» with bookmark ·
           search · settings · Sheikh. Tapping the surah / page opens the «اذهب إلى» sheet. */}
       <div className="mb-1 flex items-center gap-1.5" dir="rtl" data-mushaf-header="">
-        <BurgerButton onClick={() => setMenuOpen(true)} label={t("menu")} />
+        {/* v53: the app menu lives in the unified header above; this row is the Mushaf sub-bar */}
         {/* v30 own design: a gold medallion with the surah name (tap → «اذهب إلى»), page · juz · hizb as small
             seals under it; the tools sit together in one capsule. */}
         <button type="button" onClick={() => setGoToOpen(true)} aria-label={t("goTo")} title={t("goTo")} data-mushaf-header-open=""
@@ -691,7 +712,7 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
             highlight={playingKey ?? (rec.listening ? null : selected)}
             verseStatus={(s, a) => verseStatus(progress, s, a)}
             recorded={(s, a) => recordings.some((r) => covers(r, s, a))}
-            onWordTap={rec.listening ? undefined : (k) => {
+            onWordTap={rec.listening && !rec.paused ? undefined : (k) => {
               const i = keys.indexOf(k);
               const t = i >= 0 ? tokenOfKey[i] ?? -1 : -1;
               const heard = (t >= 0 ? rec.match.heard[t] : null) ?? colors.get(k)?.heard ?? null;
@@ -699,7 +720,7 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
               const word = mushaf.words(s!, a!)[w! - 1] ?? "";
               const phonemes = rec.engine === "phonemes" ? refs?.[t] ?? undefined : undefined;
               const st = statuses.get(k);
-              setWordFix(word ? { id: k, word, heard: heard ?? null, surah: s, ayah: a, phonemes, status: st === "WARNING" ? "WARNING" : "ERROR" } : null);
+              setWordFix(word ? { id: k, word, heard: heard ?? null, surah: s, ayah: a, phonemes, status: st === "WARNING" ? "WARNING" : "ERROR", auto: "listen" } : null);
             }}
             onVerseTap={(s, a, at) => {
               if (rec.listening) return;

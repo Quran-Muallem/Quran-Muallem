@@ -325,7 +325,7 @@
   "tajweedNone": "Tidak ada hasil — coba kata lain",
   "tajweedExamples": "Contoh",
   "tajweedScholarTitle": "Perhatian",
-  "tajweedScholar": "Panduan ini menjelaskan kaidah tajwid untuk belajar; tidak menggantikan belajar dan koreksi langsung dari guru yang mumpuni. Untuk tafsir atau fatwa, rujuklah ulama yang kompeten dan kitab-kitab yang diakui.",
+  "tajweedScholar": "Panduan ini untuk mempelajari hukum tajwid dan tidak menggantikan belajar langsung secara lisan (talaqqi) serta koreksi dari syekh yang mumpuni.",
   "badgesTitle": "Lencana & pencapaian",
   "badgesSub": "Satu lencana untuk setiap surah: perak jika dibaca seluruhnya, emas jika dihafal seluruhnya",
   "badgeGold": "Emas",
@@ -847,7 +847,7 @@
   "kidsNextSurah": "Surah berikutnya",
   "kidsPickSurah": "Pilih surah",
   "kidsListenSheikh": "Dengarkan Syekh",
-  "kidsTapAyahHint": "Ketuk ayat untuk tahu artinya dan mendengarnya 🌟",
+  "kidsTapAyahHint": "Ketuk ayat untuk tahu artinya dan mendengarnya ⭐",
   "kidsLetsGo": "Ayo!",
   "kidsVersesCount": "{n} ayat",
   "kidsLoading": "Menyiapkan surah…",
@@ -942,5 +942,14 @@
   "spQiyam": "Qiyamul Lail",
   "hfStatusNoBt": "Tidak ada perangkat Bluetooth — memakai mikrofon ponsel",
   "hfStatusBt": "Terhubung: {name}",
-  "hfStatusSpeaker": "Speaker dan mikrofon ponsel"
+  "hfStatusSpeaker": "Speaker dan mikrofon ponsel",
+  "storyContext": "Konteks sejarah",
+  "storyNarrative": "Kisah rinci dan ujian",
+  "storyVerses": "Ayat terkait dengan suara syekh",
+  "storyReflections": "Renungan dan pelajaran",
+  "storyMiracle": "Mukjizat nabi",
+  "tajAnnounce": "Catatan tajwid: {rule}. Dengarkan pelafalan yang benar.",
+  "tajCheckWord": "perhatikan kata ini",
+  "setInstantCorrection": "Koreksi langsung saat membaca",
+  "setInstantCorrectionDesc": "Pada kata yang salah langsung berhenti: kata menjadi merah dengan hukumnya, hukumnya disebutkan dan syekh membacakan kata itu. Ketuk kata merah untuk mendengarnya."
 }

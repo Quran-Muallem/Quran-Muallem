@@ -28,3 +28,16 @@ export function deferLiveMistakes(statuses: readonly LiveStatus[], verseOf: read
   const current = verseOf[Math.max(0, cursor)] ?? Infinity;
   return statuses.map((st, i) => (bad(st) && (verseOf[i] ?? Infinity) >= current ? "PENDING" : st));
 }
+
+/**
+ * v53 instant correction: a word turns red as soon as the reciter has moved past it (index < cursor) —
+ * no waiting for the end of the verse. Words at / after the cursor stay neutral (still being heard).
+ */
+export function instantLiveMistakes(statuses: readonly LiveStatus[], cursor: number): LiveStatus[] {
+  return statuses.map((st, i) => (bad(st) && i >= cursor ? "PENDING" : st));
+}
+/** Index of the first confirmed red word not yet announced (keys = token index), or -1. */
+export function firstNewError(statuses: readonly LiveStatus[], announced: ReadonlySet<number>): number {
+  for (let i = 0; i < statuses.length; i++) if (statuses[i] === "ERROR" && !announced.has(i)) return i;
+  return -1;
+}

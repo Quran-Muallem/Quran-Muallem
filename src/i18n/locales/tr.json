@@ -325,7 +325,7 @@
   "tajweedNone": "Sonuç yok — başka bir kelime dene",
   "tajweedExamples": "Örnekler",
   "tajweedScholarTitle": "Lütfen dikkat",
-  "tajweedScholar": "Bu rehber tecvid kurallarını öğrenmek için anlatır; yetkin bir hocadan öğrenmenin ve düzeltilmenin yerini tutmaz. Tefsir veya dinî hükümler (fetvalar) için ehil âlimlere ve muteber kitaplara başvur.",
+  "tajweedScholar": "Bu rehber tecvid kurallarını öğrenmek içindir; yetkin bir hocadan yüz yüze öğrenmenin ve düzeltmenin yerini tutmaz.",
   "badgesTitle": "Rozetler ve başarılar",
   "badgesSub": "Her sure için bir rozet: tamamını okumaya gümüş, tamamını ezberden okumaya altın",
   "badgeGold": "Altın",
@@ -847,7 +847,7 @@
   "kidsNextSurah": "Sonraki sure",
   "kidsPickSurah": "Bir sure seç",
   "kidsListenSheikh": "Hocayı dinle",
-  "kidsTapAyahHint": "Anlamını öğrenmek ve dinlemek için bir âyete dokun 🌟",
+  "kidsTapAyahHint": "Anlamını öğrenmek ve dinlemek için bir âyete dokun ⭐",
   "kidsLetsGo": "Haydi!",
   "kidsVersesCount": "{n} âyet",
   "kidsLoading": "Sure hazırlanıyor…",
@@ -942,5 +942,14 @@
   "spQiyam": "Gece namazı",
   "hfStatusNoBt": "Bağlı Bluetooth cihazı yok — telefon mikrofonu kullanılıyor",
   "hfStatusBt": "Bağlı: {name}",
-  "hfStatusSpeaker": "Telefon hoparlörü ve mikrofonu"
+  "hfStatusSpeaker": "Telefon hoparlörü ve mikrofonu",
+  "storyContext": "Tarihî arka plan",
+  "storyNarrative": "Ayrıntılı kıssa ve imtihanlar",
+  "storyVerses": "İlgili âyetler, kârinin sesiyle",
+  "storyReflections": "Tefekkür ve dersler",
+  "storyMiracle": "Peygamberin mucizesi",
+  "tajAnnounce": "Tecvid uyarısı: {rule}. Doğru telaffuzu dinle.",
+  "tajCheckWord": "bu kelimeye dikkat et",
+  "setInstantCorrection": "Okurken anında düzeltme",
+  "setInstantCorrectionDesc": "Yanlış bir kelimede hemen durur: kelime kuralıyla birlikte kırmızı olur, kural söylenir ve kâri kelimeyi okur. Dinlemek için kırmızı kelimeye dokun."
 }

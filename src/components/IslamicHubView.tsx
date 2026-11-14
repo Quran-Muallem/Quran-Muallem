@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { StoriesView } from "@/components/stories/StoriesView";
-import { BookOpenCheck, ChevronLeft, ChevronRight, Clock, Compass, Headphones, Library, Mic, SunMoon } from "lucide-react";
+import { BookOpenCheck, ChevronLeft, ChevronRight, Clock, Compass, Headphones, Library, Mic, SunMoon, X } from "lucide-react";
 import { GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import { PrayerTimesView } from "@/components/hub/PrayerTimesView";
 import { HadithLibrary } from "@/components/hub/HadithLibrary";
@@ -37,7 +37,7 @@ const SECTIONS: { id: HubSection; icon: typeof Clock; emoji: string; title: Copy
  * "More" hub (المزيد): prayer times, Qibla, adhkar & duas, recording sessions, the Tajweed guide and the
  * Hadith library — replaces the separate Qibla / Adhkar / Tajweed tabs.
  */
-export function IslamicHubView({ section, onSection, onRetest }: { section: HubSection | null; onSection: (s: HubSection | null) => void; onRetest: (t: StudyTarget) => void }) {
+export function IslamicHubView({ section, onSection, onRetest, onClose }: { section: HubSection | null; onSection: (s: HubSection | null) => void; onRetest: (t: StudyTarget) => void; onClose?: () => void }) {
   const { t, language } = useI18n();
   const kids = useKidsMode();
   const Back = isRtl(language) ? ChevronRight : ChevronLeft;
@@ -61,13 +61,8 @@ export function IslamicHubView({ section, onSection, onRetest }: { section: HubS
   if (kidsSection) {
     return (
       <div className="space-y-3" data-hub-section={kidsSection.id}>
-        <button type="button" onClick={() => { onSection(null); window.scrollTo({ top: 0 }); }} className="flex items-center gap-1 text-sm text-amber-200">
-          <Back className="h-4 w-4" />{t("hubTitle")}
-        </button>
-        <header>
-          <h1 className="font-arabic text-3xl leading-snug" style={{ color: GOLD_LIGHT }}>{kidsSection.emoji} {kidsSection.ar}</h1>
-          {language !== "ar" && <p className="text-sm text-emerald-100/70">{t(kidsSection.title)}</p>}
-        </header>
+        <SubViewBar title={`${kidsSection.emoji} ${language === "ar" ? kidsSection.ar : t(kidsSection.title)}`} backLabel={t("hubTitle")}
+          onBack={() => { onSection(null); window.scrollTo({ top: 0 }); }} onClose={onClose ?? (() => onSection(null))} />
         {body}
       </div>
     );
@@ -75,15 +70,8 @@ export function IslamicHubView({ section, onSection, onRetest }: { section: HubS
   if (current) {
     return (
       <div className="space-y-3" data-hub-section={current.id}>
-        <button type="button" onClick={() => { onSection(null); window.scrollTo({ top: 0 }); }} className="flex items-center gap-1 text-sm text-amber-200">
-          <Back className="h-4 w-4" />{t("hubTitle")}
-        </button>
-        {(current.id === "prayer" || current.id === "hadith" || current.id === "recordings" || current.id === "reciters") && (
-          <header>
-            <h1 className="font-arabic text-3xl leading-snug" style={{ color: GOLD_LIGHT }}>{current.ar}</h1>
-            {language !== "ar" && <p className="text-sm text-emerald-100/70">{t(current.title)}</p>}
-          </header>
-        )}
+        <SubViewBar title={language === "ar" ? current.ar : t(current.title)} backLabel={t("hubTitle")}
+          onBack={() => { onSection(null); window.scrollTo({ top: 0 }); }} onClose={onClose ?? (() => onSection(null))} />
         {body}
       </div>
     );
@@ -121,7 +109,7 @@ export function IslamicHubView({ section, onSection, onRetest }: { section: HubS
 
 const KIDS_SECTIONS: { id: "kidsTafsir" | "kidsJourney"; emoji: string; title: CopyKey; sub: CopyKey; ar: string }[] = [
   { id: "kidsTafsir", emoji: "📚", title: "kidsTafsirTitle", sub: "kidsTafsirSub", ar: "تفسير للأطفال" },
-  { id: "kidsJourney", emoji: "🌟", title: "kidsJourneyTitle", sub: "kidsJourneySub", ar: "رحلة النجوم للحفظ" },
+  { id: "kidsJourney", emoji: "⭐", title: "kidsJourneyTitle", sub: "kidsJourneySub", ar: "رحلة النجوم للحفظ" },
 ];
 
 /** The prominent «وضع الأطفال» switch, and — when on — the children's modules. */
@@ -193,3 +181,18 @@ function NextPrayerStrip() {
 }
 
 export default IslamicHubView;
+
+/** v53: the same top bar as every full-screen sub-view — ‹ Back pill · centred title · ✕ (back to the main tab). */
+export function SubViewBar({ title, backLabel, onBack, onClose }: { title: string; backLabel: string; onBack: () => void; onClose: () => void }) {
+  const { t, language } = useI18n();
+  const Back = isRtl(language) ? ChevronRight : ChevronLeft;
+  return (
+    <div className="sticky top-[calc(max(0.6rem,env(safe-area-inset-top))+3.375rem)] z-20 -mx-5 -mt-5 flex min-h-[56px] items-center gap-2 border-b border-[color:var(--sx-card-border)] bg-[var(--sx-sheet-top)] px-5 py-1.5 backdrop-blur-xl" data-subview-bar="">
+      <button type="button" onClick={onBack} data-subview-back="" className="sx-chip flex h-11 max-w-[38%] shrink-0 items-center gap-1 rounded-2xl pe-3 ps-2 text-[0.95rem] font-bold text-[var(--sx-ink)]">
+        <Back className="h-5 w-5 shrink-0" aria-hidden="true" /><span className="truncate">{backLabel}</span>
+      </button>
+      <h1 className={language === "ar" ? "line-clamp-2 min-w-0 flex-1 text-center font-arabic text-[1.4rem] font-bold leading-tight text-[var(--sx-ink)]" : "line-clamp-2 min-w-0 flex-1 text-center text-[1.2rem] font-extrabold leading-tight text-[var(--sx-ink)]"}>{title}</h1>
+      <button type="button" onClick={onClose} aria-label={t("close")} data-subview-close="" className="sx-chip flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[var(--sx-ink)]"><X className="h-5 w-5" /></button>
+    </div>
+  );
+}

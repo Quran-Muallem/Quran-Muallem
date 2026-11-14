@@ -8,7 +8,7 @@ import { matchLivePhonemes } from "@/lib/quranAlignment";
 import type { CopyKey } from "@/lib/i18n";
 import { useVoiceProfile } from "@/lib/userAdaptation";
 import { useMistakeHaptics } from "@/lib/useMistakeHaptics";
-import { deferLiveMistakes, tokenVerses } from "@/lib/liveMistakes";
+import { deferLiveMistakes, instantLiveMistakes, tokenVerses } from "@/lib/liveMistakes";
 
 const speechErrorKey = (code: SpeechErrorCode | null): CopyKey | null =>
   code === "not-allowed" ? "errMic" : code === "audio-capture" ? "errNoMic" : code === "network" ? "errSpeechNetwork" : code === "unsupported" ? "errUnsupported" : code ? "errFailed" : null;
@@ -62,8 +62,10 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
   const processing = useWhisper && whisper.transcribing;
   // v38: while reciting, red / orange appear only once their verse is finished (see liveMistakes.ts).
   const verseOf = useMemo(() => tokenVerses(targets), [targets]);
-  const liveStatuses = useMemo(() => (listening ? deferLiveMistakes(match.statuses, verseOf, match.cursor) : match.statuses),
-    [listening, match.statuses, match.cursor, verseOf]);
+  // v53: «تصحيح فوري» (default) — a mistaken word turns red the moment the reciter moves past it.
+  const instant = useSettings().instantCorrection;
+  const liveStatuses = useMemo(() => (!listening ? match.statuses : instant ? instantLiveMistakes(match.statuses, match.cursor) : deferLiveMistakes(match.statuses, verseOf, match.cursor)),
+    [listening, match.statuses, match.cursor, verseOf, instant]);
 
   // Reset (v38 «إعادة»): the session is dropped, nothing of it is saved.
   const reset = useCallback(() => { session.current = false; stopListening(); resetTranscript(); setWhisperText(""); whisper.cancel(); setBase(null); }, [stopListening, resetTranscript, whisper.cancel]); // eslint-disable-line react-hooks/exhaustive-deps

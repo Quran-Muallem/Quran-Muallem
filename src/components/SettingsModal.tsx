@@ -1,3 +1,4 @@
+import { SanctuarySheet } from "@/components/SanctuarySheet";
 import { speechEngineFor } from "@/lib/speechEngine";
 import { LargePrintToggle } from "@/components/LargePrintToggle";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -57,22 +58,23 @@ export function SettingsModal({ open, onOpenChange, initialPage = null }: { open
   const Back = directionFor(language) === "rtl" ? ChevronRight : ChevronLeft;
   const Next = directionFor(language) === "rtl" ? ChevronLeft : ChevronRight;
   return (
-    <GoldDialog open={open} onOpenChange={onOpenChange} title={row ? t(row.label) : t("settingsTitle")} description={row ? undefined : t("settingsSub")} className="max-w-md">
+    <SanctuarySheet open={open} onClose={() => onOpenChange(false)} title={row ? t(row.label) : t("settingsTitle")} subtitle={row ? undefined : t("settingsSub")}
+      onBack={page ? () => setPage(null) : undefined} backLabel={t("settingsTitle")} pageKey={page ?? undefined} dataAttr={{ "data-settings-sheet": page ?? "index" }}>
       {!page ? (
         <div className="space-y-4" data-settings-index="">
           {/* v51: one tap for elderly readers */}
           <LargePrintToggle />
           {GROUPS.map((g) => (
-            <section key={g.title} className="overflow-hidden rounded-2xl bg-black/15" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
-              <h3 className="border-b px-4 py-3 text-sm font-semibold" style={{ color: GOLD_LIGHT, borderColor: alpha(GOLD, 0.25) }}>{t(g.title)}</h3>
+            <section key={g.title} className="sx-card overflow-hidden !rounded-[22px]">
+              <h3 className="border-b px-4 py-3 text-[0.95rem] font-extrabold" style={{ color: "var(--sx-gold-soft)", borderColor: "var(--sx-card-border)" }}>{t(g.title)}</h3>
               <ul>
                 {g.rows.filter((r) => !(s0.kidsMode && r.id === "recitation")).map((r, i) => (
-                  <li key={r.id} className={cn(i > 0 && "border-t")} style={{ borderColor: alpha(GOLD, 0.12) }}>
+                  <li key={r.id} className={cn(i > 0 && "border-t")} style={{ borderColor: "var(--sx-card-border)" }}>
                     <button type="button" onClick={() => setPage(r.id)} data-settings-row={r.id}
-                      className="flex w-full items-center gap-3 px-4 py-3.5 text-start text-sm text-emerald-50 hover:bg-white/5">
-                      <span className="text-amber-200" aria-hidden="true">{r.icon}</span>
+                      className="flex min-h-[52px] w-full items-center gap-3 px-4 py-3 text-start text-[1rem] font-semibold sx-ink active:bg-[var(--sx-chip)]">
+                      <span style={{ color: "var(--sx-gold)" }} aria-hidden="true">{r.icon}</span>
                       <span className="flex-1">{t(r.label)}</span>
-                      <Next className="h-4 w-4 text-emerald-100/50" aria-hidden="true" />
+                      <Next className="h-4 w-4 sx-ink-soft" aria-hidden="true" />
                     </button>
                   </li>
                 ))}
@@ -82,13 +84,10 @@ export function SettingsModal({ open, onOpenChange, initialPage = null }: { open
         </div>
       ) : (
         <div className="space-y-4" data-settings-page={page}>
-          <button type="button" onClick={() => setPage(null)} data-settings-back=""
-            className="flex items-center gap-1 rounded-full px-3 py-1.5 text-sm text-amber-100" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.5)}` }}>
-            <Back className="h-4 w-4" aria-hidden="true" />{t("settingsTitle")}
-          </button>
           {page === "recitation" && (<>
             <InfoCard title={t("setModeSwitchTitle")} text={t("setModeSwitchText")} />
             <Toggle k="errorDetection" label="setErrorDetection" desc="setErrorDetectionDesc" />
+            {s0.errorDetection && <Toggle k="instantCorrection" label="setInstantCorrection" desc="setInstantCorrectionDesc" />}
             <SpeechSection /><Section title={t("voiceTitle")}><VoiceProfilePanel /></Section>
           </>)}
           {page === "listening" && <ListeningSection onManage={() => { onOpenChange(false); window.dispatchEvent(new Event("qm:open-reciters")); }} />}
@@ -133,11 +132,11 @@ export function SettingsModal({ open, onOpenChange, initialPage = null }: { open
           {page === "allData" && <DeleteAllDataSection />}
         </div>
       )}
-    </GoldDialog>
+    </SanctuarySheet>
   );
 }
 
-type BoolKey = "mistakeVibration" | "completionSound" | "autoStopSurahEnd" | "hiddenFirstWord" | "errorDetection" | "showPastMistakes" | "mistakeSound" | "sessionSound" | "sessionHaptic" | "saveRecordings" | "tajweedColors" | "kidsMode";
+type BoolKey = "instantCorrection" | "mistakeVibration" | "completionSound" | "autoStopSurahEnd" | "hiddenFirstWord" | "errorDetection" | "showPastMistakes" | "mistakeSound" | "sessionSound" | "sessionHaptic" | "saveRecordings" | "tajweedColors" | "kidsMode";
 function Toggle({ k, label, desc }: { k: BoolKey; label: CopyKey; desc: CopyKey }) {
   const { t } = useI18n();
   const s = useSettings();

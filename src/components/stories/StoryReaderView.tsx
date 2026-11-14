@@ -13,6 +13,8 @@ import { getAyahAudioUrl } from "@/lib/reciterManager";
 import { sheikhAudio, stopSheikhAudio } from "@/lib/audioPlayback";
 import { getSettings } from "@/lib/settings";
 import { pageTurn, startAmbience, starChime, stopAmbience } from "@/lib/storyAmbience";
+import { MiracleIcon, hasMiracleIcon } from "@/components/stories/MiracleIcon";
+import MIRACLES from "@/data/miracles.json";
 
 const AMBIENCE_KEY = "qm.stories.ambience";
 
@@ -27,17 +29,25 @@ export const ADULT_LOOK: StoryLook = {
 export function StoryReaderView({ story, look, onBack, onOpen }: { story: Story; look: StoryLook; onBack: () => void; onOpen: (id: string) => void }) {
   const { t, language } = useI18n();
   const L = storyLang(language);
-  const rtl = L === "ar";
+  const rtl = L === "ar" || L === "ur";
   const progress = useStoryProgress();
   const done = !!progress.done[story.id];
   const next = nextStory(story.id);
   // what is read aloud: each chapter (title + text), then the lesson
-  const paragraphs = useMemo(() => [...story.chapters.map((c) => `${c.title[L]}. ${c.text[L]}`), `${t("storiesLesson")}. ${story.lesson[L]}`], [story, L, t]);
+  const kidsLook0 = look === KIDS_LOOK;
+  // v53: adults get the deep version (context → narrative → verses → reflections); kids the bite-sized storybook
+  const deep = !kidsLook0 && !!story.context;
+  const paragraphs = useMemo(() => [
+    ...(deep ? [`${t("storyContext")}. ${story.context![L]}`] : []),
+    ...story.chapters.map((c) => `${c.title[L]}. ${c.text[L]}`),
+    `${t("storiesLesson")}. ${story.lesson[L]}${deep && story.reflections ? ` ${story.reflections.map((r) => r[L]).join(" ")}` : ""}`,
+  ], [story, L, t, deep]);
+  const off = deep ? 1 : 0;
   const [active, setActive] = useState(-1);
   const [state, setState] = useState<NarratorState>("idle");
   const [rate, setRate] = useState<NarrationRate>(() => (getSettings().kidsMode ? 0.8 : 1));
   const [noVoice, setNoVoice] = useState(false);
-  const kidsLook = look === KIDS_LOOK;
+  const kidsLook = kidsLook0;
   // v49: soft nature ambience behind the narrator (toggle, remembered on this device)
   const [ambience, setAmbience] = useState(() => { try { return localStorage.getItem(AMBIENCE_KEY) === "1"; } catch { return false; } });
   useEffect(() => { if (ambience && state === "playing") startAmbience(0.1); else stopAmbience(); }, [ambience, state]);
@@ -77,7 +87,14 @@ export function StoryReaderView({ story, look, onBack, onOpen }: { story: Story;
       <button type="button" onClick={onBack} className={cn(look.btnAlt, "!min-h-0 px-4 py-2 text-sm")} data-story-back="">{rtl ? "→" : "←"} {t("storiesBack")}</button>
 
       <header className={cn(look.card, "relative overflow-hidden p-5 text-center")} style={{ background: story.final ? "linear-gradient(160deg,#fff4c2,#f7c948 60%,#d99a00)" : undefined, color: story.final ? "#3b2300" : undefined }}>
-        <p className="text-5xl leading-tight tracking-widest" aria-hidden="true">{story.emoji}</p>
+        {hasMiracleIcon(story.id) ? (
+          <div className="flex flex-col items-center gap-1.5" data-story-miracle={story.id}>
+            <MiracleIcon id={story.id} className="h-24 w-24 drop-shadow-[0_8px_14px_rgba(0,0,0,.18)]" />
+            <span className="rounded-full px-3 py-1 text-[0.8rem] font-bold" style={{ background: "rgba(212,175,55,.18)", color: story.final ? "#3b2300" : "var(--sx-gold-soft)" }}>
+              {t("storyMiracle")}: {(MIRACLES as Record<string, Record<string, string>>)[story.id]?.[L] ?? ""}
+            </span>
+          </div>
+        ) : <p className="text-5xl leading-tight tracking-widest" aria-hidden="true">{story.emoji.replace(/[\u2728\u2726\u2727]/gu, "")}</p>}
         <h1 className={cn("mt-2 font-black leading-snug", rtl ? "font-arabic text-3xl" : "text-2xl")}>{story.name[L]}</h1>
         {!rtl && <p className="font-arabic text-lg">{story.name.ar}</p>}
         <p className={cn("mt-1 text-sm font-bold", !story.final && look.soft)}>{story.era[L]}</p>
@@ -85,7 +102,7 @@ export function StoryReaderView({ story, look, onBack, onOpen }: { story: Story;
       </header>
 
       {/* read-aloud bar */}
-      <div className={cn(look.card, "sticky z-20 flex flex-wrap items-center gap-2 p-3", look === KIDS_LOOK ? "top-2" : "top-[4.75rem]")} data-narrator={state}>
+      <div className={cn(look.card, "sticky z-20 flex flex-wrap items-center gap-2 p-3", look === KIDS_LOOK ? "top-2" : "top-[calc(max(0.6rem,env(safe-area-inset-top))+3.375rem)]")} data-narrator={state}>
         <button type="button" onClick={toggle} className={cn(look.btn, "flex-1 text-base")} data-narrator-play="">
           <span aria-hidden="true">{state === "playing" ? "⏸" : "🔊"}</span>{state === "playing" ? t("storiesPause") : t("storiesListen")}
         </button>
@@ -105,20 +122,38 @@ export function StoryReaderView({ story, look, onBack, onOpen }: { story: Story;
         {noVoice && <p className={cn("w-full text-xs", look.soft)}>{t("storiesNoVoice")}</p>}
       </div>
 
+      {deep && (<>
+        <SectionHead n={1} title={t("storyContext")} rtl={rtl} look={look} />
+        <section ref={(el) => { refs.current[0] = el; }} className={cn(look.card, "p-5 transition-all duration-300")} style={hl(0)} data-story-context="">
+          <p className={cn("leading-loose", rtl ? "font-arabic text-xl" : "text-[1.05rem]")}>{story.context![L]}</p>
+        </section>
+        <SectionHead n={2} title={t("storyNarrative")} rtl={rtl} look={look} />
+      </>)}
       {story.chapters.map((c, i) => (
-        <section key={i} ref={(el) => { refs.current[i] = el; }} className={cn(look.card, "p-5 transition-all duration-300")} style={hl(i)} data-story-chapter={i} data-active={active === i ? "" : undefined}>
+        <section key={i} ref={(el) => { refs.current[i + off] = el; }} className={cn(look.card, "p-5 transition-all duration-300")} style={hl(i + off)} data-story-chapter={i} data-active={active === i + off ? "" : undefined}>
           <h2 className={cn("mb-2 flex items-center gap-2 font-black", rtl ? "font-arabic text-xl" : "text-lg")}>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm text-white" style={{ background: look.accent }}>{rtl ? toArabicDigits(i + 1) : i + 1}</span>{c.title[L]}
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm text-white" style={{ background: look.accent }}>{L === "ar" ? toArabicDigits(i + 1) : i + 1}</span>{c.title[L]}
           </h2>
           <p className={cn("leading-loose", rtl ? "font-arabic text-xl" : "text-[1.05rem]")}>{c.text[L]}</p>
         </section>
       ))}
 
-      <StoryAyat story={story} look={look} rtl={rtl} />
+      {deep && <SectionHead n={3} title={t("storyVerses")} rtl={rtl} look={look} />}
+      <StoryAyat story={story} look={look} rtl={rtl} hideTitle={deep} />
 
-      <section ref={(el) => { refs.current[story.chapters.length] = el; }} className={cn(look.card, "p-5")} style={{ ...hl(story.chapters.length), background: "linear-gradient(160deg, rgba(253,230,138,.55), transparent)" }} data-story-lesson="">
+      {deep && <SectionHead n={4} title={t("storyReflections")} rtl={rtl} look={look} />}
+      <section ref={(el) => { refs.current[story.chapters.length + off] = el; }} className={cn(look.card, "p-5")} style={{ ...hl(story.chapters.length + off), background: "linear-gradient(160deg, rgba(253,230,138,.55), transparent)" }} data-story-lesson="">
         <h2 className={cn("mb-2 font-black", rtl ? "font-arabic text-xl" : "text-lg")}>💡 {t("storiesLesson")}</h2>
         <p className={cn("leading-loose", rtl ? "font-arabic text-xl" : "text-[1.05rem]")}>{story.lesson[L]}</p>
+        {deep && story.reflections && (
+          <ul className="mt-3 space-y-2.5" data-story-reflections={story.reflections.length}>
+            {story.reflections.map((r, i) => (
+              <li key={i} className={cn("flex gap-2.5 leading-relaxed", rtl ? "font-arabic text-lg" : "text-[1rem]")}>
+                <span aria-hidden="true" className="mt-1 shrink-0" style={{ color: look.accent }}>★</span><span>{r[L]}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <div ref={endRef} className="space-y-3 pb-4">
@@ -135,7 +170,7 @@ export function StoryReaderView({ story, look, onBack, onOpen }: { story: Story;
 }
 
 /** «الآيات المرتبطة بالقصة»: the verses, played in the Sheikh's voice one after another, and a jump to the Mushaf. */
-function StoryAyat({ story, look, rtl }: { story: Story; look: StoryLook; rtl: boolean }) {
+function StoryAyat({ story, look, rtl, hideTitle = false }: { story: Story; look: StoryLook; rtl: boolean; hideTitle?: boolean }) {
   const { t } = useI18n();
   const [texts, setTexts] = useState<Record<string, string>>({});
   const [playing, setPlaying] = useState<string | null>(null);
@@ -168,7 +203,7 @@ function StoryAyat({ story, look, rtl }: { story: Story; look: StoryLook; rtl: b
 
   return (
     <section className="space-y-3" data-story-ayat="">
-      <h2 className={cn("px-1 font-black", rtl ? "font-arabic text-xl" : "text-lg")}>📖 {t("storiesAyat")}</h2>
+      {!hideTitle && <h2 className={cn("px-1 font-black", rtl ? "font-arabic text-xl" : "text-lg")}>📖 {t("storiesAyat")}</h2>}
       {story.ayat.map(([s, a, b]) => {
         const key = `${s}:${a}`;
         const ref = `${getSurahMeta(s)?.nameArabic ?? ""} ${toArabicDigits(a)}${b > a ? `–${toArabicDigits(b)}` : ""}`;
@@ -184,6 +219,17 @@ function StoryAyat({ story, look, rtl }: { story: Story; look: StoryLook; rtl: b
         );
       })}
     </section>
+  );
+}
+
+/** v53 adult section heading: «١ السياق التاريخي» … */
+function SectionHead({ n, title, rtl, look }: { n: number; title: string; rtl: boolean; look: StoryLook }) {
+  const { language } = useI18n();
+  return (
+    <h2 className={cn("flex items-center gap-2.5 px-1 pt-2 font-black", rtl ? "font-arabic text-[1.35rem]" : "text-[1.15rem]")} data-story-section={n}>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[0.95rem]" style={{ background: "linear-gradient(135deg,#f3d27a,#d4af37)", color: "#1b1300" }}>{language === "ar" ? toArabicDigits(n) : n}</span>
+      <span style={{ color: look.ink }}>{title}</span>
+    </h2>
   );
 }
 

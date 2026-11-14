@@ -22,7 +22,7 @@ const CARD_BG = ["bg-emerald-100/90 text-emerald-950", "bg-amber-100/90 text-amb
 export function KidsTafsirView() {
   const { t, language } = useI18n();
   const L = kidsLang(language);
-  const rtl = L === "ar";
+  const rtl = L === "ar" || L === "ur";
   const [open, setOpen] = useState<KidsTafsirEntry | null>(null);
   useEffect(() => () => { void stopSpeaking(); }, []);
   const Back = isRtl(language) ? ChevronRight : ChevronLeft;
@@ -66,7 +66,7 @@ export function KidsTafsirView() {
 export function KidsTafsirCards({ entry: open }: { entry: KidsTafsirEntry }) {
   const { t, language } = useI18n();
   const L = kidsLang(language);
-  const rtl = L === "ar";
+  const rtl = L === "ar" || L === "ur";
   const [speaking, setSpeaking] = useState<string | null>(null);
   useEffect(() => () => { void stopSpeaking(); }, []);
   const read = async (id: string, text: string) => {

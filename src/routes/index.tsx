@@ -4,11 +4,11 @@ import { chooseLanguage } from "@/components/LanguageSelector";
 import type { SettingsPage } from "@/components/SettingsModal";
 import { AppLogo } from "@/components/ornaments";
 import { PrayingPersonIcon } from "@/components/icons/PrayingPersonIcon";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BookOpen, BookOpenText, Headphones, Home, Star, LayoutGrid, Loader2, PenLine, Mic, Lightbulb, RotateCcw, Search, Settings, Sparkles, Square, Target, Pause, Play } from "lucide-react";
 import { VoiceWordFix, type WordFix } from "@/components/VoiceWordFix";
 import { useVoiceProfile } from "@/lib/userAdaptation";
-import { deferLiveMistakes, tokenVerses } from "@/lib/liveMistakes";
+import { deferLiveMistakes, firstNewError, instantLiveMistakes, tokenVerses } from "@/lib/liveMistakes";
 import { SessionReview, type ReviewItem } from "@/components/SessionReview";
 import { useTajweedWords, type TajweedSeg } from "@/lib/tajweedColors";
 import { useMistakeHaptics } from "@/lib/useMistakeHaptics";
@@ -265,16 +265,18 @@ export function App() {
         <div className="mx-auto flex min-h-screen max-w-md flex-col bg-hero">
           {/* Global header on every screen (the full-screen Mushaf has the same burger in its own top row) */}
           {/* v51 clean header: menu · app name · text size (A− / A+); on the home screen also the language switch */}
-          <div className={cn("sticky top-0 z-30 -mb-1 bg-[var(--sx-header)] backdrop-blur-xl shadow-[0_10px_24px_-18px_rgba(16,48,38,.5)] px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]", tab === "mushaf" && "hidden")} data-app-header="">
-            <div className="flex items-center gap-2.5">
+          <div className="sticky top-0 z-30 -mb-1 bg-[var(--sx-header)] backdrop-blur-xl shadow-[0_10px_24px_-18px_rgba(16,48,38,.5)] px-3 pb-2 pt-[max(0.6rem,env(safe-area-inset-top))]" data-app-header="">
+            <div className="flex items-center gap-2">
               <BurgerButton onClick={() => setMenuOpen(true)} label={translate(language, "menu")} />
-              <AppLogo className="h-10 w-10 shrink-0" />
-              <span className={cn("min-w-0 flex-1 truncate font-bold leading-tight text-[var(--sx-gold-soft)]", language === "ar" ? "font-arabic text-xl" : "text-lg")}>{language === "ar" ? "معلم القرآن" : "Quran Muallem"}</span>
+              <AppLogo className="h-[38px] w-[38px] shrink-0" />
+              {/* v53: the full name always fits — px sizes (not rem) so A+/A− never squeeze it */}
+              <span className={cn("shrink-0 whitespace-nowrap font-bold leading-tight text-[var(--sx-gold-soft)]", language === "ar" && "font-arabic")} style={{ fontSize: language === "ar" ? "clamp(17px, 5vw, 21px)" : "clamp(15px, 4.2vw, 18px)" }} data-app-title="">{language === "ar" ? "معلم القرآن" : "Quran Muallem"}</span>
+              <span className="min-w-0 flex-1" />
               <TextSizeButtons />
             </div>
-            {tab === "home" && <LanguageQuickSwitch />}
           </div>
-          <main key={tab} className={cn("flex-1 pb-28 animate-in fade-in slide-in-from-bottom-2 duration-300", tab === "mushaf" ? "px-1.5 pb-0 pt-[max(0.5rem,env(safe-area-inset-top))]" : "px-5 pt-5")}>
+          <main key={companion ? `companion-${companion}` : tab} className={cn("flex-1 animate-in fade-in slide-in-from-bottom-2 duration-300", companion ? "px-5 pt-4" : tab === "mushaf" ? "px-1.5 pb-0 pt-2" : "px-5 pb-28 pt-5")}>
+            {companion ? <CompanionView tab={companion} onTab={setCompanion} onClose={() => setCompanion(null)} /> : <>
             {tab === "home" && settings.kidsMode && <KidsHome userName={auth.session?.provider === "guest" ? null : auth.session?.name || null} />}
             {tab === "home" && !settings.kidsMode && <Dashboard userName={auth.session?.provider === "guest" ? null : auth.session?.name || null} onOpen={open} onInvite={() => setInviteOpen(true)} onBadges={() => setBadgesOpen({ surah: null })} />}
             {tab === "mushaf" && (
@@ -283,12 +285,12 @@ export function App() {
             )}
             {tab === "practice" && <PracticeScreen target={practice} onTargetChange={setPractice} />}
             {tab === "khatma" && <KhatmaView onOpenPage={openPage} />}
-            {tab === "hub" && <IslamicHubView section={hubSection} onSection={(s) => { if (s === "salat") openCompanion("salat"); else setHubSection(s); }} onRetest={open} />}
+            {tab === "hub" && <IslamicHubView section={hubSection} onSection={(s) => { if (s === "salat") openCompanion("salat"); else setHubSection(s); }} onRetest={open} onClose={() => go("home")} />}
+            </>}
           </main>
-          {/* Full-screen Mushaf: the tab bar is replaced by the burger menu */}
-          {(tab !== "mushaf" || companion) && <BottomNav tab={companion ? null : tab} setTab={go} hubSection={hubSection} kids={settings.kidsMode} />}
-          {companion && <CompanionView tab={companion} onTab={setCompanion} onClose={() => setCompanion(null)} />}
-          {tab !== "mushaf" && (
+          {/* v53: one shell everywhere — the same header and 4-tab bar on Home, Mushaf, Recite and «المرافق» */}
+          <BottomNav tab={companion ? null : tab} setTab={go} hubSection={hubSection} kids={settings.kidsMode} />
+          {(
             <MushafMenu open={menuOpen} onClose={() => setMenuOpen(false)} current={tab} page={1} surah={mushaf.surahId} juz={1}
               profile={auth.status === "signedIn" ? <AccountMenu session={auth.session} onRename={() => setRenameOpen(true)} /> : undefined}
               onPage={openPage} onSurah={(s2) => { jump({ surahId: s2, focus: 1 }); go("mushaf"); }}
@@ -322,11 +324,11 @@ export function App() {
 /** v51: «A− / A+» — one step smaller / larger for the whole app. */
 function TextSizeButtons() {
   const { t } = useI18n();
-  const cls = "flex h-[3.25rem] min-w-[3.25rem] items-center justify-center rounded-2xl border-2 border-[color:var(--sx-card-top)] bg-[var(--sx-card)] px-2 font-serif font-black text-[var(--sx-gold-soft)] shadow-[var(--sx-card-shadow)] active:scale-95";
+  const cls = "flex h-[46px] min-w-[46px] items-center justify-center rounded-2xl border-2 border-[color:var(--sx-card-top)] bg-[var(--sx-card)] px-2 font-serif font-black text-[var(--sx-gold-soft)] shadow-[var(--sx-card-shadow)] active:scale-95";
   return (
-    <div className="flex shrink-0 gap-1.5" dir="ltr" data-text-size="">
-      <button type="button" onClick={() => stepAppFontScale(-1)} aria-label={t("textSmaller")} className={cn(cls, "text-base")}>A−</button>
-      <button type="button" onClick={() => stepAppFontScale(1)} aria-label={t("textLarger")} className={cn(cls, "text-xl")}>A+</button>
+    <div className="flex shrink-0 gap-1" dir="ltr" data-text-size="">
+      <button type="button" onClick={() => stepAppFontScale(-1)} aria-label={t("textSmaller")} className={cls} style={{ fontSize: 16 }}>A−</button>
+      <button type="button" onClick={() => stepAppFontScale(1)} aria-label={t("textLarger")} className={cls} style={{ fontSize: 20 }}>A+</button>
     </div>
   );
 }
@@ -387,29 +389,38 @@ function BottomNav({ tab, setTab, hubSection, kids }: { tab: Tab | null; setTab:
   void hubSection; void kids; // v47: Kids Mode has its own layout and navigation
   // v51: only four large, self-explaining tabs (icon ≥ 28 px + bold label ≥ 14 px, ≥ 52 px tall);
   // Khatma, the Islamic sections, settings, downloads and Kids Mode live in the flat menu.
-  const label = cn("max-w-full truncate font-bold leading-tight", language === "ar" ? "font-arabic text-[0.95rem]" : "text-[0.875rem]");
+  // v53: labels never truncate («Companion», «Compañero») — fixed px size, slight negative tracking
+  const label = cn("max-w-full whitespace-nowrap font-bold leading-tight tracking-[-0.01em]", language === "ar" && "font-arabic");
+  const labelStyle = { fontSize: language === "ar" || language === "ur" ? 13 : 11 };
+  const navRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const el = navRef.current; if (!el) return;
+    const set = () => document.documentElement.style.setProperty("--qm-nav-h", `${Math.round(el.getBoundingClientRect().height)}px`);
+    set(); const ro = new ResizeObserver(set); ro.observe(el);
+    return () => { ro.disconnect(); document.documentElement.style.setProperty("--qm-nav-h", "0px"); };
+  }, []);
   const btn = (key: Tab, Icon: typeof Home, text: string) => {
     const active = tab === key;
     return (
       <button type="button" key={key} onClick={() => setTab(key)} aria-current={active ? "page" : undefined} data-nav={key}
-        className={cn("flex min-h-[3.75rem] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1.5 transition-colors", active ? "bg-[var(--sx-chip)] text-[var(--sx-primary)] [html:not([data-theme])_&]:text-[#f6d36b] [html[data-theme=dark]_&]:text-[#f6d36b]" : "text-[var(--sx-ink-soft)]")}>
-        <Icon className="h-7 w-7" strokeWidth={active ? 2.4 : 2} />
-        <span className={label}>{text}</span>
+        className={cn("flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-[3px] rounded-2xl px-0.5 py-1.5 transition-colors", active ? "bg-[var(--sx-chip)] text-[var(--sx-primary)] [html:not([data-theme])_&]:text-[#f6d36b] [html[data-theme=dark]_&]:text-[#f6d36b]" : "text-[var(--sx-ink-soft)]")}>
+        <Icon width={26} height={26} strokeWidth={active ? 2.4 : 2} />
+        <span className={label} style={labelStyle}>{text}</span>
       </button>
     );
   };
   return (
-    <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t border-[color:var(--sx-card-top)] bg-[var(--sx-nav)] shadow-[0_-10px_30px_-12px_rgba(16,48,38,.18)] backdrop-blur-xl px-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-1.5" data-bottom-nav="main">
+    <nav ref={navRef} className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t border-[color:var(--sx-card-top)] bg-[var(--sx-nav)] shadow-[0_-10px_30px_-12px_rgba(16,48,38,.18)] backdrop-blur-xl px-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-1.5" data-bottom-nav="main">
       <div className="grid grid-cols-4 gap-1.5">
         {btn("home", Home, t("start"))}
         {btn("mushaf", BookOpen, t("navMushaf"))}
         {btn("practice", Mic, t("navPractice"))}
         {/* «المرافق»: opens the companion (رفيق الصلاة / المراجعة الحرة) */}
         <button type="button" onClick={() => openCompanion()} data-nav="companion" aria-label={t("companionTitle")}
-          className="flex min-h-[3.75rem] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1.5 text-[#1b1300]"
+          className="flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-[3px] rounded-2xl px-0.5 py-1.5 text-[#1b1300]"
           style={{ background: "linear-gradient(135deg,#f3d27a,#d4af37)", boxShadow: "0 8px 20px -8px rgba(212,175,55,.9)" }}>
-          <PrayingPersonIcon className="h-8 w-8" />
-          <span className={label}>{t("navCompanion")}</span>
+          <PrayingPersonIcon className="h-[28px] w-[28px]" />
+          <span className={label} style={labelStyle}>{t("navCompanion")}</span>
         </button>
       </div>
     </nav>
@@ -484,7 +495,7 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
   const listening = useWhisper ? whisper.recording : speech.isListening;
   // v38: while reciting, red / orange appear only once their verse is finished (liveMistakes.ts).
   const verseOf = useMemo(() => tokenVerses(texts), [texts]);
-  const liveStatuses = useMemo(() => (listening ? deferLiveMistakes(match.statuses, verseOf, match.cursor) : match.statuses), [listening, match.statuses, match.cursor, verseOf]);
+  const liveStatuses = useMemo(() => (!listening ? match.statuses : settings.instantCorrection ? instantLiveMistakes(match.statuses, match.cursor) : deferLiveMistakes(match.statuses, verseOf, match.cursor)), [listening, match.statuses, match.cursor, verseOf, settings.instantCorrection]);
   // Word colours shared with the Mushaf (RecitationContext): a passage recited there shows the same
   // green / orange / red here; a new recitation replaces them verse by verse as the reciter reaches them.
   const colors = useWordColors();
@@ -527,7 +538,18 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
   useMistakeHaptics(liveStatuses, listening);
   const [wordFix, setWordFix] = useState<WordFix | null>(null);
   useEffect(() => { if (listening) { setWordFix(null); setReview(null); } }, [listening]);
-  const tapWord = (i: number) => {
+  // v53 instant correction (as in the Mushaf): stop at a confirmed wrong word, announce its rule, Sheikh's word.
+  const announcedP = useRef(new Set<number>());
+  useEffect(() => { if (!listening) announcedP.current = new Set(); }, [listening]);
+  useEffect(() => {
+    if (!listening || !useWhisper || whisper.paused || !settings.errorDetection || !settings.instantCorrection) return;
+    const tk = firstNewError(liveStatuses, announcedP.current);
+    if (tk < 0) return;
+    announcedP.current.add(tk);
+    whisper.pause();
+    tapWord(tk, "announce");
+  }, [liveStatuses]); // eslint-disable-line react-hooks/exhaustive-deps
+  const tapWord = (i: number, auto: "listen" | "announce" = "listen") => {
     const heard = match.heard[i] ?? (tokenKeys[i] ? colors.get(tokenKeys[i]!)?.heard : null) ?? null;
     let o = 0;
     for (const a of ayat) {
@@ -538,7 +560,7 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
         // Word number as Quran.com counts it: waqf signs printed as separate tokens are not words.
         const wordNo = words.slice(0, i - o + 1).filter((w) => normalizeArabic(w)).length;
         const st = shown[i];
-        setWordFix(word ? { id: `${target.surahId}:${a.number}:${wordNo}`, word, heard: heard ?? null, surah: target.surahId, ayah: a.number, phonemes, status: st === "WARNING" ? "WARNING" : "ERROR" } : null);
+        setWordFix(word ? { id: `${target.surahId}:${a.number}:${wordNo}`, word, heard: heard ?? null, surah: target.surahId, ayah: a.number, phonemes, status: auto === "announce" ? "ERROR" : st === "WARNING" ? "WARNING" : "ERROR", auto } : null);
         return;
       }
       o += words.length;
@@ -956,7 +978,7 @@ function MicButton({ recording, busy = false, onClick, label, getLevel, wave = f
 const statusClass: Record<WordStatus, string> = {
   CORRECT: "bg-success/15 text-success",
   WARNING: "bg-orange-950/45 text-orange-300 ring-1 ring-orange-400/35",
-  ERROR: "bg-red-950/60 text-red-300 ring-1 ring-red-400/40",
+  ERROR: "bg-[#DC2626]/20 text-[#DC2626] [html:not([data-theme=light])_&]:text-[#ff6b6b] ring-[1.5px] ring-[#DC2626]",
 };
 
 /**

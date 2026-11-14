@@ -20,9 +20,9 @@ export type AppTab = "home" | "mushaf" | "practice" | "khatma" | "hub";
 export function BurgerButton({ onClick, label }: { onClick: () => void; label: string }) {
   return (
     <button type="button" onClick={onClick} aria-label={label}
-      className="flex h-[3.25rem] w-[3.25rem] shrink-0 items-center justify-center rounded-2xl text-[var(--sx-gold-soft)]"
+      className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-2xl text-[var(--sx-gold-soft)]"
       style={{ background: "var(--sx-card)", boxShadow: `inset 0 0 0 1.5px var(--sx-card-top), var(--sx-card-shadow)` }}>
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
         <path d="M4 7h16M4 12h16M4 17h16" />
       </svg>
     </button>
@@ -101,7 +101,7 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
   const settingsRows: Row[] = [
     ...(onSearch ? [{ key: "search", icon: <Search className={ic} />, title: "searchTitle" as CopyKey, sub: "menuSearchSub" as CopyKey, on: onSearch }] : []),
     { key: "typo", icon: <Type className={ic} />, title: "setTypography", sub: "menuTypoSub", on: page2("typography") },
-    { key: "adhan", icon: <BellRing className={ic} />, title: "menuAdhanTitle", sub: "menuAdhanSub", on: page2("reminders") },
+    { key: "adhan", icon: <BellRing className={ic} />, title: "menuAdhanTitle", sub: "menuAdhanSub", on: hub("prayer") },
     { key: "downloads", icon: <Download className={ic} />, title: "menuDownloadsTitle", sub: "menuDownloadsSub", on: page2("offline") },
     { key: "settings", icon: <Settings className={ic} />, title: "settingsTitle", sub: "menuSettingsSub", on: onSettings },
     { key: "invite", icon: <Share2 className={ic} />, title: "inviteTitle", sub: "menuInviteSub", on: onInvite },
@@ -113,11 +113,11 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
       <button type="button" aria-label={t("close")} onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-[2px] animate-in fade-in" />
       <aside role="dialog" aria-modal="true" aria-label={t("menu")}
         className="absolute inset-y-0 start-0 flex w-[86%] max-w-sm flex-col overflow-y-auto [&>*]:shrink-0 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] shadow-2xl animate-in fade-in slide-in-from-right-4 duration-200"
-        style={{ background: "linear-gradient(180deg, var(--hq-emerald), var(--hq-emerald-deep))", boxShadow: `inset -1px 0 0 ${alpha(GOLD, 0.6)}` }}>
+        style={{ background: "var(--sx-sheet)", boxShadow: `inset -1px 0 0 ${alpha(GOLD, 0.6)}` }}>
         <div className="flex items-center gap-3">
           <AppLogo className="h-11 w-11" />
           <AppWordmark size="sm" className="flex-1 items-start" />
-          <button type="button" onClick={onClose} aria-label={t("close")} className="flex h-9 w-9 items-center justify-center rounded-full text-amber-200 hover:bg-white/10"><X className="h-5 w-5" /></button>
+          <button type="button" onClick={onClose} aria-label={t("close")} className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--sx-gold)] hover:bg-[var(--sx-chip)]"><X className="h-5 w-5" /></button>
         </div>
 
         {profile && <div className="mt-3">{profile}</div>}
@@ -147,20 +147,20 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
             <BookOpen className="h-5 w-5" />{t("goTo")}
           </button>
         )}
-        {!onGoTo && <h2 className="mb-2 text-xs font-medium text-emerald-100/70">{t("goTo")}</h2>}
+        {!onGoTo && <h2 className="mb-2 text-xs font-medium text-[var(--sx-ink-soft)]">{t("goTo")}</h2>}
         <div className={onGoTo ? "hidden" : "space-y-2"}>
-          <label className="block text-xs text-emerald-100/70">{t("surah")}
+          <label className="block text-xs text-[var(--sx-ink-soft)]">{t("surah")}
             <select value={surah} onChange={(e) => { onSurah(Number(e.target.value)); onClose(); }} className={selectCls}>
               {SURAH_META.map((s) => <option key={s.id} value={s.id}>{language === "ar" ? `${toArabicDigits(s.id)}. ${s.nameArabic}` : `${s.id}. ${s.nameSimple}`}</option>)}
             </select>
           </label>
           <div className="grid grid-cols-2 gap-2">
-            <label className="block text-xs text-emerald-100/70">{t("juz")}
+            <label className="block text-xs text-[var(--sx-ink-soft)]">{t("juz")}
               <select value={juz} onChange={(e) => { onJuz(Number(e.target.value)); onClose(); }} className={selectCls}>
                 {Array.from({ length: 30 }, (_, i) => <option key={i} value={i + 1}>{num(i + 1)}</option>)}
               </select>
             </label>
-            <label className="block text-xs text-emerald-100/70">{t("pageLabel")}
+            <label className="block text-xs text-[var(--sx-ink-soft)]">{t("pageLabel")}
               <select value={page} onChange={(e) => { onPage(Number(e.target.value)); onClose(); }} className={selectCls}>
                 {Array.from({ length: TOTAL_PAGES }, (_, i) => <option key={i} value={i + 1}>{num(i + 1)}</option>)}
               </select>
@@ -172,8 +172,7 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
           </div>}
         </div>
 
-        <div className="my-4 h-px" style={{ background: alpha(GOLD, 0.4) }} />
-        <LanguageSelector variant="row" />
+        {/* v53: the language lives only in Settings → App appearance → Language */}
       </aside>
     </div>
   );
@@ -183,16 +182,16 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
 function MenuGroup({ title, rows, go, t }: { title: string; rows: { key: string; icon: ReactNode; title: CopyKey; sub: CopyKey; on: () => void; current?: boolean }[]; go: (fn: () => void) => () => void; t: (k: CopyKey) => string }) {
   return (
     <section className="mt-5">
-      <h2 className="mb-2 px-1 text-sm font-bold" style={{ color: GOLD_LIGHT }}>{title}</h2>
+      <h2 className="mb-2 px-1 text-sm font-bold text-[var(--sx-gold)]">{title}</h2>
       <ul className="space-y-1.5">
         {rows.map((r) => (
           <li key={r.key}>
             <button type="button" onClick={go(r.on)} aria-current={r.current ? "page" : undefined} data-menu-row={r.key}
-              className={cn("flex min-h-[3.25rem] w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-start transition", r.current ? "bg-amber-300/20" : "hover:bg-white/5")}>
-              <span className="shrink-0" style={{ color: GOLD_LIGHT }}>{r.icon}</span>
+              className={cn("flex min-h-[3.25rem] w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-start transition", r.current ? "bg-[var(--sx-chip)]" : "hover:bg-[var(--sx-chip)]")}>
+              <span className="shrink-0 text-[var(--sx-gold)]">{r.icon}</span>
               <span className="min-w-0 flex-1">
-                <span className="block text-base font-bold leading-snug text-[#fbf7ea]">{t(r.title)}</span>
-                <span className="block text-sm leading-snug text-[#dfeee6]">{t(r.sub)}</span>
+                <span className="block text-base font-bold leading-snug text-[var(--sx-ink)]">{t(r.title)}</span>
+                <span className="block text-sm leading-snug text-[var(--sx-ink-soft)]">{t(r.sub)}</span>
               </span>
             </button>
           </li>
@@ -202,8 +201,8 @@ function MenuGroup({ title, rows, go, t }: { title: string; rows: { key: string;
   );
 }
 
-const selectCls = "mt-1 h-10 w-full rounded-xl border border-amber-400/40 bg-[var(--mf-page-deep)] px-2 text-sm text-emerald-50";
-const pageBtn = "flex items-center justify-center gap-1 rounded-xl border border-amber-400/40 px-2 py-2 text-xs text-amber-100 disabled:opacity-40";
+const selectCls = "mt-1 h-10 w-full rounded-xl border border-amber-400/40 bg-[var(--sx-card)] px-2 text-sm text-[var(--sx-ink)]";
+const pageBtn = "flex items-center justify-center gap-1 rounded-xl border border-amber-400/40 px-2 py-2 text-xs text-[var(--sx-gold)] disabled:opacity-40";
 
 export default MushafMenu;
 /** The same menu under its app-wide name. */

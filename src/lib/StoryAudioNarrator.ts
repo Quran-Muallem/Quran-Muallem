@@ -3,7 +3,7 @@
  * device (src/lib/storyVoice.ts), reads sentence by sentence with storyteller pauses (≈350–500 ms, 700 ms after
  * questions / exclamations) and, in Kids Mode, a warm tuning (pitch 1.08, rate × 0.92). The paragraph being
  * read is reported for highlighting; pause = stop and resume from that sentence. Speeds 0.8 · 1.0 · 1.2.
- * Languages: Arabic, German, English, French.
+ * Languages: all 13 app languages (BCP-47 locale per language, see storyVoice.ts).
  */
 import { hush, pauseAfter, speakSentence, storySentences, wait, PLAIN, STORYTELLER, type Tuning, type VoiceLang } from "@/lib/storyVoice";
 

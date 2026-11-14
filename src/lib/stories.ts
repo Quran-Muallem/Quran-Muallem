@@ -8,20 +8,40 @@ import part2 from "@/data/stories2.json";
 import part3 from "@/data/stories3.json";
 import { useSyncExternalStore } from "react";
 
-export type StoryLang = "ar" | "de" | "en" | "fr";
+export type StoryLang = "ar" | "de" | "en" | "fr" | "es" | "tr" | "ur" | "id" | "ms" | "ru" | "bn" | "sq" | "bs";
+export const STORY_LANGS: StoryLang[] = ["ar", "de", "en", "fr", "es", "tr", "ur", "id", "ms", "ru", "bn", "sq", "bs"];
 export type Tri = Record<StoryLang, string>;
 export type Story = {
   id: string; kind: "prophet" | "quran"; emoji: string; final?: boolean;
   name: Tri; era: Tri; ayat: [number, number, number][];
   chapters: { title: Tri; text: Tri }[]; lesson: Tri;
+  /** v53 adult depth: historical context and deeper reflections (kids keep chapters + lesson). */
+  context?: Tri; reflections?: Tri[];
 };
 
+type Overlay = { name?: string; era?: string; chapters?: { title: string; text: string }[]; lesson?: string; context?: string; reflections?: string[] };
+/** v53: per-language texts (es, tr, ur, id, ms, ru, bn, sq, bs — and the adult context / reflections for every language). */
+const OVERLAYS = import.meta.glob<{ default: Record<string, Overlay> }>("../data/storiesI18n/*.json", { eager: true });
 const ALL = [...part1, ...part2, ...part3] as Story[];
+for (const [path, mod] of Object.entries(OVERLAYS)) {
+  const lang = path.slice(path.lastIndexOf("/") + 1, -5) as StoryLang;
+  for (const s of ALL) {
+    const o = mod.default[s.id];
+    if (!o) continue;
+    if (o.name) s.name[lang] = o.name;
+    if (o.era) s.era[lang] = o.era;
+    if (o.lesson) s.lesson[lang] = o.lesson;
+    o.chapters?.forEach((c, i) => { const ch = s.chapters[i]; if (ch) { ch.title[lang] = c.title; ch.text[lang] = c.text; } });
+    if (o.context) { s.context ??= {} as Tri; s.context[lang] = o.context; }
+    o.reflections?.forEach((r, i) => { s.reflections ??= []; s.reflections[i] ??= {} as Tri; s.reflections[i]![lang] = r; });
+  }
+}
 export const PROPHETS: Story[] = ALL.filter((s) => s.kind === "prophet");
 export const QURAN_STORIES: Story[] = ALL.filter((s) => s.kind === "quran");
 export const storyById = (id: string) => ALL.find((s) => s.id === id) ?? null;
-/** UI language → narration/text language (others read the English text). */
-export const storyLang = (language: string): StoryLang => (language === "ar" || language === "de" || language === "fr" ? language : "en");
+/** UI language → narration/text language: v53 every app language has its own text (English only as last resort). */
+export const storyLang = (language: string): StoryLang => ((STORY_LANGS as string[]).includes(language) ? (language as StoryLang) : "en");
+export const storyRtl = (l: StoryLang) => l === "ar" || l === "ur";
 
 /** The next station on the journey (prophets) or the next Quran story; null at the end. */
 export function nextStory(id: string): Story | null {

@@ -571,3 +571,6 @@ html:not([data-theme]) { --gradient-hero: linear-gradient(180deg, #071f18 0%, #0
 /* v52 studio range: big round gold thumb (≥ 28 px) */
 .sx-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 28px; height: 28px; border-radius: 9999px; background: #fffaf0; border: 3px solid #d4af37; box-shadow: 0 4px 12px -4px rgba(0,0,0,.45); }
 .sx-range::-moz-range-thumb { width: 26px; height: 26px; border-radius: 9999px; background: #fffaf0; border: 3px solid #d4af37; }
+
+/* v53: no rubber-band / pull-to-refresh bounce fighting the scroll position */
+html, body { overscroll-behavior-y: none; }

@@ -47,6 +47,8 @@ export type AppSettings = {
   /** v30 settings. */
   /** «كشف الأخطاء»: mark wrong / unclear words while reciting (off → no red / orange, no mistake alert). */
   errorDetection: boolean;
+  /** v53: stop at a mistaken word at once (red, Tajweed note, Sheikh's word) instead of after the verse. */
+  instantCorrection: boolean;
   /** «تظليل الأخطاء الماضية»: show the saved colours of earlier recitations (red / orange) in the Mushaf. */
   showPastMistakes: boolean;
   /** Short sound when a word is marked wrong. */
@@ -108,6 +110,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   dailyReminder: false,
   dailyReminderTime: "20:00",
   errorDetection: true,
+  instantCorrection: true,
   showPastMistakes: true,
   mistakeSound: false,
   mistakeSoundType: "tone",
@@ -153,7 +156,7 @@ export function cleanSettings(s: AppSettings & Record<string, unknown>): AppSett
   if (out.recognizer !== "zipformer" && out.recognizer !== "whisper") out.recognizer = "zipformer";
   if (!out.translations || typeof out.translations !== "object") out.translations = {};
   if (!out.tafsirs || typeof out.tafsirs !== "object") out.tafsirs = {};
-  for (const k of ["mistakeVibration", "completionSound", "autoStopSurahEnd", "hiddenFirstWord", "dailyReminder", "errorDetection", "showPastMistakes", "mistakeSound", "sessionSound", "sessionHaptic", "saveRecordings", "tajweedColors", "highContrast", "kidsMode"] as const) if (typeof out[k] !== "boolean") out[k] = DEFAULT_SETTINGS[k];
+  for (const k of ["mistakeVibration", "completionSound", "autoStopSurahEnd", "hiddenFirstWord", "dailyReminder", "errorDetection", "instantCorrection", "showPastMistakes", "mistakeSound", "sessionSound", "sessionHaptic", "saveRecordings", "tajweedColors", "highContrast", "kidsMode"] as const) if (typeof out[k] !== "boolean") out[k] = DEFAULT_SETTINGS[k];
   if (typeof out.dailyReminderTime !== "string" || !/^\d{2}:\d{2}$/.test(out.dailyReminderTime)) out.dailyReminderTime = DEFAULT_SETTINGS.dailyReminderTime;
   if (!(PLAYBACK_RATES as readonly number[]).includes(out.playbackRate as number)) out.playbackRate = 1;
   if (!["tone", "click", "bell"].includes(out.mistakeSoundType as string)) out.mistakeSoundType = "tone";

@@ -12,8 +12,9 @@ export function StudioShell({ children, data, onClose, closeLabel, title, intro,
   children: ReactNode; data: Record<string, string>; onClose: () => void; closeLabel: string; title: ReactNode; intro: ReactNode; switcher?: ReactNode;
 }) {
   return (
-    <div className="fixed inset-0 z-[35] overflow-y-auto" style={{ background: "var(--sx-canvas)", color: "var(--sx-ink)" }} {...data}>
-      <div className="relative mx-auto flex min-h-full max-w-md flex-col gap-4 px-5 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]">
+    // v53: rendered inside the app shell (same header + 4-tab bar as every main screen), not as an overlay
+    <div className="relative" style={{ color: "var(--sx-ink)" }} {...data}>
+      <div className="relative mx-auto flex min-h-[calc(100dvh-10rem)] max-w-md flex-col gap-4 pb-[calc(var(--qm-nav-h,5rem)+0.5rem)]">
         <StarLattice id="sx-studio-lattice" opacity={0.04} className="!h-64" />
         <div className="relative">{switcher}</div>
         {/* v52.1: no close button in setup — the app's bottom bar stays visible to leave; the running
@@ -142,7 +143,7 @@ export function PlacementCard({ on, kind, label, onClick, data }: { on: boolean;
 export function GlowStart({ onClick, disabled, children, data, tone = "gold" }: { onClick: () => void; disabled?: boolean; children: ReactNode; data: Record<string, string>; tone?: "gold" | "emerald" }) {
   const bg = tone === "gold" ? "linear-gradient(135deg,#f3d27a 0%,#d4af37 55%,#b8901f 100%)" : "linear-gradient(135deg,#1d9a6c 0%,#0f6b48 55%,#0f5132 100%)";
   return (
-    <div className="sticky bottom-[calc(5.4rem+env(safe-area-inset-bottom))] z-10 -mx-5 mt-auto px-5 pb-1 pt-4" style={{ background: "linear-gradient(to top, var(--sx-studio-fade, rgba(0,0,0,0)) 60%, transparent)" }}>
+    <div className="sticky bottom-[calc(var(--qm-nav-h,5rem)+0.25rem)] z-10 -mx-5 mt-auto px-5 pb-1 pt-4" style={{ background: "linear-gradient(to top, var(--sx-studio-fade, rgba(0,0,0,0)) 60%, transparent)" }}>
       <div className="relative isolate">
         <span aria-hidden="true" className={cn("absolute inset-0 rounded-[22px]", !disabled && "sx-pulse")} style={{ background: bg }} />
         <button type="button" onClick={onClick} disabled={disabled} {...data}

@@ -15,7 +15,7 @@ export function KidsHomeView({ userName, onGo }: { userName?: string | null; onG
   const stars = Object.values(useSurahStars()).reduce((a, b) => a + b, 0);
   const num = (n: number) => (ar ? toArabicDigits(n) : String(n));
   const cards: { id: KidsTab; badge: KidsBadgeId; emoji: string; deco: string; arTitle: string; title: string; sub: string; bg: string; edge: string }[] = [
-    { id: "mushaf", badge: "mushaf", emoji: "📗", deco: "✨", arTitle: "مصحف الأطفال", title: t("kidsMushafTitle"), sub: t("kidsTapAyahHint"), bg: "linear-gradient(150deg,#6ee7d0 0%,#14b8a6 55%,#0e9f8f 100%)", edge: "#0d8f81" },
+    { id: "mushaf", badge: "mushaf", emoji: "📗", deco: "⭐", arTitle: "مصحف الأطفال", title: t("kidsMushafTitle"), sub: t("kidsTapAyahHint"), bg: "linear-gradient(150deg,#6ee7d0 0%,#14b8a6 55%,#0e9f8f 100%)", edge: "#0d8f81" },
     { id: "stories", badge: "stories", emoji: "🗺️", deco: "🕋", arTitle: "رحلة الأنبياء وقصص القرآن", title: t("storiesTitle"), sub: t("storiesJourneySub"), bg: "linear-gradient(150deg,#c9b8ff 0%,#8b5cf6 55%,#7444e6 100%)", edge: "#6d28d9" },
     { id: "tafsir", badge: "tafsir", emoji: "📚", deco: "🌙", arTitle: "تفسير وقصص للأطفال", title: t("kidsTafsirTitle"), sub: t("kidsCardStory"), bg: "linear-gradient(150deg,#fdb4bd 0%,#fb7185 55%,#f2546f 100%)", edge: "#e04e66" },
     { id: "journey", badge: "journey", emoji: "⭐", deco: "⭐", arTitle: "رحلة النجوم للحفظ", title: t("kidsJourneyTitle"), sub: t("kidsJourneySub"), bg: "linear-gradient(150deg,#fde47a 0%,#f8b21a 55%,#ef9a06 100%)", edge: "#c97d00" },

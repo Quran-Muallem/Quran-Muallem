@@ -34,7 +34,7 @@ export function KidsTafsirDrawer({ surah, ayah, onClose, withSheikh = false }: {
       <div className="relative flex max-h-[86vh] w-full max-w-md flex-col overflow-hidden rounded-t-[20px] bg-card text-foreground shadow-2xl animate-in slide-in-from-bottom-6 duration-200">
         <div className="mx-auto mt-2 h-1.5 w-12 shrink-0 rounded-full bg-foreground/20" aria-hidden="true" />
         <header className="flex shrink-0 items-center gap-2 px-4 pb-2 pt-2">
-          <span className="text-2xl" aria-hidden="true">🌟</span>
+          <span className="text-2xl" aria-hidden="true">⭐</span>
           <span className="min-w-0 flex-1">
             <span className="block font-arabic text-xl font-bold leading-snug">{t("kidsDrawerTitle")}</span>
             <span className="block font-arabic text-sm text-muted-foreground">{ref}</span>

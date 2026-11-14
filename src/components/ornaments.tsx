@@ -3,6 +3,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { directionFor, useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { SanctuarySheet } from "@/components/SanctuarySheet";
 import { APP_NAME, APP_NAME_ARABIC, APP_NAME_LATIN, assetUrl } from "@/lib/assets";
 
 /* Shared palette: deep emerald with ornate gold frames. */
@@ -100,34 +101,13 @@ export function GoldDialog({ open, onOpenChange, dismissible = true, busy = fals
   closeLabel?: string;
   className?: string;
 }) {
-  const { language } = useI18n();
-  const block = (e: Event) => { if (!dismissible || busy) e.preventDefault(); };
+  // v53: no centred popups for navigation — every GoldDialog is a full-screen Sanctuary view.
+  void closeLabel; void className;
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={(o) => { if (dismissible && !busy) onOpenChange?.(o); }}>
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
-        <DialogPrimitive.Content dir={directionFor(language)} lang={language}
-          onEscapeKeyDown={block} onPointerDownOutside={block} onInteractOutside={block}
-          className={cn("fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[1.75rem] outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95", className)}>
-          <GoldFrame className="shadow-[0_0_60px_-10px_rgba(251,191,36,.45)]">
-            {dismissible && (
-              <DialogPrimitive.Close disabled={busy} aria-label={closeLabel ?? (language === "ar" ? "إغلاق" : "Close")}
-                className="absolute end-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full text-amber-200/80 transition hover:bg-white/10 hover:text-amber-100 focus-visible:outline-2 focus-visible:outline-amber-300">
-                <X className="h-4 w-4" />
-              </DialogPrimitive.Close>
-            )}
-            <header className="px-6 pt-7 text-center">
-              <DialogPrimitive.Title className="font-arabic text-2xl leading-snug" style={{ color: GOLD_LIGHT }}>{title}</DialogPrimitive.Title>
-              {description
-                ? <DialogPrimitive.Description className="mt-1 text-sm text-emerald-100/70">{description}</DialogPrimitive.Description>
-                : <DialogPrimitive.Description className="sr-only">{title}</DialogPrimitive.Description>}
-              <Divider />
-            </header>
-            <div className="px-6 pb-6 pt-2">{children}</div>
-          </GoldFrame>
-        </DialogPrimitive.Content>
-      </DialogPrimitive.Portal>
-    </DialogPrimitive.Root>
+    <SanctuarySheet open={open} onClose={() => { if (dismissible && !busy) onOpenChange?.(false); }} closable={dismissible && !busy}
+      title={title} subtitle={description} dataAttr={{ "data-gold-sheet": "" }}>
+      {children}
+    </SanctuarySheet>
   );
 }
 

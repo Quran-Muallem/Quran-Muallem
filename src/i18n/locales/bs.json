@@ -325,7 +325,7 @@
   "tajweedNone": "Nema rezultata — probaj drugu riječ",
   "tajweedExamples": "Primjeri",
   "tajweedScholarTitle": "Napomena",
-  "tajweedScholar": "Ovaj vodič objašnjava pravila tedžvida radi učenja; ne zamjenjuje učenje i ispravljanje kod kvalifikovanog učitelja. Za tefsir ili fetve obrati se stručnim učenjacima i priznatim knjigama.",
+  "tajweedScholar": "Ovaj vodič služi za učenje tedžvidskih pravila i ne zamjenjuje usmeno učenje i ispravljanje kod stručnog hafiza.",
   "badgesTitle": "Značke i postignuća",
   "badgesSub": "Značka za svaku suru: srebro kad je cijelu pročitaš, zlato kad je cijelu proučiš napamet",
   "badgeGold": "Zlato",
@@ -847,7 +847,7 @@
   "kidsNextSurah": "Sljedeća sura",
   "kidsPickSurah": "Izaberi suru",
   "kidsListenSheikh": "Poslušaj šejha",
-  "kidsTapAyahHint": "Dodirni ajet da saznaš značenje i da ga čuješ 🌟",
+  "kidsTapAyahHint": "Dodirni ajet da saznaš značenje i da ga čuješ ⭐",
   "kidsLetsGo": "Idemo!",
   "kidsVersesCount": "{n} ajeta",
   "kidsLoading": "Pripremamo suru…",
@@ -942,5 +942,14 @@
   "spQiyam": "Kijamul-lejl",
   "hfStatusNoBt": "Nema povezanog Bluetooth uređaja — koristi se mikrofon telefona",
   "hfStatusBt": "Povezano: {name}",
-  "hfStatusSpeaker": "Zvučnik i mikrofon telefona"
+  "hfStatusSpeaker": "Zvučnik i mikrofon telefona",
+  "storyContext": "Historijski kontekst",
+  "storyNarrative": "Detaljna priča i iskušenja",
+  "storyVerses": "Povezani ajeti glasom hafiza",
+  "storyReflections": "Razmišljanja i pouke",
+  "storyMiracle": "Mudžiza poslanika",
+  "tajAnnounce": "Tedžvidska napomena: {rule}. Poslušaj ispravan izgovor.",
+  "tajCheckWord": "pazi na ovu riječ",
+  "setInstantCorrection": "Trenutno ispravljanje tokom učenja",
+  "setInstantCorrectionDesc": "Kod pogrešne riječi odmah stane: riječ postane crvena s pravilom, pravilo se najavi i hafiz izgovori riječ. Dodirni crvenu riječ da je čuješ."
 }

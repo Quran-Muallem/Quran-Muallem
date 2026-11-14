@@ -325,7 +325,7 @@
   "tajweedNone": "Keine Ergebnisse – versuche ein anderes Wort",
   "tajweedExamples": "Beispiele",
   "tajweedScholarTitle": "Bitte beachten",
-  "tajweedScholar": "Dieser Leitfaden erklärt die Tajweed-Regeln zum Lernen; er ersetzt nicht das Lernen und die Korrektur bei einem qualifizierten Lehrer. Für Tafsir oder religiöse Urteile (Fatwas) wende dich an qualifizierte Gelehrte (ʿUlamāʾ) und anerkannte Bücher.",
+  "tajweedScholar": "Dieser Leitfaden dient dem Erlernen der Tadschwīd-Regeln und ersetzt nicht das mündliche Lernen und die Korrektur bei einem qualifizierten Quran-Lehrer.",
   "badgesTitle": "Abzeichen & Erfolge",
   "badgesSub": "Ein Abzeichen pro Sure: Silber, wenn du sie ganz gelesen hast, Gold, wenn du sie ganz auswendig rezitiert hast",
   "badgeGold": "Gold",
@@ -847,7 +847,7 @@
   "kidsNextSurah": "Nächste Sura",
   "kidsPickSurah": "Sura wählen",
   "kidsListenSheikh": "Dem Scheich zuhören",
-  "kidsTapAyahHint": "Tippe auf eine Āya, um zu erfahren, was sie bedeutet, und sie zu hören 🌟",
+  "kidsTapAyahHint": "Tippe auf eine Āya, um zu erfahren, was sie bedeutet, und sie zu hören ⭐",
   "kidsLetsGo": "Los geht's!",
   "kidsVersesCount": "{n} Āyāt",
   "kidsLoading": "Die Sura wird vorbereitet …",
@@ -942,5 +942,14 @@
   "spQiyam": "Qiyam al-Layl",
   "hfStatusNoBt": "Kein Bluetooth-Gerät verbunden — nutzt Telefonmikrofon",
   "hfStatusBt": "Verbunden: {name}",
-  "hfStatusSpeaker": "Telefonlautsprecher und -mikrofon"
+  "hfStatusSpeaker": "Telefonlautsprecher und -mikrofon",
+  "storyContext": "Historischer Hintergrund",
+  "storyNarrative": "Ausführliche Erzählung & Prüfungen",
+  "storyVerses": "Zugehörige Quranverse mit der Stimme des Scheichs",
+  "storyReflections": "Besinnung & Lehren",
+  "storyMiracle": "Das Wunder des Propheten",
+  "tajAnnounce": "Tadschwīd-Hinweis: {rule}. Hör dir die richtige Aussprache an.",
+  "tajCheckWord": "achte auf dieses Wort",
+  "setInstantCorrection": "Sofortige Korrektur beim Rezitieren",
+  "setInstantCorrectionDesc": "Bei einem falschen Wort stoppt es sofort: Das Wort wird rot mit seiner Regel, die Regel wird angesagt und der Scheich spricht das Wort vor. Tippe auf ein rotes Wort, um es zu hören."
 }

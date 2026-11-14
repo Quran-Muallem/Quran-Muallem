@@ -6,6 +6,7 @@ import { playWord, stopWordAudio, type WordVoice } from "@/lib/audioPlayback";
 import { getReciter } from "@/lib/reciterManager";
 import { useSettings } from "@/lib/settings";
 import { wordFeatures, type WordFeature } from "@/lib/wordTajweed";
+import { PLAIN, isVoiceLang, speakSentence } from "@/lib/storyVoice";
 import { useI18n, type CopyKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,8 @@ export type WordFix = {
   status?: "ERROR" | "WARNING" | undefined;
   /** Set with the phoneme engine: the word's canonical phonemes (`heard` is then phonemes too). */
   phonemes?: string | undefined;
+  /** v53: «listen» plays the Sheikh's word at once (tap on a red word); «announce» first speaks the Tajweed note. */
+  auto?: "listen" | "announce" | undefined;
 };
 
 const FEATURE_KEY: Record<WordFeature, CopyKey> = {
@@ -50,6 +53,21 @@ export function VoiceWordFix({ fix, showExpected = true, onClose, className }: {
   const red = fix.status !== "WARNING";
   const audioState = audio?.id === fix.id ? audio.state : null;
 
+  // v53: tap on a red word → the Sheikh's word right away; instant correction → the rule is announced first.
+  useEffect(() => {
+    if (!fix.auto) return;
+    let live = true;
+    void (async () => {
+      if (fix.auto === "announce") {
+        const rule = features[0] ? t(FEATURE_KEY[features[0]]) : t("tajCheckWord");
+        const lang = isVoiceLang(language) ? language : "en";
+        try { await speakSentence(t("tajAnnounce").replace("{rule}", rule), lang, 1, PLAIN); } catch { /* no voice: go straight to the Sheikh */ }
+      }
+      if (live) listen();
+    })();
+    return () => { live = false; };
+  }, [fix.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const listen = () => {
     if (!fix.surah || !fix.ayah || !wordNumber) return;
     setAudio({ id: fix.id, state: "loading" });
@@ -63,9 +81,9 @@ export function VoiceWordFix({ fix, showExpected = true, onClose, className }: {
       style={{ boxShadow: `inset 0 0 0 1px ${red ? "rgba(248,113,113,.45)" : "rgba(251,146,60,.45)"}` }}>
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <p className={cn("text-[0.7rem] font-medium", red ? "text-red-300" : "text-orange-300")}>{t(red ? "wordWrong" : "wordNear")}</p>
+          <p className={cn("text-[0.8rem] font-bold", red ? "text-[#f87171]" : "text-orange-300")}>{t(red ? "wordWrong" : "wordNear")}</p>
           {showExpected && (
-            <p dir="rtl" lang="ar" className={cn("mt-1 inline-block rounded-xl px-3 py-0.5 font-quran text-[2rem] leading-[1.9]", red ? "bg-red-950/60 text-red-200" : "bg-orange-950/45 text-orange-200")}>{fix.word}</p>
+            <p dir="rtl" lang="ar" className={cn("mt-1 inline-block rounded-xl px-3 py-0.5 font-quran text-[2rem] leading-[1.9]", red ? "bg-[#DC2626]/15 text-[#DC2626] shadow-[inset_0_0_0_1.5px_#DC2626]" : "bg-orange-950/45 text-orange-200")}>{fix.word}</p>
           )}
         </div>
         <button type="button" onClick={onClose} aria-label={t("close")} className="rounded-full p-1 text-emerald-100/70 hover:bg-white/10"><X className="h-4 w-4" /></button>
@@ -76,7 +94,7 @@ export function VoiceWordFix({ fix, showExpected = true, onClose, className }: {
           <p className="mb-1 text-[0.68rem] text-emerald-100/60">{t("wordTajweed")}</p>
           <ul className="flex flex-wrap gap-1.5">
             {features.map((f) => (
-              <li key={f} className="rounded-full px-2.5 py-1 text-[0.7rem] text-amber-100" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD_LIGHT, 0.45)}` }}>{t(FEATURE_KEY[f])}</li>
+              <li key={f} className={cn("rounded-full px-2.5 py-1 text-[0.75rem] font-bold", red ? "bg-[#DC2626] text-white" : "text-amber-100")} style={red ? undefined : { boxShadow: `inset 0 0 0 1px ${alpha(GOLD_LIGHT, 0.45)}` }} data-taj-badge={f}>{t(FEATURE_KEY[f])}</li>
             ))}
           </ul>
         </div>
