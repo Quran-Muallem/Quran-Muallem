@@ -713,7 +713,7 @@
   "tajweedMuallimGroup": "Muallim – mushaf za učenje (Hafs)",
   "tajweedMuallim": "Muallim",
   "tajweedMuallimKids": "Muallim, djeca ponavljaju",
-  "hubSalat": "Namaski način",
+  "hubSalat": "Pratilac namaza",
   "hubSalatSub": "Tihi pratilac u namazu i noćnom namazu: prati tvoje učenje nakon Fatihe i nježno te podsjeti kad zaboraviš",
   "salatReady": "Spremno",
   "salatWaitFatiha": "Čeka se Fatiha…",
@@ -826,5 +826,12 @@
   "kidsJourneyStart": "Započni putovanje i osvoji prvu zvjezdicu!",
   "kidsJourneyHow": "⭐ vježbano · ⭐⭐ proučeno cijelo · ⭐⭐⭐ naučeno. Dodirni suru da je otvoriš.",
   "kidsMushafTitle": "Dječiji Mushaf",
-  "kidsMushafSub": "Jedan ajet po redu, jasno pismo s harekatima – dodirni riječ da je čuješ."
+  "kidsMushafSub": "Jedan ajet po redu, jasno pismo s harekatima – dodirni ajet za jednostavan tefsir.",
+  "navCompanion": "Pratilac",
+  "companionTitle": "Pratilac namaza i ponavljanja",
+  "kidsHomeHello": "Zdravo, šampione! Šta danas učimo?",
+  "kidsDrawerTitle": "Jednostavan tefsir za djecu",
+  "kidsNoTafsir": "Za ovaj ajet još nema dječijeg tefsira. Probaj suru iz džuza 'Amme, Tebareke ili Fatihu!",
+  "kidsNavTafsir": "Tefsir",
+  "kidsNavJourney": "Zvjezdice"
 }

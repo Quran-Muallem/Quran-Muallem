@@ -26,7 +26,7 @@ import { accuracyOf, covers, recordingForVerse, saveRecording, useRecordings } f
 import { RecitationPlayerBar } from "@/components/RecitationPlayerBar";
 import type { KeptAudio } from "@/lib/use-transcribing-recorder";
 import { QURAN_FONT_SIZES, getSettings, updateSettings, useSettings, type MushafStyle } from "@/lib/settings";
-import { playWord } from "@/lib/audioPlayback";
+import { KidsTafsirDrawer } from "@/components/kids/KidsTafsirDrawer";
 import type { LiveMatch, LiveStatus } from "@/lib/quranMatcher";
 import { useI18n } from "@/lib/i18n";
 import { VoiceWordFix, type WordFix } from "@/components/VoiceWordFix";
@@ -98,6 +98,7 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
   const [saved, setSaved] = useState<number | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   /** Verse menu (listen · translation · tafsir · mark for practice) at the tapped point. */
+  const [kidsVerse, setKidsVerse] = useState<{ surah: number; ayah: number } | null>(null);
   const [verseMenu, setVerseMenu] = useState<{ surah: number; ayah: number; at: { x: number; y: number } } | null>(null);
   /** Translation / Tafsir sheet. */
   const [info, setInfo] = useState<{ surah: number; ayah: number; tab: AyahInfoTab } | null>(null);
@@ -688,7 +689,6 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
           <MushafPage mushaf={mushaf} page={page} maxTextHeight={textHeight} tajweed={settings.tajweedColors ? tajweed : undefined}
             flow={settings.mushafStyle === "clean" || settings.mushafStyle === "lines" ? { fontSize: settings.quranFontSize, perAyah: settings.mushafStyle === "lines" } : undefined} statuses={statuses} hidden={hidden} hinted={hints} cursor={cursor} marked={marked ?? undefined}
             highlight={playingKey ?? (rec.listening ? null : selected)}
-            onWordPlay={settings.kidsMode && !rec.listening ? (k) => { const [ws, wa, ww] = k.split(":").map(Number); if (ws && wa && ww) void playWord({ quranComId: null, surah: ws, ayah: wa, word: ww }).catch(() => {}); } : undefined}
             verseStatus={(s, a) => verseStatus(progress, s, a)}
             recorded={(s, a) => recordings.some((r) => covers(r, s, a))}
             onWordTap={rec.listening ? undefined : (k) => {
@@ -701,7 +701,12 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
               const st = statuses.get(k);
               setWordFix(word ? { id: k, word, heard: heard ?? null, surah: s, ayah: a, phonemes, status: st === "WARNING" ? "WARNING" : "ERROR" } : null);
             }}
-            onVerseTap={(s, a, at) => { if (rec.listening) return; setSelected(`${s}:${a}`); setVerseMenu({ surah: s, ayah: a, at }); }} />
+            onVerseTap={(s, a, at) => {
+              if (rec.listening) return;
+              setSelected(`${s}:${a}`);
+              // v46 Kids Mode: a tapped verse opens the simple kids tafsir instead of the scholarly verse menu.
+              if (settings.kidsMode) setKidsVerse({ surah: s, ayah: a }); else setVerseMenu({ surah: s, ayah: a, at });
+            }} />
         </div>
       </div>
 
@@ -744,6 +749,7 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
         onJuz={(j) => { setSelected(null); setPage(mushaf.juzStartPage(j)); }}
         onNavigate={(tab) => onNavigate?.(tab)} onSettings={() => onSettings?.()} onInvite={() => onInvite?.()} onSearch={onSearch} onGoTo={() => setGoToOpen(true)} />
 
+      {kidsVerse && <KidsTafsirDrawer surah={kidsVerse.surah} ayah={kidsVerse.ayah} onClose={() => { setKidsVerse(null); setSelected(null); }} />}
       {verseMenu && (
         <AyahActionMenu surah={verseMenu.surah} ayah={verseMenu.ayah} at={verseMenu.at}
           markedFrom={markedFrom && markedFrom.surah === verseMenu.surah ? markedFrom.ayah : null}

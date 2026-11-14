@@ -12,7 +12,7 @@
  * Logic: HandsFreeTracker (src/lib/HandsFreeHifdhService.ts). Recognition: useRecitation (on-device, nothing
  * recorded or kept). Prompts: the Salat Mode's Sheikh player (src/lib/sheikhPrompt.ts).
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Bluetooth, Headphones, Pause, Play, Smartphone, Square, Volume2, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -63,7 +63,7 @@ function keepAlive(on: boolean) {
   void keepAliveEl.play().catch(() => {});
 }
 
-export function HandsFreeHifdhView({ onClose }: { onClose: () => void }) {
+export function HandsFreeHifdhView({ onClose, switcher }: { onClose: () => void; switcher?: ReactNode }) {
   const { t, language } = useI18n();
   const ar = language === "ar";
   const num = (n: number) => (ar ? toArabicDigits(n) : String(n));
@@ -308,7 +308,7 @@ export function HandsFreeHifdhView({ onClose }: { onClose: () => void }) {
 
   if (running) {
     return (
-      <div className="fixed inset-0 z-[70] flex flex-col items-center justify-between bg-black px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))] text-center" data-handsfree="running" data-hf-state={state}>
+      <div className="qm-native-colors fixed inset-0 z-[70] flex flex-col items-center justify-between bg-black px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))] text-center" data-handsfree="running" data-hf-state={state}>
         <div className="flex flex-col items-center gap-2">
           <p className="text-xs tracking-widest text-neutral-600">{t("hfTitle")}</p>
           {routeBadge}
@@ -337,8 +337,9 @@ export function HandsFreeHifdhView({ onClose }: { onClose: () => void }) {
 
   const chip = (on: boolean) => `rounded-xl border px-3 py-2.5 text-sm ${on ? "border-emerald-500/70 bg-emerald-950/50 text-emerald-100" : "border-neutral-800 text-neutral-400"}`;
   return (
-    <div className="fixed inset-0 z-[70] overflow-y-auto bg-neutral-950 text-neutral-200" data-handsfree="setup">
+    <div className="qm-native-colors fixed inset-0 z-[70] overflow-y-auto bg-neutral-950 text-neutral-200" data-handsfree="setup">
       <div className="mx-auto flex min-h-full max-w-md flex-col gap-5 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]">
+        {switcher}
         <div className="flex items-center justify-between">
           <h1 className="font-arabic text-2xl text-emerald-200">{ar ? "المراجعة الحرة" : t("hfTitle")}</h1>
           <button type="button" onClick={() => { stopPrompt(); onClose(); }} aria-label={t("close")} className="rounded-full p-2 text-neutral-500 hover:bg-neutral-900" data-hf-close=""><X className="h-5 w-5" /></button>

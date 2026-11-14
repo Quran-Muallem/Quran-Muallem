@@ -1,5 +1,5 @@
 /**
- * Salat Mode (وضع الصلاة, v42) — a silent, respectful companion during prayer (e.g. Qiyām al-Layl).
+ * Salat Companion (رفيق الصلاة, formerly «وضع الصلاة», v42) — a silent, respectful companion during prayer (e.g. Qiyām al-Layl).
  *
  * Before the prayer: the Sheikh whose voice prompts (with a voice test), the silence delay (2–6 s), the
  * prompt length (a few words / the whole verse) and the prompt volume. During the prayer: a pitch-black
@@ -11,7 +11,7 @@
  * verse audio cut to the words (Quran.com word timings; offline: the verse file, cut proportionally),
  * faded in softly; recognition pauses while a prompt plays so the prompt is not taken for the reader.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Mic, Play, Square, Volume2, X } from "lucide-react";
 import { useI18n, type CopyKey } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -97,7 +97,7 @@ const STATUS: Record<SalatState, CopyKey> = {
 };
 const WINDOW = 20;
 
-export function SalatModeView({ onClose }: { onClose: () => void }) {
+export function SalatModeView({ onClose, switcher }: { onClose: () => void; switcher?: ReactNode }) {
   const { t, language } = useI18n();
   const settings = useSettings();
   const [prefs, setPrefsState] = useState<SalatPrefs>(() => loadPrefs(settings.reciterId));
@@ -344,7 +344,7 @@ export function SalatModeView({ onClose }: { onClose: () => void }) {
   if (running) {
     const dot = phase.state === "IN_RUKU_OR_SUJUD" ? "#7c5a12" : phase.state === "ACTIVE_SURAH_TRACKING" ? "#0f5f45" : "#3b4b44";
     return (
-      <div className="fixed inset-0 z-[70] flex select-none flex-col items-center justify-between bg-black px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]" data-salat="running" data-salat-state={phase.state}>
+      <div className="qm-native-colors fixed inset-0 z-[70] flex select-none flex-col items-center justify-between bg-black px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]" data-salat="running" data-salat-state={phase.state}>
         <div className="flex flex-col items-center gap-1">
           <p className="text-xs tracking-widest text-neutral-700" data-salat-rakah={shownRakah}>{t("salatRakah").replace("{n}", num(shownRakah))}</p>
           {/* v43: «صلاة العشاء • الركعة ٢ من ٤ • قيام» */}
@@ -374,10 +374,11 @@ export function SalatModeView({ onClose }: { onClose: () => void }) {
 
   /* ── before the prayer ── */
   return (
-    <div className="fixed inset-0 z-[70] overflow-y-auto bg-black text-neutral-200" data-salat="setup">
+    <div className="qm-native-colors fixed inset-0 z-[70] overflow-y-auto bg-black text-neutral-200" data-salat="setup">
       <div className="mx-auto flex min-h-full max-w-md flex-col gap-5 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]">
+        {switcher}
         <div className="flex items-center justify-between">
-          <h1 className="font-arabic text-3xl text-amber-200/90">وضع الصلاة</h1>
+          <h1 className="font-arabic text-3xl text-amber-200/90">{ar ? "رفيق الصلاة" : t("hubSalat")}</h1>
           <button type="button" onClick={() => { stopPrompt(); onClose(); }} aria-label={t("close")} className="rounded-full p-2 text-neutral-500 hover:bg-neutral-900" data-salat-close=""><X className="h-5 w-5" /></button>
         </div>
         <p className="text-sm leading-relaxed text-neutral-400">{t("salatIntro")}</p>

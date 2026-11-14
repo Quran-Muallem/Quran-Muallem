@@ -5,7 +5,7 @@ import type { TajweedSeg } from "@/lib/tajweedColors";
 import type { VerseStatus } from "@/lib/progressStorage";
 import { getSurahMeta, toArabicDigits } from "@/lib/quranService";
 import { cn } from "@/lib/utils";
-import { AyahMedallion, BasmalaLine, GOLD_A, GOLD_B, INK, PageFrame, PageNumber, SurahBanner } from "@/components/mushaf/MushafOrnaments";
+import { AyahMedallion, BasmalaFlow, BasmalaLine, GOLD_A, GOLD_B, INK, PageFrame, PageNumber, SurahBanner } from "@/components/mushaf/MushafOrnaments";
 
 const LINES_PER_PAGE = 15;
 const BASE = 20; // px, font size used for measuring
@@ -166,6 +166,7 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, mar
   if (flow) {
     // Consecutive text lines flow together (words wrap to the screen); banners and Basmala stay blocks.
     const fh = flow.fontSize * 2.05;
+    const bh = Math.min(96, Math.max(52, flow.fontSize * 1.9)); // banner: grows with the font, but stays a banner
     const blocks: ({ kind: "header"; surah: number } | { kind: "basmala" } | { kind: "text"; lines: Extract<ReturnType<Mushaf["page"]>[number], { type: "text" }>[] })[] = [];
     for (const line of lines) {
       if (line.type === "header") blocks.push({ kind: "header", surah: line.surah });
@@ -179,10 +180,10 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, mar
           <span>الجُزْءُ {toArabicDigits(mushaf.juzOfPage(page))}</span>
         </div>
         <div className="h-px w-full" style={{ background: `linear-gradient(90deg, transparent, ${GOLD_A}, transparent)` }} />
-        <div ref={wrap} data-mushaf-text="" data-mushaf-flow="" data-mushaf-per-ayah={flow.perAyah ? "" : undefined} dir="rtl" lang="ar" className="relative mt-1 qm-flow" style={{ fontSize: flow.fontSize, color: INK }}>
+        <div ref={wrap} data-mushaf-text="" data-mushaf-flow="" data-mushaf-per-ayah={flow.perAyah ? "" : undefined} dir="rtl" lang="ar" className="relative mt-1 flex flex-col gap-2 qm-flow" style={{ fontSize: flow.fontSize, color: INK }}>
           {blocks.map((b, i) => {
-            if (b.kind === "header") return <div key={i} className="flex items-center" style={{ height: fh }}><SurahBanner name={`سُورَةُ ${getSurahMeta(b.surah)?.nameArabic ?? ""}`} height={fh * 0.92} /></div>;
-            if (b.kind === "basmala") return <BasmalaLine key={i} height={fh} />;
+            if (b.kind === "header") return <div key={i} className="flex shrink-0 items-center pt-2" data-surah-banner="" style={{ minHeight: bh }}><SurahBanner name={`سُورَةُ ${getSurahMeta(b.surah)?.nameArabic ?? ""}`} height={bh} /></div>;
+            if (b.kind === "basmala") return <BasmalaFlow key={i} fontSize={flow.fontSize} />;
             if (flow.perAyah) {
               // v45 «آية في كل سطر»: every verse (its part on this page) on its own row.
               const verses: { key: string; line: Extract<ReturnType<Mushaf["page"]>[number], { type: "text" }> }[] = [];

@@ -12,7 +12,7 @@ import { SalatModeView } from "@/components/SalatModeView";
 import { KidsTafsirView } from "@/components/kids/KidsTafsirView";
 import { KidsStarJourney } from "@/components/kids/KidsStarJourney";
 import { useKidsMode } from "@/components/kids/KidsModeContext";
-import { updateSettings } from "@/lib/settings";
+import { openKidsMushaf } from "@/components/kids/kidsNav";
 import { formatCountdown, useNextPrayer } from "@/lib/useNextPrayer";
 import type { PrayerName } from "@/lib/PrayerTimesEngine";
 import type { StudyTarget } from "@/components/Dashboard";
@@ -23,7 +23,7 @@ export type HubSection = "prayer" | "salat" | "kidsTafsir" | "kidsJourney" | "qi
 
 const SECTIONS: { id: HubSection; icon: typeof Clock; emoji: string; title: CopyKey; sub: CopyKey; ar: string }[] = [
   { id: "prayer", icon: Clock, emoji: "🕋", title: "hubPrayer", sub: "hubPrayerSub", ar: "مواقيت الصلاة" },
-  { id: "salat", icon: Mic, emoji: "🕌", title: "hubSalat", sub: "hubSalatSub", ar: "وضع الصلاة" },
+  { id: "salat", icon: Mic, emoji: "🕌", title: "hubSalat", sub: "hubSalatSub", ar: "رفيق الصلاة" },
   { id: "qibla", icon: Compass, emoji: "🧭", title: "navQibla", sub: "hubQiblaSub", ar: "القبلة" },
   { id: "adhkar", icon: SunMoon, emoji: "📿", title: "hubAdhkar", sub: "hubAdhkarSub", ar: "الأذكار والأدعية" },
   { id: "reciters", icon: Headphones, emoji: "🎧", title: "hubReciters", sub: "hubRecitersSub", ar: "المقرئين" },
@@ -118,23 +118,18 @@ export function IslamicHubView({ section, onSection, onRetest }: { section: HubS
 /* ───────────── v45 Kids Mode in the hub ───────────── */
 
 const KIDS_SECTIONS: { id: "kidsTafsir" | "kidsJourney"; emoji: string; title: CopyKey; sub: CopyKey; ar: string }[] = [
-  { id: "kidsTafsir", emoji: "📚", title: "kidsTafsirTitle", sub: "kidsTafsirSub", ar: "تفسير وقصص الآيات" },
-  { id: "kidsJourney", emoji: "🌟", title: "kidsJourneyTitle", sub: "kidsJourneySub", ar: "رحلة الحفظ" },
+  { id: "kidsTafsir", emoji: "📚", title: "kidsTafsirTitle", sub: "kidsTafsirSub", ar: "تفسير للأطفال" },
+  { id: "kidsJourney", emoji: "🌟", title: "kidsJourneyTitle", sub: "kidsJourneySub", ar: "رحلة النجوم للحفظ" },
 ];
 
 /** The prominent «وضع الأطفال» switch, and — when on — the children's modules. */
 function KidsHubBlock({ onSection }: { onSection: (s: HubSection | null) => void }) {
   const { t, language } = useI18n();
   const kids = useKidsMode();
-  const openKidsMushaf = () => {
-    // Kids Mushaf: one verse per line, clear Naskh with full tashkeel, Tajweed colours; tap a word to hear it.
-    void updateSettings({ mushafStyle: "lines", quranFont: "naskh", tajweedColors: true });
-    window.dispatchEvent(new Event("qm:open-mushaf"));
-  };
   return (
     <div className="space-y-3" data-kids-hub={kids.on ? "on" : "off"}>
       <button type="button" role="switch" aria-checked={kids.on} onClick={() => kids.set(!kids.on)} data-kids-toggle=""
-        className="flex w-full items-center gap-3 rounded-3xl p-3.5 text-start shadow-md"
+        className="flex w-full items-center gap-3 rounded-[20px] p-3.5 text-start shadow-md"
         style={{ background: kids.on ? "linear-gradient(135deg,#fde68a,#f59e0b)" : "rgba(0,0,0,.18)", boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.5)}` }}>
         <span className="text-3xl" aria-hidden="true">🧒</span>
         <span className="min-w-0 flex-1">
@@ -148,15 +143,15 @@ function KidsHubBlock({ onSection }: { onSection: (s: HubSection | null) => void
       {kids.on && (
         <ul className="grid grid-cols-1 gap-3" data-kids-modules="">
           <li>
-            <button type="button" onClick={openKidsMushaf} data-kids-module="mushaf" className="flex w-full items-center gap-3 rounded-3xl bg-gradient-to-br from-emerald-500 to-emerald-700 p-4 text-start text-white shadow-lg active:scale-[.99]">
+            <button type="button" onClick={openKidsMushaf} data-kids-module="mushaf" className="flex w-full items-center gap-3 rounded-[20px] bg-gradient-to-br from-emerald-500 to-emerald-700 p-4 text-start text-white shadow-lg active:scale-[.99]">
               <span className="text-4xl" aria-hidden="true">📗</span>
-              <span><span className="block font-arabic text-2xl leading-snug">المصحف للأطفال</span>{language !== "ar" && <span className="block text-sm font-semibold">{t("kidsMushafTitle")}</span>}<span className="block text-xs opacity-85">{t("kidsMushafSub")}</span></span>
+              <span><span className="block font-arabic text-2xl leading-snug">مصحف الأطفال</span>{language !== "ar" && <span className="block text-sm font-semibold">{t("kidsMushafTitle")}</span>}<span className="block text-xs opacity-85">{t("kidsMushafSub")}</span></span>
             </button>
           </li>
           {KIDS_SECTIONS.map((k) => (
             <li key={k.id}>
               <button type="button" onClick={() => { onSection(k.id); window.scrollTo({ top: 0 }); }} data-kids-module={k.id}
-                className={`flex w-full items-center gap-3 rounded-3xl p-4 text-start shadow-lg active:scale-[.99] ${k.id === "kidsTafsir" ? "bg-gradient-to-br from-sky-400 to-sky-600 text-white" : "bg-gradient-to-br from-amber-300 to-amber-500 text-amber-950"}`}>
+                className={`flex w-full items-center gap-3 rounded-[20px] p-4 text-start shadow-lg active:scale-[.99] ${k.id === "kidsTafsir" ? "bg-gradient-to-br from-sky-400 to-sky-600 text-white" : "bg-gradient-to-br from-amber-300 to-amber-500 text-amber-950"}`}>
                 <span className="text-4xl" aria-hidden="true">{k.emoji}</span>
                 <span><span className="block font-arabic text-2xl leading-snug">{k.ar}</span>{language !== "ar" && <span className="block text-sm font-semibold">{t(k.title)}</span>}<span className="block text-xs opacity-85">{t(k.sub)}</span></span>
               </button>

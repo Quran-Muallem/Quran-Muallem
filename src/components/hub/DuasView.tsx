@@ -221,7 +221,7 @@ function DuaDetail({ entry, pool, onOpen, onBack }: { entry: DuaEntry; pool: Dua
         const forward = ar ? x1 > x0 : x1 < x0; // RTL: swipe right = next
         step(forward ? 1 : -1);
       }}>
-      <div className="sticky top-0 z-10 flex items-center gap-2 rounded-2xl bg-[#0b1a14]/90 p-2 backdrop-blur" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.25)}` }}>
+      <div className="qm-native-colors sticky top-0 z-10 flex items-center gap-2 rounded-2xl bg-[#0b1a14]/90 p-2 backdrop-blur" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.25)}` }}>
         <button type="button" onClick={onBack} aria-label={t("back")} className="flex h-11 w-11 items-center justify-center rounded-full bg-white/5" style={{ color: GOLD_LIGHT }} data-dua-back=""><Back className="h-5 w-5" /></button>
         <span className="flex-1" />
         <button type="button" onClick={() => { tapHaptic(); void toggleDuaFavorite(entry.key); }} aria-pressed={fav} aria-label={t(fav ? "recFavRemove" : "recFavAdd")} className="flex h-11 w-11 items-center justify-center rounded-full bg-white/5">

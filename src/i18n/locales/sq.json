@@ -713,7 +713,7 @@
   "tajweedMuallimGroup": "Muallim – Mus’haf mësimor (Hafs)",
   "tajweedMuallim": "Muallim",
   "tajweedMuallimKids": "Muallim, fëmijët përsërisin",
-  "hubSalat": "Modaliteti i Namazit",
+  "hubSalat": "Shoqëruesi i namazit",
   "hubSalatSub": "Shoqërues i heshtur në namaz dhe në namazin e natës: ndjek leximin tënd pas Fatihasë dhe të kujton butësisht kur harron",
   "salatReady": "Gati",
   "salatWaitFatiha": "Duke pritur Fatihanë…",
@@ -826,5 +826,12 @@
   "kidsJourneyStart": "Nise udhëtimin dhe fito yllin e parë!",
   "kidsJourneyHow": "⭐ ushtruar · ⭐⭐ lexuar plot · ⭐⭐⭐ mësuar përmendësh. Prek suren për ta hapur.",
   "kidsMushafTitle": "Mus'hafi për fëmijë",
-  "kidsMushafSub": "Një ajet për rresht, shkrim i qartë me zanore – prek një fjalë për ta dëgjuar."
+  "kidsMushafSub": "Një ajet për rresht, shkrim i qartë me zanore – prek një ajet për një tefsir të thjeshtë.",
+  "navCompanion": "Shoqëruesi",
+  "companionTitle": "Shoqëruesi i namazit dhe përsëritjes",
+  "kidsHomeHello": "Përshëndetje, kampion! Çfarë mësojmë sot?",
+  "kidsDrawerTitle": "Tefsir i thjeshtë për fëmijë",
+  "kidsNoTafsir": "Ende nuk ka tefsir për fëmijë për këtë ajet. Provo një sure nga Amme, Tebareke ose Fatiha!",
+  "kidsNavTafsir": "Tefsir",
+  "kidsNavJourney": "Yjet"
 }

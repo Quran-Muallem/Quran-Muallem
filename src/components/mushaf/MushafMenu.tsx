@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from "react";
+import { KidsModePill } from "@/components/kids/KidsModePill";
 import { BookOpen, ChevronLeft, ChevronRight, Home, LayoutGrid, Mic, Search, Settings, Share2, Target, X } from "lucide-react";
 import { AppLogo, AppWordmark, GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import { TOTAL_PAGES } from "@/lib/mushafData";
@@ -88,7 +89,10 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
           <button type="button" onClick={onClose} aria-label={t("close")} className="flex h-9 w-9 items-center justify-center rounded-full text-amber-200 hover:bg-white/10"><X className="h-5 w-5" /></button>
         </div>
 
-        <nav className="mt-5 space-y-1">
+        {/* v46: «وضع الأطفال» always at the top of the menu */}
+        <KidsModePill wide className="mt-4" />
+
+        <nav className="mt-4 space-y-1">
           {nav.map((n) => (
             <button key={n.id} type="button" onClick={go(() => onNavigate(n.id))} aria-current={n.id === current ? "page" : undefined}
               className={cn("flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-start text-sm transition", n.id === current ? "bg-amber-300/15 text-amber-100" : "text-emerald-50 hover:bg-white/5")}>

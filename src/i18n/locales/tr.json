@@ -713,7 +713,7 @@
   "tajweedMuallimGroup": "Muallim – öğretici Mushaf (Hafs)",
   "tajweedMuallim": "Muallim",
   "tajweedMuallimKids": "Muallim, çocuklar tekrarlar",
-  "hubSalat": "Namaz Modu",
+  "hubSalat": "Namaz Arkadaşı",
   "hubSalatSub": "Namazda ve gece namazında sessiz bir yol arkadaşı: Fâtiha'dan sonra kıraatini takip eder, unutursan nazikçe hatırlatır",
   "salatReady": "Hazır",
   "salatWaitFatiha": "Fâtiha bekleniyor…",
@@ -826,5 +826,12 @@
   "kidsJourneyStart": "Yolculuğuna başla, ilk yıldızını topla!",
   "kidsJourneyHow": "⭐ çalışıldı · ⭐⭐ tamamı okundu · ⭐⭐⭐ ezberlendi. Mushafta açmak için bir sureye dokun.",
   "kidsMushafTitle": "Çocuk Mushafı",
-  "kidsMushafSub": "Her satırda bir âyet, net yazı ve tam hareke – duymak için kelimeye dokun."
+  "kidsMushafSub": "Her satırda bir âyet, net yazı ve tam hareke – basit açıklama için bir âyete dokun.",
+  "navCompanion": "Rehber",
+  "companionTitle": "Namaz ve Tekrar Arkadaşı",
+  "kidsHomeHello": "Merhaba şampiyon! Bugün ne öğreniyoruz?",
+  "kidsDrawerTitle": "Çocuklar için basit tefsir",
+  "kidsNoTafsir": "Bu âyet için henüz çocuk tefsiri yok. Amme, Tebâreke cüzünden ya da Fâtiha'dan bir sure dene!",
+  "kidsNavTafsir": "Tefsir",
+  "kidsNavJourney": "Yıldızlar"
 }

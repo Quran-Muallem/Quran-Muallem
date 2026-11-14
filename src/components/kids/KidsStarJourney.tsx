@@ -56,7 +56,7 @@ export function KidsStarJourney({ onOpenSurah }: { onOpenSurah?: (surah: number)
 
   return (
     <div className="space-y-4" data-kids-journey={total}>
-      <div className="rounded-3xl bg-gradient-to-br from-amber-200 via-amber-300 to-amber-400 p-5 text-center text-amber-950 shadow-lg">
+      <div className="qm-native-colors rounded-[20px] bg-gradient-to-br from-amber-200 via-amber-300 to-amber-400 p-5 text-center text-amber-950 shadow-lg">
         <p className="text-4xl" aria-hidden="true">🌟</p>
         <p className="mt-1 text-3xl font-black tabular-nums" data-kids-total="">{num(total)} ⭐</p>
         <p className={cn("mt-1 font-bold", language === "ar" ? "font-arabic text-xl" : "text-lg")} data-kids-praise="">
@@ -75,7 +75,7 @@ export function KidsStarJourney({ onOpenSurah }: { onOpenSurah?: (surah: number)
           return (
             <li key={s} className={cn("relative flex w-[78%]", side)} data-kids-surah={s} data-kids-stars={st}>
               <button type="button" onClick={() => onOpenSurah?.(s)}
-                className={cn("flex w-full items-center gap-3 rounded-3xl p-3 text-start shadow-md active:scale-[.98]",
+                className={cn("qm-native-colors flex w-full items-center gap-3 rounded-[20px] p-3 text-start shadow-md active:scale-[.98]",
                   st === 3 ? "bg-gradient-to-br from-amber-200 to-amber-300 text-amber-950" : st > 0 ? "bg-emerald-100 text-emerald-950" : "bg-white/80 text-emerald-950")}>
                 <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-black", st === 3 ? "bg-amber-500 text-white" : "bg-emerald-600 text-white")}>{num(s)}</span>
                 <span className="min-w-0 flex-1">
@@ -110,7 +110,7 @@ export function KidsPraiseToast() {
   if (!show) return null;
   return (
     <div className="pointer-events-none fixed inset-x-0 top-[max(1rem,env(safe-area-inset-top))] z-[80] flex justify-center px-4" data-kids-toast={show.surah}>
-      <div className="flex items-center gap-3 rounded-3xl bg-gradient-to-br from-amber-200 to-amber-400 px-5 py-4 text-amber-950 shadow-2xl animate-in zoom-in-50 fade-in duration-500">
+      <div className="qm-native-colors flex items-center gap-3 rounded-[20px] bg-gradient-to-br from-amber-200 to-amber-400 px-5 py-4 text-amber-950 shadow-2xl animate-in zoom-in-50 fade-in duration-500">
         <span className="kids-star text-4xl" aria-hidden="true">⭐</span>
         <span>
           <span className={cn("block font-black", language === "ar" ? "font-arabic text-2xl" : "text-xl")}>{show.text}</span>

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { KidsModePill } from "@/components/kids/KidsModePill";
 import { BookOpenText, ChevronLeft, Flame, Mic, RotateCcw, Share2, Sparkles, Target, Trophy } from "lucide-react";
 
 import { DailyAyah } from "@/components/DailyAyah";
@@ -43,6 +44,8 @@ export function Dashboard({ userName, onOpen, onInvite, onBadges }: {
           </h1>
         </div>
       </header>
+      {/* v46: «وضع الأطفال» right under the logo, never hidden */}
+      <KidsModePill className="-mt-2 w-fit" />
 
       <DailyAyah onOpen={(r) => onOpen({ surahId: r.surah, fromAyah: r.from, toAyah: r.to, mode: "READING" })} />
 

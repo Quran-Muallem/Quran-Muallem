@@ -1,5 +1,5 @@
 /**
- * Salat Mode (وضع الصلاة, v42): a silent companion during prayer.
+ * Salat Companion (رفيق الصلاة, formerly «وضع الصلاة», v42): a silent companion during prayer.
  *
  * State machine (one rakʿah after the other):
  *

@@ -128,6 +128,28 @@ export function BasmalaLine({ height }: { height: number }) {
   );
 }
 
+/**
+ * v46: Basmala for the flowing Mushaf styles (clean / lines). No fixed height — it is a normal block that grows
+ * with the chosen font size and wraps, so it can never collide with the surah banner above or ayah 1 below.
+ */
+export function BasmalaFlow({ fontSize }: { fontSize: number }) {
+  return (
+    <div className="flex w-full items-center justify-center text-center" data-basmala-flow="" dir="rtl" lang="ar"
+      style={{ paddingBlock: "clamp(12px, 0.4em, 16px)" }}>
+      <span className="qm-flow"
+        style={{
+          fontSize: `clamp(20px, ${(fontSize * 0.85).toFixed(1)}px, 42px)`, lineHeight: 1.8, paddingInline: "0.2em",
+          backgroundImage: `linear-gradient(180deg, #fff2c4, ${GOLD_B} 45%, ${GOLD_A})`,
+          WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
+          WebkitBoxDecorationBreak: "clone", boxDecorationBreak: "clone",
+          filter: "drop-shadow(0 0 8px rgba(243,210,122,.45))",
+        }}>
+        {BASMALAH_TEXT}
+      </span>
+    </div>
+  );
+}
+
 /** End-of-verse medallion with Eastern Arabic numerals. */
 export function AyahMedallion({ n, tone = "gold", className }: { n: number; tone?: "gold" | "memorized" | "revision"; className?: string }) {
   const color = tone === "memorized" ? "var(--color-emerald-300)" : tone === "revision" ? "var(--color-orange-300)" : GOLD_B;

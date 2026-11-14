@@ -713,7 +713,7 @@
   "tajweedMuallimGroup": "Muallim – Mushaf didáctico (Hafs)",
   "tajweedMuallim": "Muallim",
   "tajweedMuallimKids": "Muallim, los niños repiten",
-  "hubSalat": "Modo Oración",
+  "hubSalat": "Compañero de oración",
   "hubSalatSub": "Un compañero silencioso en la oración y el Qiyam al-Layl: sigue tu recitación después de la Fátiha y te recuerda con suavidad si olvidas",
   "salatReady": "Listo",
   "salatWaitFatiha": "Esperando la Fátiha…",
@@ -826,5 +826,12 @@
   "kidsJourneyStart": "¡Empieza tu viaje y gana tu primera estrella!",
   "kidsJourneyHow": "⭐ practicada · ⭐⭐ leída entera · ⭐⭐⭐ memorizada. Toca una sura para abrirla.",
   "kidsMushafTitle": "Mushaf infantil",
-  "kidsMushafSub": "Una aleya por línea con letra clara y vocales completas: toca una palabra para oírla."
+  "kidsMushafSub": "Una aleya por línea con letra clara y vocales completas: toca una aleya para un tafsir sencillo.",
+  "navCompanion": "Compañero",
+  "companionTitle": "Compañero de oración y repaso",
+  "kidsHomeHello": "¡Hola, campeón! ¿Qué aprendemos hoy?",
+  "kidsDrawerTitle": "Tafsir sencillo para niños",
+  "kidsNoTafsir": "Aún no hay tafsir infantil para esta aleya. ¡Prueba una sura de Juz 'Amma, Tabarak o al-Fatiha!",
+  "kidsNavTafsir": "Tafsir",
+  "kidsNavJourney": "Estrellas"
 }

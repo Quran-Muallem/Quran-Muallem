@@ -75,7 +75,7 @@ export function SessionReview({ items, stats, onClose, onRetryVerse, onRetryAll,
     <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" dir={directionFor(language)} lang={language} data-session-review="">
       <button type="button" aria-label={t("close")} onClick={onClose} className="absolute inset-0 bg-black/60 animate-in fade-in" />
       <section role="dialog" aria-modal="true" aria-label={t("srTitle")}
-        className="relative mx-2 mb-[max(0.5rem,env(safe-area-inset-bottom))] flex w-full max-w-md flex-col overflow-hidden rounded-[1.5rem] shadow-2xl animate-in slide-in-from-bottom-4 fade-in duration-200"
+        className="qm-native-colors relative mx-2 mb-[max(0.5rem,env(safe-area-inset-bottom))] flex w-full max-w-md flex-col overflow-hidden rounded-[1.5rem] shadow-2xl animate-in slide-in-from-bottom-4 fade-in duration-200"
         style={{ background: "#062b22", boxShadow: `0 0 0 1px ${alpha(GOLD, 0.6)}, 0 20px 50px -20px rgba(0,0,0,.8)`, maxHeight: "min(80dvh, 44rem)" }}>
         <header className="shrink-0 space-y-2 px-4 pb-3 pt-4" style={{ background: "linear-gradient(180deg, #0a3d30, #062b22)" }}>
           <div className="flex items-center gap-2">

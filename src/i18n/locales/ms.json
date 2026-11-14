@@ -713,7 +713,7 @@
   "tajweedMuallimGroup": "Muallim – mushaf pengajaran (Hafs)",
   "tajweedMuallim": "Muallim",
   "tajweedMuallimKids": "Muallim, kanak-kanak mengulang",
-  "hubSalat": "Mod Solat",
+  "hubSalat": "Teman Solat",
   "hubSalatSub": "Peneman senyap dalam solat dan qiamullail: mengikuti bacaan anda selepas Al-Fatihah dan mengingatkan dengan lembut jika terlupa",
   "salatReady": "Sedia",
   "salatWaitFatiha": "Menunggu Al-Fatihah…",
@@ -826,5 +826,12 @@
   "kidsJourneyStart": "Mulakan perjalanan dan kumpul bintang pertama!",
   "kidsJourneyHow": "⭐ dilatih · ⭐⭐ dibaca penuh · ⭐⭐⭐ dihafal. Ketik surah untuk membukanya dalam Mushaf.",
   "kidsMushafTitle": "Mushaf kanak-kanak",
-  "kidsMushafSub": "Satu ayat sebaris dengan tulisan jelas dan baris lengkap – ketik perkataan untuk mendengarnya."
+  "kidsMushafSub": "Satu ayat sebaris dengan tulisan jelas dan baris lengkap – ketik ayat untuk tafsir ringkas.",
+  "navCompanion": "Teman",
+  "companionTitle": "Teman Solat & Ulangkaji",
+  "kidsHomeHello": "Hai, juara! Hari ini kita belajar apa?",
+  "kidsDrawerTitle": "Tafsir ringkas untuk kanak-kanak",
+  "kidsNoTafsir": "Belum ada tafsir kanak-kanak untuk ayat ini. Cuba surah dari Juz 'Amma, Tabarak atau al-Fatihah!",
+  "kidsNavTafsir": "Tafsir",
+  "kidsNavJourney": "Bintang"
 }

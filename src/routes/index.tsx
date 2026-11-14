@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { BookOpen, Headphones, Home, LayoutGrid, Loader2, PenLine, Mic, Lightbulb, RotateCcw, Search, Settings, Sparkles, Square, Target, Pause, Play } from "lucide-react";
+import { BookOpen, BookOpenText, Headphones, Home, Star, LayoutGrid, Loader2, PenLine, Mic, Lightbulb, RotateCcw, Search, Settings, Sparkles, Square, Target, Pause, Play } from "lucide-react";
 import { VoiceWordFix, type WordFix } from "@/components/VoiceWordFix";
 import { useVoiceProfile } from "@/lib/userAdaptation";
 import { deferLiveMistakes, tokenVerses } from "@/lib/liveMistakes";
@@ -36,8 +36,9 @@ import { SettingsModal } from "@/components/SettingsModal";
 import { Dashboard, type StudyTarget } from "@/components/Dashboard";
 import { MushafReader } from "@/components/MushafReader";
 import { IslamicHubView, type HubSection } from "@/components/IslamicHubView";
-import { SalatModeView } from "@/components/SalatModeView";
-import { HandsFreeHifdhView } from "@/components/HandsFreeHifdhView";
+import { CompanionView, lastCompanionTab, type CompanionTab } from "@/components/CompanionView";
+import { KidsHome } from "@/components/kids/KidsHome";
+import { openKidsMushaf as openKidsMushafNav, openKidsSection as openKidsSectionNav } from "@/components/kids/kidsNav";
 import { KidsModeProvider } from "@/components/kids/KidsModeContext";
 import { KidsPraiseToast } from "@/components/kids/KidsStarJourney";
 import { BadgesModal } from "@/components/badges/BadgesModal";
@@ -107,6 +108,13 @@ export function App() {
   useEffect(() => { if (settings !== DEFAULT_SETTINGS) applyTypography(settings); }, [settings]);
 
   const [tab, setTab] = useState<Tab>("home");
+  // v46 «رفيق الصلاة والمراجعة»: one view for the Salat Companion and hands-free Hifdh (null = closed).
+  const [companion, setCompanion] = useState<CompanionTab | null>(null);
+  useEffect(() => {
+    const open = (e: Event) => { const d = (e as CustomEvent).detail; setCompanion(d === "handsfree" || d === "salat" ? d : lastCompanionTab()); };
+    window.addEventListener("qm:open-companion", open);
+    return () => window.removeEventListener("qm:open-companion", open);
+  }, []);
   /** Open section of the Islamic hub (null = the hub's overview). */
   const [hubSection, setHubSection] = useState<HubSection | null>(null);
   const [mushaf, setMushaf] = useState<MushafTarget>({ surahId: 1, jumpId: 0 });
@@ -158,9 +166,11 @@ export function App() {
   useEffect(() => {
     const mushafTab = () => { switchTab("mushaf"); window.scrollTo({ top: 0 }); };
     const surah = (e: Event) => { const s = Number((e as CustomEvent).detail); if (s >= 1 && s <= 114) { jump({ surahId: s, focus: 1 }); } mushafTab(); };
+    const hub = (e: Event) => { const s = (e as CustomEvent).detail as HubSection; setHubSection(s); switchTab("hub"); window.scrollTo({ top: 0 }); };
     window.addEventListener("qm:open-mushaf", mushafTab);
     window.addEventListener("qm:open-surah", surah);
-    return () => { window.removeEventListener("qm:open-mushaf", mushafTab); window.removeEventListener("qm:open-surah", surah); };
+    window.addEventListener("qm:open-hub", hub);
+    return () => { window.removeEventListener("qm:open-mushaf", mushafTab); window.removeEventListener("qm:open-surah", surah); window.removeEventListener("qm:open-hub", hub); };
   }, [switchTab]);
   const go = useCallback((t: Tab) => { if (t === "hub") setHubSection(null); switchTab(t); window.scrollTo({ top: 0 }); }, [switchTab]);
   const jump = useCallback((target: { surahId: number; focus?: number | undefined; mark?: string[] | undefined; mode?: PracticeMode | undefined }) => {
@@ -208,17 +218,19 @@ export function App() {
             <LanguageSelector />
           </div>
           <main key={tab} className={cn("flex-1 pb-28 animate-in fade-in slide-in-from-bottom-2 duration-300", tab === "mushaf" ? "px-1.5 pb-0 pt-[max(0.5rem,env(safe-area-inset-top))]" : "px-5 pt-5")}>
-            {tab === "home" && <Dashboard userName={auth.session?.provider === "guest" ? null : auth.session?.name || null} onOpen={open} onInvite={() => setInviteOpen(true)} onBadges={() => setBadgesOpen({ surah: null })} />}
+            {tab === "home" && settings.kidsMode && <KidsHome userName={auth.session?.provider === "guest" ? null : auth.session?.name || null} />}
+            {tab === "home" && !settings.kidsMode && <Dashboard userName={auth.session?.provider === "guest" ? null : auth.session?.name || null} onOpen={open} onInvite={() => setInviteOpen(true)} onBadges={() => setBadgesOpen({ surah: null })} />}
             {tab === "mushaf" && (
               <MushafReader surahId={mushaf.surahId} focusAyah={mushaf.focus} focusMode={mushaf.mode} mark={mushaf.mark} jumpId={mushaf.jumpId} onPractice={open}
                 onNavigate={go} onSettings={() => setSettingsOpen("manual")} onInvite={() => setInviteOpen(true)} onSearch={() => setSearchOpen(true)} />
             )}
             {tab === "practice" && <PracticeScreen target={practice} onTargetChange={setPractice} />}
             {tab === "khatma" && <KhatmaView onOpenPage={openPage} />}
-            {tab === "hub" && <IslamicHubView section={hubSection} onSection={setHubSection} onRetest={open} />}
+            {tab === "hub" && <IslamicHubView section={hubSection} onSection={(s) => { if (s === "salat") openCompanion("salat"); else setHubSection(s); }} onRetest={open} />}
           </main>
           {/* Full-screen Mushaf: the tab bar is replaced by the burger menu */}
-          {tab !== "mushaf" && <BottomNav tab={tab} setTab={go} />}
+          {tab !== "mushaf" && <BottomNav tab={tab} setTab={go} hubSection={hubSection} kids={settings.kidsMode} />}
+          {companion && <CompanionView tab={companion} onTab={setCompanion} onClose={() => setCompanion(null)} />}
           {tab !== "mushaf" && (
             <MushafMenu open={menuOpen} onClose={() => setMenuOpen(false)} current={tab} page={1} surah={mushaf.surahId} juz={1}
               onPage={openPage} onSurah={(s2) => { jump({ surahId: s2, focus: 1 }); go("mushaf"); }}
@@ -277,26 +289,51 @@ function AccountMenu({ session, onRename }: { session: UserSession; onRename: ()
   );
 }
 
-function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
+/** v46: opens «رفيق الصلاة والمراجعة» at the given tab (handled by the App). */
+export const openCompanion = (tab?: CompanionTab) => window.dispatchEvent(new CustomEvent("qm:open-companion", { detail: tab }));
+
+function BottomNav({ tab, setTab, hubSection, kids }: { tab: Tab; setTab: (t: Tab) => void; hubSection: HubSection | null; kids: boolean }) {
   const { t } = useI18n();
-  const items: { id: Tab; label: string; icon: typeof Home }[] = [
-    { id: "home", label: t("start"), icon: Home },
-    { id: "mushaf", label: t("navMushaf"), icon: BookOpen },
-    { id: "practice", label: t("navPractice"), icon: Mic },
-    { id: "khatma", label: t("navKhatma"), icon: Target },
-    { id: "hub", label: t("navHub"), icon: LayoutGrid },
-  ];
+  const btn = (key: string, active: boolean, onClick: () => void, Icon: typeof Home, label: string) => (
+    <button type="button" key={key} onClick={onClick} aria-current={active ? "page" : undefined} data-nav={key}
+      className={cn("flex min-w-0 flex-col items-center gap-0.5 rounded-xl py-1.5 text-[0.66rem] leading-tight transition-colors",
+        active ? "text-accent" : "text-muted-foreground hover:text-foreground", kids && "text-[0.78rem] font-semibold")}>
+      <Icon className={kids ? "h-6 w-6" : "h-5 w-5"} />
+      <span className="max-w-full truncate">{label}</span>
+    </button>
+  );
+  const shell = "fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t border-border bg-card/95 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1.5 backdrop-blur";
+  if (kids) {
+    // Kids Mode: only the children's destinations.
+    const kidsHub = (s: HubSection) => () => { openKidsSectionNav(s as "kidsTafsir" | "kidsJourney"); };
+    return (
+      <nav className={shell} data-bottom-nav="kids">
+        <div className="grid grid-cols-4">
+          {btn("home", tab === "home", () => setTab("home"), Home, t("start"))}
+          {btn("mushaf", tab === "mushaf", openKidsMushafNav, BookOpen, t("navMushaf"))}
+          {btn("kidsTafsir", tab === "hub" && hubSection === "kidsTafsir", kidsHub("kidsTafsir"), BookOpenText, t("kidsNavTafsir"))}
+          {btn("kidsJourney", tab === "hub" && hubSection === "kidsJourney", kidsHub("kidsJourney"), Star, t("kidsNavJourney"))}
+        </div>
+      </nav>
+    );
+  }
   return (
-    <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t border-border bg-card/95 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1.5 backdrop-blur">
-      <div className="grid grid-cols-5">
-        {items.map(({ id, label, icon: Icon }) => (
-          <button type="button" key={id} onClick={() => setTab(id)} aria-current={tab === id ? "page" : undefined}
-            className={cn("flex min-w-0 flex-col items-center gap-0.5 rounded-xl py-1.5 text-[0.66rem] leading-tight transition-colors",
-              tab === id ? "text-accent" : "text-muted-foreground hover:text-foreground")}>
-            <Icon className="h-5 w-5" />
-            <span className="max-w-full truncate">{label}</span>
-          </button>
-        ))}
+    <nav className={shell} data-bottom-nav="main">
+      <div className="grid grid-cols-6">
+        {btn("home", tab === "home", () => setTab("home"), Home, t("start"))}
+        {btn("mushaf", tab === "mushaf", () => setTab("mushaf"), BookOpen, t("navMushaf"))}
+        {btn("practice", tab === "practice", () => setTab("practice"), Mic, t("navPractice"))}
+        {/* v46: the AI companions — highlighted, right next to التسميع */}
+        <button type="button" onClick={() => openCompanion()} data-nav="companion" aria-label={t("companionTitle")}
+          className="flex min-w-0 flex-col items-center gap-0.5 rounded-xl text-[0.66rem] font-semibold leading-tight text-accent">
+          <span className="-mt-5 flex h-12 w-12 items-center justify-center rounded-full text-[#062b22] shadow-lg ring-4 ring-[var(--card)]"
+            style={{ background: GOLD_GRADIENT, boxShadow: "0 0 18px rgba(243,210,122,.55)" }}>
+            <Sparkles className="h-6 w-6" />
+          </span>
+          <span className="max-w-full truncate">{t("navCompanion")}</span>
+        </button>
+        {btn("khatma", tab === "khatma", () => setTab("khatma"), Target, t("navKhatma"))}
+        {btn("hub", tab === "hub", () => setTab("hub"), LayoutGrid, t("navHub"))}
       </div>
     </nav>
   );
@@ -322,8 +359,6 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
   const settings = useSettings();
   const list = useSurahList();
   const text = useSurahText(target.surahId);
-  const [salatOpen, setSalatOpen] = useState(false);
-  const [handsFreeOpen, setHandsFreeOpen] = useState(false);
   const meta = list[target.surahId - 1];
   const count = text.data?.ayahs.length ?? meta?.versesCount ?? 1;
   const from = Math.min(target.fromAyah, count);
@@ -682,14 +717,13 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
           <p className="mt-1 text-sm text-muted-foreground">{masked ? t("hifzSub") : t("reciteSub")}</p>
         </div>
         {/* v42: Salat Mode — a silent companion during prayer */}
-        <button type="button" onClick={() => { if (listening) toggleMic(); setSalatOpen(true); }} data-open-salat=""
-          className="flex shrink-0 items-center gap-1.5 rounded-full border border-amber-500/40 px-3 py-1.5 text-xs font-semibold text-amber-200">
-          <span aria-hidden="true">🕌</span><span className="font-arabic">وضع الصلاة</span>
+        <button type="button" onClick={() => { if (listening) toggleMic(); openCompanion("salat"); }} data-open-salat=""
+          className="kids-hide flex shrink-0 items-center gap-1.5 rounded-full border border-amber-500/40 px-3 py-1.5 text-xs font-semibold text-amber-200">
+          <span aria-hidden="true">🕌</span><span className={language === "ar" ? "font-arabic" : undefined}>{language === "ar" ? "رفيق الصلاة" : t("hubSalat")}</span>
         </button>
       </div>
-      {salatOpen && <SalatModeView onClose={() => setSalatOpen(false)} />}
       {/* v45 «المراجعة الحرة»: hands-free Hifdh (pocket / screen off / Bluetooth) */}
-      <button type="button" onClick={() => { if (listening) toggleMic(); setHandsFreeOpen(true); }} data-open-handsfree=""
+      <button type="button" onClick={() => { if (listening) toggleMic(); openCompanion("handsfree"); }} data-open-handsfree=""
         className="kids-hide flex w-full items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-950/30 p-3 text-start">
         <span aria-hidden="true" className="text-2xl">🎧</span>
         <span className="min-w-0 flex-1">
@@ -697,7 +731,6 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
           <span className="mt-0.5 block text-xs leading-relaxed text-emerald-100/60">{t("hfCardSub")}</span>
         </span>
       </button>
-      {handsFreeOpen && <HandsFreeHifdhView onClose={() => setHandsFreeOpen(false)} />}
 
       {/* Sheikh player at the top: play / pause · Sheikh (same as in the Mushaf) · repeat the range */}
       <SheikhControls reciterId={settings.reciterId} playing={player.playing} loading={player.loading} failed={player.failed}

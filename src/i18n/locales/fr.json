@@ -713,7 +713,7 @@
   "tajweedMuallimGroup": "Muallim – Mushaf d’apprentissage (Hafs)",
   "tajweedMuallim": "Muallim",
   "tajweedMuallimKids": "Muallim, les enfants répètent",
-  "hubSalat": "Mode Prière",
+  "hubSalat": "Compagnon de prière",
   "hubSalatSub": "Un compagnon silencieux pendant la prière et la prière de nuit : il suit votre récitation après la Fâtiha et vous rappelle doucement en cas d'oubli",
   "salatReady": "Prêt",
   "salatWaitFatiha": "En attente de la Fâtiha…",
@@ -826,5 +826,12 @@
   "kidsJourneyStart": "Commence ton voyage et gagne ta première étoile !",
   "kidsJourneyHow": "⭐ pratiquée · ⭐⭐ lue en entier · ⭐⭐⭐ apprise par cœur. Touchez une sourate pour l'ouvrir.",
   "kidsMushafTitle": "Mushaf pour enfants",
-  "kidsMushafSub": "Un verset par ligne, écriture claire et voyelles complètes – touchez un mot pour l'entendre."
+  "kidsMushafSub": "Un verset par ligne, écriture claire et voyelles complètes – touchez un verset pour une explication simple.",
+  "navCompanion": "Compagnon",
+  "companionTitle": "Compagnon de prière et de révision",
+  "kidsHomeHello": "Salut, champion ! Qu'apprenons-nous aujourd'hui ?",
+  "kidsDrawerTitle": "Tafsir simple pour enfants",
+  "kidsNoTafsir": "Pas encore de tafsir pour enfants pour ce verset. Essaie une sourate de Juz 'Amma, Tabarak ou al-Fatiha !",
+  "kidsNavTafsir": "Tafsir",
+  "kidsNavJourney": "Étoiles"
 }

@@ -50,3 +50,18 @@ export async function stopSpeaking(): Promise<void> {
   if (isNativePlatform()) { try { const { TextToSpeech } = await import("@capacitor-community/text-to-speech"); await TextToSpeech.stop(); } catch { /* ignore */ } }
   try { (globalThis as { speechSynthesis?: SpeechSynthesis }).speechSynthesis?.cancel(); } catch { /* ignore */ }
 }
+
+/** Verses each story-entry covers (entries without an `ayah` cover the whole surah). */
+const RANGES: Record<string, [number, number]> = { kursi: [255, 255] };
+const STORY_END: Record<number, number> = { 9: 26, 32: 44, 60: 82, 83: 98 }; // al-Kahf stories
+
+/** v46: the kids tafsir entry for a tapped verse, if there is one. */
+export function kidsTafsirFor(surah: number, ayah: number): KidsTafsirEntry | null {
+  const list = KIDS_TAFSIR.filter((e) => e.surah === surah);
+  for (const e of list) {
+    if (e.ayah == null) continue;
+    const [a, b] = RANGES[e.id] ?? [e.ayah, surah === 18 ? STORY_END[e.ayah] ?? e.ayah : e.ayah];
+    if (ayah >= a && ayah <= b) return e;
+  }
+  return list.find((e) => e.ayah == null) ?? null;
+}

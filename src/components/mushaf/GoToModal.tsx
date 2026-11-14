@@ -51,7 +51,7 @@ export function GoToModal({ open, page, surah, mushaf, onClose, onGo }: {
     <div className="fixed inset-0 z-[60] flex justify-center" dir={directionFor(language)} lang={language}>
       <button type="button" aria-label={t("close")} onClick={onClose} className="absolute inset-0 bg-black/70 animate-in fade-in" />
       <section role="dialog" aria-modal="true" aria-label={t("goTo")} data-goto-sheet=""
-        className="relative mx-2 my-[max(0.5rem,env(safe-area-inset-top))] flex w-full max-w-md flex-col overflow-hidden rounded-[1.5rem] shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+        className="qm-native-colors relative mx-2 my-[max(0.5rem,env(safe-area-inset-top))] flex w-full max-w-md flex-col overflow-hidden rounded-[1.5rem] shadow-2xl animate-in fade-in zoom-in-95 duration-150"
         style={{ background: "#062b22", boxShadow: `0 0 0 1px ${alpha(GOLD, 0.6)}, 0 20px 50px -20px rgba(0,0,0,.8)`, maxHeight: "calc(100dvh - 1rem - env(safe-area-inset-top) - env(safe-area-inset-bottom))" }}>
         {/* fixed top: title, search / jump, recently read, tabs */}
         <div className="shrink-0 space-y-3 px-4 pb-3 pt-4" style={{ background: "linear-gradient(180deg, #0a3d30, #062b22)" }}>
@@ -64,7 +64,7 @@ export function GoToModal({ open, page, surah, mushaf, onClose, onGo }: {
               <Search className="pointer-events-none absolute inset-y-0 start-3 my-auto h-5 w-5 text-amber-200" aria-hidden="true" />
               <input value={q} onChange={(e) => setQ(e.target.value)} type="search" autoComplete="off" enterKeyHint="go" data-goto-surah-search=""
                 placeholder={t("goToSearchAll")} aria-label={t("goToSurahName")}
-                className="h-12 w-full rounded-2xl border bg-black/30 ps-11 pe-3 text-base text-white placeholder:text-emerald-100/50 focus:outline-none"
+                className="h-12 w-full rounded-2xl border bg-black/30 ps-11 pe-3 text-base text-white placeholder:text-[#D4E4DC]/80 focus:outline-none"
                 style={{ borderColor: alpha(GOLD, 0.55) }} />
             </label>
             <button type="submit" disabled={!q.trim() || (!jump && !ids.length)} aria-label={t("goTo")}
@@ -72,7 +72,7 @@ export function GoToModal({ open, page, surah, mushaf, onClose, onGo }: {
               <CornerDownLeft className="h-5 w-5" />
             </button>
           </form>
-          <p className="-mt-1 text-xs text-emerald-100/70" data-goto-hint="">
+          <p className="-mt-1 text-xs text-[#D4E4DC]" data-goto-hint="">
             {jump ? ("page" in jump ? `→ ${t("pageLabel")} ${num(jump.page)}` : `→ ${label(jump.surah)} ${num(jump.surah)}:${num(jump.ayah)}`) : q.trim() && /\d/.test(q) ? t("goToInvalid") : t("goToExample")}
           </p>
 
@@ -86,7 +86,7 @@ export function GoToModal({ open, page, surah, mushaf, onClose, onGo }: {
                     <Clock className="h-4 w-4 shrink-0 text-amber-200" aria-hidden="true" />
                     <span>
                       <span className="block whitespace-nowrap font-arabic text-base leading-tight text-white">{label(r.surah)}</span>
-                      <span className="block whitespace-nowrap text-[0.7rem] text-emerald-100/70">{num(r.surah)}:{num(r.ayah)} · {t("pageShort").replace("{n}", num(r.page))}</span>
+                      <span className="block whitespace-nowrap text-[0.7rem] text-[#D4E4DC]">{num(r.surah)}:{num(r.ayah)} · {t("pageShort").replace("{n}", num(r.page))}</span>
                     </span>
                   </button>
                 ))}
@@ -118,7 +118,7 @@ export function GoToModal({ open, page, surah, mushaf, onClose, onGo }: {
         <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-3" data-goto-surah-list="">
           {tab === "surahs" ? (
             <ul data-goto-hits="">
-              {ids.length === 0 && <li className="px-3 py-4 text-sm text-emerald-100/70">{t("goToSurahNone")}</li>}
+              {ids.length === 0 && <li className="px-3 py-4 text-sm text-[#D4E4DC]">{t("goToSurahNone")}</li>}
               {ids.map((id) => {
                 const m = getSurahMeta(id)!;
                 const share = shares[id - 1] ?? 0;
@@ -131,7 +131,7 @@ export function GoToModal({ open, page, surah, mushaf, onClose, onGo }: {
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-emerald-950" style={{ background: GOLD_GRADIENT }}>{num(id)}</span>
                       <span className="min-w-0 flex-1">
                         <span className="block font-arabic text-xl leading-snug text-white">{ar ? `سورة ${m.nameArabic}` : m.nameSimple}</span>
-                        <span className="block text-xs text-emerald-100/75">
+                        <span className="block text-xs text-[#D4E4DC]">
                           {!ar && <>{m.nameArabic}{surahMeaning(id, language) ? ` · ${surahMeaning(id, language)}` : ""} · </>}
                           {num(m.versesCount)} {t("goToVerses")} · {t("pageShort").replace("{n}", num(mushaf?.surahStartPage(id) ?? 0))}
                         </span>
@@ -159,7 +159,7 @@ export function GoToModal({ open, page, surah, mushaf, onClose, onGo }: {
                       className="w-full rounded-2xl px-3 py-3 text-start"
                       style={{ background: here ? alpha(GOLD, 0.18) : "rgba(255,255,255,.05)", boxShadow: `inset 0 0 0 1px ${alpha(GOLD, here ? 0.7 : 0.25)}` }}>
                       <span className="block text-base font-semibold text-white">{t("juz")} {num(j)}</span>
-                      <span className="block font-arabic text-sm text-emerald-100/80">{label(js)} {num(js)}:{num(ja)}</span>
+                      <span className="block font-arabic text-sm text-[#D4E4DC]">{label(js)} {num(js)}:{num(ja)}</span>
                       <span className="block text-xs text-emerald-100/60">{t("pageShort").replace("{n}", num(jp))}</span>
                     </button>
                   </li>

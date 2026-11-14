@@ -713,7 +713,7 @@
   "tajweedMuallimGroup": "Muallim – Lehr-Mushaf (Hafs)",
   "tajweedMuallim": "Muallim (Lehr-Rezitation)",
   "tajweedMuallimKids": "Muallim, Kinder sprechen nach",
-  "hubSalat": "Gebetsmodus",
+  "hubSalat": "Gebetsbegleiter",
   "hubSalatSub": "Ein stiller Begleiter im Gebet und im Nachtgebet: folgt deiner Rezitation nach der Fātiḥa und erinnert dich sanft, wenn du hängen bleibst",
   "salatReady": "Bereit",
   "salatWaitFatiha": "Warte auf die Fātiḥa …",
@@ -826,5 +826,12 @@
   "kidsJourneyStart": "Starte deine Reise und sammle deinen ersten Stern!",
   "kidsJourneyHow": "⭐ geübt · ⭐⭐ ganz gelesen · ⭐⭐⭐ auswendig gelernt. Tippe auf eine Sura, um sie im Mushaf zu öffnen.",
   "kidsMushafTitle": "Kinder-Mushaf",
-  "kidsMushafSub": "Eine Āya pro Zeile in klarer Schrift mit allen Vokalzeichen – tippe auf ein Wort, um es zu hören."
+  "kidsMushafSub": "Eine Āya pro Zeile in klarer Schrift mit allen Vokalzeichen – tippe auf eine Āya für eine einfache Erklärung.",
+  "navCompanion": "Begleiter",
+  "companionTitle": "Gebets- & Wiederholungsbegleiter",
+  "kidsHomeHello": "Hallo, kleiner Held! Was lernen wir heute?",
+  "kidsDrawerTitle": "Einfacher Tafsir für Kinder",
+  "kidsNoTafsir": "Für diese Āya gibt es noch keinen Kinder-Tafsir. Probier eine Sura aus Dschuz ʿAmma, Tabārak oder al-Fātiḥa!",
+  "kidsNavTafsir": "Tafsir",
+  "kidsNavJourney": "Sterne"
 }
