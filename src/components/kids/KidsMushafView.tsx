@@ -12,6 +12,9 @@ import { BASMALAH, getSurahAyahs, getSurahMeta, toArabicDigits, type Ayah } from
 import { KidsTafsirDrawer } from "@/components/kids/KidsTafsirDrawer";
 import { JOURNEY, useSurahStars } from "@/components/kids/KidsStarJourney";
 import { stopSheikhAudio } from "@/lib/audioPlayback";
+import { starChime } from "@/lib/storyAmbience";
+
+const HIDE_KEY = "qm.kids.hide";
 
 const KEY = "qm.kids.surah";
 export function kidsSurah(): number {
@@ -28,13 +31,19 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
   const [retry, setRetry] = useState(0);
   const [tapped, setTapped] = useState<number | null>(null);
   const [picker, setPicker] = useState(false);
+  // v49 «إخفاء الآيات للتسميع»: verses under cloud covers; tap a cloud to check yourself.
+  const [hide, setHide] = useState(() => { try { return localStorage.getItem(HIDE_KEY) === "1"; } catch { return false; } });
+  const [revealed, setRevealed] = useState<Set<number>>(new Set());
+  const [sparkle, setSparkle] = useState<number | null>(null);
+  const toggleHide = () => { const v = !hide; setHide(v); setRevealed(new Set()); try { localStorage.setItem(HIDE_KEY, v ? "1" : "0"); } catch { /* ignore */ } };
+  const reveal = (n: number) => { setRevealed((r) => new Set(r).add(n)); setSparkle(n); starChime(0.14); window.setTimeout(() => setSparkle((x) => (x === n ? null : x)), 1100); };
   const meta = getSurahMeta(surah);
   const size = Math.max(26, settings.quranFontSize);
   const num = (n: number) => (ar ? toArabicDigits(n) : String(n));
 
   useEffect(() => {
     const ac = new AbortController();
-    setAyahs(null); setFailed(false); setTapped(null);
+    setAyahs(null); setFailed(false); setTapped(null); setRevealed(new Set());
     getSurahAyahs(surah, { signal: ac.signal }).then((s) => setAyahs(s.ayahs)).catch(() => { if (!ac.signal.aborted) setFailed(true); });
     window.scrollTo({ top: 0 });
     return () => { ac.abort(); stopSheikhAudio(); };
@@ -53,8 +62,18 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
   );
 
   return (
-    <div className="space-y-4" data-kids-mushaf={surah}>
+    <div className="space-y-4" data-kids-mushaf={surah} data-kids-hide={hide ? "on" : "off"}>
       {nav("top")}
+      {/* toolbar: hide the verses to recite from memory */}
+      <div className="kd-card flex items-center gap-2 p-2" dir={ar ? "rtl" : "ltr"}>
+        <button type="button" role="switch" aria-checked={hide} onClick={toggleHide} data-kids-hide-toggle=""
+          className={cn("kd-btn flex-1 text-base", hide ? "kd-btn-mango" : "kd-btn-soft")}>
+          <span aria-hidden="true">{hide ? "🙈" : "👀"}</span>{hide ? t("kidsShowAyat") : t("kidsHideAyat")}
+        </button>
+        {hide && revealed.size > 0 && (
+          <button type="button" onClick={() => setRevealed(new Set())} className="kd-btn kd-btn-soft !px-4 text-base" aria-label={t("kidsHideAgain")} data-kids-hide-again="">☁️</button>
+        )}
+      </div>
       <article className="kd-card overflow-hidden" dir="rtl" lang="ar">
         {/* surah title — sequential blocks: title → Basmala → verses (never overlapping) */}
         <header className="relative flex flex-col items-center gap-1 px-4 pb-4 pt-5 text-center" style={{ background: "linear-gradient(180deg, var(--kd-sun), transparent)" }}>
@@ -65,7 +84,7 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
         {surah !== 1 && surah !== 9 && (
           <p className="kd-quran px-4 py-3 text-center" data-basmala-flow="" style={{ fontSize: `clamp(22px, ${(size * 0.85).toFixed(1)}px, 44px)`, lineHeight: 1.9, color: "var(--kd-turquoise-deep)" }}>{BASMALAH}</p>
         )}
-        <p className="px-4 pb-2 text-center text-sm font-bold kd-ink-soft" dir={ar ? "rtl" : "ltr"}>{t("kidsTapAyahHint")}</p>
+        <p className="px-4 pb-2 text-center text-sm font-bold kd-ink-soft" dir={ar ? "rtl" : "ltr"}>{hide ? t("kidsHideHint") : t("kidsTapAyahHint")}</p>
         {!ayahs && !failed && <p className="p-10 text-center font-bold kd-ink-soft" dir={ar ? "rtl" : "ltr"}>{t("kidsLoading")}</p>}
         {failed && (
           <div className="space-y-3 p-8 text-center" dir={ar ? "rtl" : "ltr"}>
@@ -75,8 +94,21 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
         )}
         {ayahs && (
           <ol className="divide-y-2 divide-dashed px-2 pb-3" style={{ borderColor: "var(--kd-edge)" }}>
-            {ayahs.map((a) => (
-              <li key={a.number}>
+            {ayahs.map((a) => (hide && !revealed.has(a.number)) ? (
+              <li key={a.number} className="py-2">
+                {/* a cloud cover with a golden star border — tap to reveal */}
+                <button type="button" onClick={() => reveal(a.number)} data-kids-cloud={a.number}
+                  className="relative flex w-full items-center justify-center gap-2 overflow-hidden px-4 py-5 text-center active:translate-y-[2px]"
+                  style={{ borderRadius: 26, border: "3px dashed var(--kd-mango)", borderBottomWidth: 6, background: "linear-gradient(180deg, #ffffff, var(--kd-sky))", color: "var(--kd-ink)", boxShadow: "0 0 0 4px rgba(245,158,11,.15)" }}>
+                  <span aria-hidden="true" className="absolute -start-2 -top-3 text-3xl opacity-80">☁️</span>
+                  <span aria-hidden="true" className="absolute -end-1 -top-2 text-xl">⭐</span>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-sans text-sm font-black text-white" style={{ background: "var(--kd-turquoise)", boxShadow: "0 3px 0 var(--kd-turquoise-deep)" }}>{toArabicDigits(a.number)}</span>
+                  <span className="text-base font-black" dir={ar ? "rtl" : "ltr"}>{t("kidsTapReveal")}</span>
+                </button>
+              </li>
+            ) : (
+              <li key={a.number} className={cn("relative", sparkle === a.number && "kd-pop")}>
+                {sparkle === a.number && <span aria-hidden="true" className="pointer-events-none absolute -top-1 start-3 z-10 text-2xl kids-star">✨</span>}
                 <button type="button" onClick={() => setTapped(a.number)} data-kids-ayah={a.number}
                   className={cn("kd-quran block w-full rounded-[22px] px-3 py-3 text-start transition", tapped === a.number ? "bg-[var(--kd-sun)]" : "active:bg-[var(--kd-sky)]")}
                   style={{ fontSize: size, lineHeight: 2.25 }}>

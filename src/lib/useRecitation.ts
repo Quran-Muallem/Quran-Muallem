@@ -18,7 +18,9 @@ const speechErrorKey = (code: SpeechErrorCode | null): CopyKey | null =>
  * recognition where available, otherwise Whisper on the device (optionally live).
  * `onSessionEnd` fires once after each recitation with the final match.
  */
-export function useRecitation(targets: readonly string[], { onSessionEnd, phonemeRefs, forceLive = false, keepAudio = true }: {
+export function useRecitation(targets: readonly string[], { onSessionEnd, phonemeRefs, forceLive = false, keepAudio = true, background = false }: {
+  /** v49: keep listening with the screen off (Android: the foreground service's microphone). */
+  background?: boolean;
   onSessionEnd?: (m: LiveMatch) => void;
   /** Live results even when live feedback is off in the settings (Salat Mode). */
   forceLive?: boolean;
@@ -39,7 +41,7 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
   const [textEngine, setTextEngine] = useState<"phonemes" | "text">("text");
   // The recording is kept (compressed, on the device) so the user can listen back to it.
   const whisper = useTranscribingRecorder((t, _final, kind) => { setWhisperText(t); setTextEngine(kind); },
-    { live, keepAudio, engine: phonemes ? "zipformer" : "whisper" });
+    { live, keepAudio, engine: phonemes ? "zipformer" : "whisper", background });
   const { stopListening, resetTranscript, startListening } = speech;
 
   const fullTranscript = useWhisper ? whisperText : speech.liveTranscript;

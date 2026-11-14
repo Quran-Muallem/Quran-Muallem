@@ -197,5 +197,12 @@ export function matchLivePhonemes(recognized: string, target: string | readonly 
   for (let i = lastJudged + 1; i < flat.length; i++) if (isWord[i]) { cursor = i; break; }
   const judged = counts.correct + counts.warning + counts.error;
   const accuracy = judged ? Math.round(((counts.correct + counts.warning * 0.5) / judged) * 100) : 0;
-  return { statuses, cursor, counts, recited: counts.correct + counts.warning, total, accuracy, done: lastJudged >= 0 && cursor >= flat.length, heard };
+  // v49: how much of the word being spoken (not yet judged) was heard.
+  let inProgress: LiveMatch["inProgress"] = null;
+  if (!final && !lastComplete && lastToken >= 0 && statuses[lastToken] === "PENDING") {
+    let k = end - 1; while (k > 0 && owner[k - 1] === lastToken) k--;
+    let len = 0; for (let x = k; x < m && owner[x] === lastToken; x++) len++;
+    inProgress = { token: lastToken, coverage: len ? (end - k) / len : 0 };
+  }
+  return { statuses, cursor, counts, recited: counts.correct + counts.warning, total, accuracy, done: lastJudged >= 0 && cursor >= flat.length, heard, inProgress };
 }

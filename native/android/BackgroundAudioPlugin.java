@@ -49,6 +49,10 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 @CapacitorPlugin(name = "BackgroundAudio")
 public class BackgroundAudioPlugin extends Plugin {
     private static BackgroundAudioPlugin instance;
+    /** v49: while hands-free / Salat companion listen, MainActivity keeps the WebView «visible» with the screen off. */
+    static volatile boolean keepWebViewAlive = false;
+    /** Microphone wanted by the web layer: started as soon as the service runs. */
+    private static volatile boolean micWanted = false;
     private boolean askedForNotifications = false;
 
     @Override
@@ -64,6 +68,19 @@ public class BackgroundAudioPlugin extends Plugin {
         data.put("action", action);
         p.notifyListeners("handsfree", data, true);
     }
+
+    /** v49: a 100 ms chunk of 16 kHz PCM16 (base64) from the service's microphone ("mic" event). */
+    static void emitMic(String base64, int samples) {
+        BackgroundAudioPlugin p = instance;
+        if (p == null) return;
+        JSObject data = new JSObject();
+        data.put("pcm", base64);
+        data.put("n", samples);
+        p.notifyListeners("mic", data, false);
+    }
+
+    /** Called by the service once it runs: start the capture if the web layer asked for it. */
+    static void serviceReady(HandsFreeMicService s) { if (micWanted && s != null) s.startCapture(); }
 
     /** Lock screen / notification / headset button: tell the web layer (play, pause, next, previous, stop, seekto). */
     static void emit(String action, double seconds) {
@@ -291,10 +308,34 @@ public class BackgroundAudioPlugin extends Plugin {
                 .putExtra(HandsFreeMicService.EXTRA_TEXT, call.getString("text", "المراجعة الحرة نشطة - في انتظار التلاوة"));
         try {
             ContextCompat.startForegroundService(ctx, i);
+            keepWebViewAlive = true;
             call.resolve();
         } catch (Exception e) {
             call.reject("Could not start the microphone service: " + e.getMessage());
         }
+    }
+
+    /** v49: stream the microphone from the foreground service ("mic" events); starts with the service. */
+    @PluginMethod
+    public void startMicStream(PluginCall call) {
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            call.reject("microphone permission missing");
+            return;
+        }
+        micWanted = true;
+        HandsFreeMicService s = HandsFreeMicService.instance;
+        JSObject r = new JSObject();
+        r.put("sampleRate", HandsFreeMicService.MIC_RATE);
+        if (s != null) r.put("started", s.startCapture()); else r.put("started", false);
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void stopMicStream(PluginCall call) {
+        micWanted = false;
+        HandsFreeMicService s = HandsFreeMicService.instance;
+        if (s != null) s.stopCapture();
+        call.resolve();
     }
 
     @PluginMethod
@@ -306,6 +347,8 @@ public class BackgroundAudioPlugin extends Plugin {
 
     @PluginMethod
     public void stopHandsFree(PluginCall call) {
+        keepWebViewAlive = false;
+        micWanted = false;
         getContext().stopService(new Intent(getContext(), HandsFreeMicService.class));
         call.resolve();
     }

@@ -873,5 +873,12 @@
   "storiesJourneyEnd": "🎉 Du bist beim Siegel der Propheten ﷺ angekommen! Du hast die Reise von Adam bis Muhammad ﷺ geschafft.",
   "storiesAllRead": "🎉 Toll gemacht! Du hast alle Quran-Geschichten gelesen.",
   "storiesNoVoice": "Auf diesem Gerät gibt es keine Vorlesestimme für diese Sprache. Installiere eine Sprachausgabe-Stimme in den Handy-Einstellungen.",
-  "kidsNavStories": "Geschichten"
+  "kidsNavStories": "Geschichten",
+  "salatExtraWarn": "Hinweis: Die Rakʿāt von {prayer} sind vollständig – setz dich zum Taschahhud",
+  "kidsHideAyat": "Āyāt verstecken zum Aufsagen",
+  "kidsShowAyat": "Āyāt zeigen",
+  "kidsHideAgain": "Wieder verstecken",
+  "kidsTapReveal": "Tippen zum Aufdecken",
+  "kidsHideHint": "Sag die Āya auswendig auf und tippe dann auf die Wolke, um nachzusehen ⭐",
+  "storiesAmbience": "Sanfte Naturklänge"
 }

@@ -24,7 +24,6 @@ export type HubSection = "prayer" | "salat" | "stories" | "kidsTafsir" | "kidsJo
 
 const SECTIONS: { id: HubSection; icon: typeof Clock; emoji: string; title: CopyKey; sub: CopyKey; ar: string }[] = [
   { id: "prayer", icon: Clock, emoji: "🕋", title: "hubPrayer", sub: "hubPrayerSub", ar: "مواقيت الصلاة" },
-  { id: "salat", icon: Mic, emoji: "🕌", title: "hubSalat", sub: "hubSalatSub", ar: "رفيق الصلاة" },
   { id: "stories", icon: BookOpenCheck, emoji: "🗺️", title: "storiesTitle", sub: "storiesSub", ar: "قصص القرآن وقصص الأنبياء" },
   { id: "qibla", icon: Compass, emoji: "🧭", title: "navQibla", sub: "hubQiblaSub", ar: "القبلة" },
   { id: "adhkar", icon: SunMoon, emoji: "📿", title: "hubAdhkar", sub: "hubAdhkarSub", ar: "الأذكار والأدعية" },

@@ -873,5 +873,12 @@
   "storiesJourneyEnd": "🎉 Tu es arrivé au Sceau des prophètes ﷺ ! Tu as terminé le voyage d'Adam à Muhammad ﷺ.",
   "storiesAllRead": "🎉 Bravo ! Tu as lu tous les récits du Coran ici.",
   "storiesNoVoice": "Aucune voix de lecture pour cette langue sur cet appareil. Installez une voix de synthèse dans les réglages.",
-  "kidsNavStories": "Récits"
+  "kidsNavStories": "Récits",
+  "salatExtraWarn": "Attention : tu as terminé les rak'as de {prayer} – assieds-toi pour le tachahhoud",
+  "kidsHideAyat": "Cacher les versets pour réciter",
+  "kidsShowAyat": "Afficher les versets",
+  "kidsHideAgain": "Cacher à nouveau",
+  "kidsTapReveal": "Touche pour révéler",
+  "kidsHideHint": "Récite le verset de mémoire, puis touche le nuage pour vérifier ⭐",
+  "storiesAmbience": "Ambiance douce"
 }

@@ -873,5 +873,12 @@
   "storiesJourneyEnd": "🎉 Stigao si do Pečata poslanika ﷺ! Završio si putovanje od Adema do Muhammeda ﷺ.",
   "storiesAllRead": "🎉 Bravo! Pročitao si sve kur'anske priče.",
   "storiesNoVoice": "Na uređaju nema glasa za ovaj jezik. Instaliraj glas za pretvaranje teksta u govor u postavkama.",
-  "kidsNavStories": "Priče"
+  "kidsNavStories": "Priče",
+  "salatExtraWarn": "Pažnja: završio si rekate {prayer} – sjedni na tešehhud",
+  "kidsHideAyat": "Sakrij ajete za učenje napamet",
+  "kidsShowAyat": "Prikaži ajete",
+  "kidsHideAgain": "Sakrij ponovo",
+  "kidsTapReveal": "Dodirni da otkriješ",
+  "kidsHideHint": "Prouči ajet napamet, pa dodirni oblak da provjeriš ⭐",
+  "storiesAmbience": "Mirna atmosfera"
 }

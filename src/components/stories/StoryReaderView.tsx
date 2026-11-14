@@ -12,6 +12,9 @@ import { getSurahAyahs, getSurahMeta, toArabicDigits } from "@/lib/quranService"
 import { getAyahAudioUrl } from "@/lib/reciterManager";
 import { sheikhAudio, stopSheikhAudio } from "@/lib/audioPlayback";
 import { getSettings } from "@/lib/settings";
+import { pageTurn, startAmbience, starChime, stopAmbience } from "@/lib/storyAmbience";
+
+const AMBIENCE_KEY = "qm.stories.ambience";
 
 export type StoryLook = { card: string; soft: string; accent: string; btn: string; btnAlt: string; ink: string };
 export const KIDS_LOOK: StoryLook = { card: "kd-card", soft: "kd-ink-soft", accent: "var(--kd-turquoise)", btn: "kd-btn", btnAlt: "kd-btn kd-btn-soft", ink: "var(--kd-ink)" };
@@ -34,6 +37,11 @@ export function StoryReaderView({ story, look, onBack, onOpen }: { story: Story;
   const [state, setState] = useState<NarratorState>("idle");
   const [rate, setRate] = useState<NarrationRate>(() => (getSettings().kidsMode ? 0.8 : 1));
   const [noVoice, setNoVoice] = useState(false);
+  const kidsLook = look === KIDS_LOOK;
+  // v49: soft nature ambience behind the narrator (toggle, remembered on this device)
+  const [ambience, setAmbience] = useState(() => { try { return localStorage.getItem(AMBIENCE_KEY) === "1"; } catch { return false; } });
+  useEffect(() => { if (ambience && state === "playing") startAmbience(0.1); else stopAmbience(); }, [ambience, state]);
+  useEffect(() => () => stopAmbience(), []);
   const narrator = useRef<StoryAudioNarrator | null>(null);
   const refs = useRef<(HTMLElement | null)[]>([]);
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -41,7 +49,11 @@ export function StoryReaderView({ story, look, onBack, onOpen }: { story: Story;
   useEffect(() => {
     markStoryOpened(story.id);
     window.scrollTo({ top: 0 });
-    const n = new StoryAudioNarrator(paragraphs, L, rate, { index: setActive, state: setState, done: () => markStoryDone(story.id), error: () => setNoVoice(true) });
+    const n = new StoryAudioNarrator(paragraphs, L, rate, {
+      index: setActive, state: setState, error: () => setNoVoice(true),
+      done: () => { markStoryDone(story.id); if (kidsLook) starChime(); },
+      paragraph: (i) => { if (kidsLook && i > 0) pageTurn(); },
+    }, StoryAudioNarrator.storyteller(kidsLook));
     narrator.current = n;
     return () => { void n.stop(); stopSheikhAudio(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,6 +98,10 @@ export function StoryReaderView({ story, look, onBack, onOpen }: { story: Story;
             </button>
           ))}
         </div>
+        <button type="button" role="switch" aria-checked={ambience} onClick={() => { const v = !ambience; setAmbience(v); try { localStorage.setItem(AMBIENCE_KEY, v ? "1" : "0"); } catch { /* ignore */ } }}
+          className={cn("min-h-10 rounded-full px-3 text-xs font-black", ambience ? "text-white" : look.soft)} style={ambience ? { background: look.accent } : { border: "2px solid currentColor", opacity: 0.8 }} data-narrator-ambience={ambience ? "on" : "off"}>
+          🌿 {t("storiesAmbience")}
+        </button>
         {noVoice && <p className={cn("w-full text-xs", look.soft)}>{t("storiesNoVoice")}</p>}
       </div>
 

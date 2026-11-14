@@ -310,7 +310,7 @@ export class SalatPrayerTracker {
     if (quiet && quietFor >= this.config.silenceMs && lastWasRecitation && triedAgain && this.promptsAtCursor < 2) {
       this.promptsAtCursor++;
       this.lastPromptAt = now;
-      return [{ type: "prompt", token: match.cursor, reason: "stall", mode: this.config.promptMode }];
+      return [{ type: "prompt", token: continuationToken(match), reason: "stall", mode: this.config.promptMode }];
     }
     return [];
   }
@@ -370,6 +370,17 @@ export function salatVerse(surah: number, ayah: number, words: readonly string[]
 }
 
 /**
+ * v49: the first word NOT yet recited. Normally the matcher's cursor; but when the reciter paused on a word
+ * that was mostly heard (a stop drops its last vowel, so it is not "complete"), that word was said and the
+ * prompt must start after it — never repeat the word the reciter just said.
+ */
+export function continuationToken(match: Pick<LiveMatch, "cursor" | "inProgress" | "statuses">): number {
+  const ip = match.inProgress;
+  if (ip && ip.token === match.cursor && ip.coverage >= 0.5) return Math.min(match.statuses.length, match.cursor + 1);
+  return match.cursor;
+}
+
+/**
  * Words to prompt for flat token `token` of `verses`. Words mode: the next 2–3 words of that verse (3, or
  * what is left of it); ayah mode: the whole verse. Mistake prompts start at the verse's first word.
  */
@@ -379,7 +390,11 @@ export function promptSpan(verses: readonly SalatVerse[], token: number, mode: P
   for (const v of verses) {
     if (t < v.tokenWord.length) {
       const n = v.words.length;
-      if (mode === "ayah") return { surah: v.surah, ayah: v.ayah, fromWord: 1, toWord: n, text: v.words.join(" ") };
+      // Ayah mode: the whole verse — or, if part of it was already recited, the rest of it (v49).
+      if (mode === "ayah") {
+        const from = reason === "mistake" ? 1 : v.tokenWord[t]!;
+        return { surah: v.surah, ayah: v.ayah, fromWord: from, toWord: n, text: v.words.slice(from - 1).join(" ") };
+      }
       const from = reason === "mistake" ? 1 : v.tokenWord[t]!;
       const to = Math.min(n, from + 2);
       return { surah: v.surah, ayah: v.ayah, fromWord: from, toWord: to, text: v.words.slice(from - 1, to).join(" ") };

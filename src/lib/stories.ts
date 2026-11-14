@@ -8,7 +8,7 @@ import part2 from "@/data/stories2.json";
 import part3 from "@/data/stories3.json";
 import { useSyncExternalStore } from "react";
 
-export type StoryLang = "ar" | "de" | "en";
+export type StoryLang = "ar" | "de" | "en" | "fr";
 export type Tri = Record<StoryLang, string>;
 export type Story = {
   id: string; kind: "prophet" | "quran"; emoji: string; final?: boolean;
@@ -21,7 +21,7 @@ export const PROPHETS: Story[] = ALL.filter((s) => s.kind === "prophet");
 export const QURAN_STORIES: Story[] = ALL.filter((s) => s.kind === "quran");
 export const storyById = (id: string) => ALL.find((s) => s.id === id) ?? null;
 /** UI language → narration/text language (others read the English text). */
-export const storyLang = (language: string): StoryLang => (language === "ar" || language === "de" ? language : "en");
+export const storyLang = (language: string): StoryLang => (language === "ar" || language === "de" || language === "fr" ? language : "en");
 
 /** The next station on the journey (prophets) or the next Quran story; null at the end. */
 export function nextStory(id: string): Story | null {

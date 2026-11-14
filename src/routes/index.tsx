@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PrayingPersonIcon } from "@/components/icons/PrayingPersonIcon";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BookOpen, BookOpenText, Headphones, Home, Star, LayoutGrid, Loader2, PenLine, Mic, Lightbulb, RotateCcw, Search, Settings, Sparkles, Square, Target, Pause, Play } from "lucide-react";
 import { VoiceWordFix, type WordFix } from "@/components/VoiceWordFix";
@@ -373,7 +374,7 @@ function BottomNav({ tab, setTab, hubSection, kids }: { tab: Tab; setTab: (t: Ta
           className="flex min-w-0 flex-col items-center gap-0.5 rounded-xl text-[0.66rem] font-semibold leading-tight text-accent">
           <span className="-mt-5 flex h-12 w-12 items-center justify-center rounded-full text-[#062b22] shadow-lg ring-4 ring-[var(--card)]"
             style={{ background: GOLD_GRADIENT, boxShadow: "0 0 18px rgba(243,210,122,.55)" }}>
-            <Sparkles className="h-6 w-6" />
+            <PrayingPersonIcon className="h-9 w-9" />
           </span>
           <span className="max-w-full truncate">{t("navCompanion")}</span>
         </button>
@@ -761,21 +762,8 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
           <h1 className="text-2xl font-semibold">{masked ? t("hifzModeLong") : t("reciteModeLong")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{masked ? t("hifzSub") : t("reciteSub")}</p>
         </div>
-        {/* v42: Salat Mode — a silent companion during prayer */}
-        <button type="button" onClick={() => { if (listening) toggleMic(); openCompanion("salat"); }} data-open-salat=""
-          className="kids-hide flex shrink-0 items-center gap-1.5 rounded-full border border-amber-500/40 px-3 py-1.5 text-xs font-semibold text-amber-200">
-          <span aria-hidden="true">🕌</span><span className={language === "ar" ? "font-arabic" : undefined}>{language === "ar" ? "رفيق الصلاة" : t("hubSalat")}</span>
-        </button>
       </div>
-      {/* v45 «المراجعة الحرة»: hands-free Hifdh (pocket / screen off / Bluetooth) */}
-      <button type="button" onClick={() => { if (listening) toggleMic(); openCompanion("handsfree"); }} data-open-handsfree=""
-        className="kids-hide flex w-full items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-950/30 p-3 text-start">
-        <span aria-hidden="true" className="text-2xl">🎧</span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold text-emerald-50">{t("hfCard")}</span>
-          <span className="mt-0.5 block text-xs leading-relaxed text-emerald-100/60">{t("hfCardSub")}</span>
-        </span>
-      </button>
+      {/* v49: رفيق الصلاة and المراجعة الحرة live in «المرافق» (bottom bar) — no duplicate entry here */}
 
       {/* Sheikh player at the top: play / pause · Sheikh (same as in the Mushaf) · repeat the range */}
       <SheikhControls reciterId={settings.reciterId} playing={player.playing} loading={player.loading} failed={player.failed}

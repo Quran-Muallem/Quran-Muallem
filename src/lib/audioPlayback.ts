@@ -43,11 +43,15 @@ export interface BackgroundAudioPlugin {
   addListener(event: "download", cb: (e: NativeDownloadEvent) => void): Promise<ListenerHandle>;
   /** v45 hands-free Hifdh: microphone foreground service (screen off), its status text, audio routing. */
   startHandsFree(options: { title: string; text: string }): Promise<void>;
+  /** v49: microphone captured by the foreground service, streamed as "mic" events (16 kHz PCM16, base64). */
+  startMicStream(): Promise<{ sampleRate: number; started: boolean }>;
+  stopMicStream(): Promise<void>;
   updateHandsFree(options: { title?: string; text?: string }): Promise<void>;
   stopHandsFree(): Promise<void>;
   audioDevices(): Promise<{ devices: { kind: "bluetooth" | "wired" | "phone" | "other"; name: string; input: boolean; output: boolean }[] }>;
   setAudioRoute(options: { route: "auto" | "bluetooth" | "speaker" }): Promise<{ ok: boolean; route: string }>;
   addListener(event: "handsfree", cb: (e: { action: "play" | "pause" | "toggle" | "repeat" }) => void): Promise<ListenerHandle>;
+  addListener(event: "mic", fn: (e: { pcm: string; n: number }) => void): Promise<{ remove: () => Promise<void> }>;
 }
 /** The native plugin (Android app only); loaded on first use. */
 let plugin: Promise<BackgroundAudioPlugin | null> | null = null;

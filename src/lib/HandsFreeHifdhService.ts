@@ -15,7 +15,7 @@
  * Pure logic (no React, no audio); prompt rules shared with the Salat Mode (`trailingErrors`, `promptSpan`).
  * The view (HandsFreeHifdhView) feeds matches, voice activity and the clock and acts on the events.
  */
-import { MISTAKE_PAUSE_MS, MISTAKE_RUN, trailingErrors, type PromptMode } from "@/lib/SalatPrayerTracker";
+import { MISTAKE_PAUSE_MS, MISTAKE_RUN, continuationToken, trailingErrors, type PromptMode } from "@/lib/SalatPrayerTracker";
 import type { LiveMatch } from "@/lib/quranMatcher";
 
 export type HandsFreeState = "OFF" | "IDLE_LISTENING" | "ACTIVE_MEMORIZATION";
@@ -124,7 +124,7 @@ export class HandsFreeTracker {
     const triedAgain = this.promptsAtCursor === 0 || this.lastSpeechAt > this.lastPromptAt;
     if (quiet && quietFor >= this.config.silenceMs && lastWasRecitation && triedAgain && this.promptsAtCursor < 2) {
       this.promptsAtCursor++; this.lastPromptAt = now; this.prompts++;
-      return [{ type: "prompt", token: match.cursor, reason: "stall", mode: this.config.promptMode }];
+      return [{ type: "prompt", token: continuationToken(match), reason: "stall", mode: this.config.promptMode }];
     }
     return [];
   }
@@ -133,7 +133,7 @@ export class HandsFreeTracker {
   repeat(now: number, match: LiveMatch | null | undefined): HandsFreeEvent[] {
     if (this.state !== "ACTIVE_MEMORIZATION" || !match) return [];
     this.lastPromptAt = now; this.prompts++;
-    return [{ type: "prompt", token: match.cursor, reason: "stall", mode: this.config.promptMode }];
+    return [{ type: "prompt", token: continuationToken(match), reason: "stall", mode: this.config.promptMode }];
   }
 
   private entry(now: number): HandsFreeLogEntry | null {

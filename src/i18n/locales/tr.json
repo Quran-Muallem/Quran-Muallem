@@ -873,5 +873,12 @@
   "storiesJourneyEnd": "🎉 Son peygambere ﷺ ulaştın! Âdem'den Muhammed'e ﷺ yolculuğu tamamladın.",
   "storiesAllRead": "🎉 Aferin! Buradaki tüm Kur'an kıssalarını okudun.",
   "storiesNoVoice": "Bu cihazda bu dil için okuma sesi yok. Telefon ayarlarından bir metin okuma sesi yükleyin.",
-  "kidsNavStories": "Kıssalar"
+  "kidsNavStories": "Kıssalar",
+  "salatExtraWarn": "Uyarı: {prayer} rekâtlarını tamamladın – teşehhüd için otur",
+  "kidsHideAyat": "Ezber için âyetleri gizle",
+  "kidsShowAyat": "Âyetleri göster",
+  "kidsHideAgain": "Yeniden gizle",
+  "kidsTapReveal": "Görmek için dokun",
+  "kidsHideHint": "Âyeti ezberden oku, sonra kontrol için buluta dokun ⭐",
+  "storiesAmbience": "Sakin ortam"
 }

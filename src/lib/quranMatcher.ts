@@ -251,6 +251,12 @@ export interface LiveMatch {
   done: boolean;
   /** Per flat target token: what was heard for it (judged words only; null if missing or not reached). */
   heard: (string | null)[];
+  /**
+   * v49: the word being spoken when the transcript ended but not yet judged (phoneme matcher) and how much of
+   * it was heard (0–1). A reciter who pauses usually stops on the word (waqf) and drops its last vowel, so a
+   * mostly-heard word here was in fact said — prompts must continue AFTER it.
+   */
+  inProgress?: { token: number; coverage: number } | null;
 }
 
 /**

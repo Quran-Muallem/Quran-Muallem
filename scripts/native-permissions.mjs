@@ -147,7 +147,8 @@ if (existsSync(manifestPath)) {
   // (this also replaces the code an older version of this script added for a login plugin).
   if (existsSync(pkgDir)) {
     for (const f of ["BackgroundAudioPlugin.java", "BackgroundAudioService.java", "HandsFreeMicService.java"]) copyFileSync(`native/android/${f}`, `${pkgDir}/${f}`);
-    const wanted = `package ${APP_ID};\n\nimport android.os.Bundle;\nimport com.getcapacitor.BridgeActivity;\n\npublic class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        registerPlugin(BackgroundAudioPlugin.class);\n        super.onCreate(savedInstanceState);\n    }\n}\n`;
+    // v49: MainActivity also keeps the WebView «visible» while hands-free / Salat companion listen (screen off).
+    const wanted = readFileSync("native/android/MainActivity.java.tpl", "utf8").replaceAll("__APP_ID__", APP_ID);
     if (!existsSync(mainActivity) || readFileSync(mainActivity, "utf8") !== wanted) {
       writeFileSync(mainActivity, wanted);
       console.log(`✓ Android: background audio plugin registered in ${mainActivity}`);

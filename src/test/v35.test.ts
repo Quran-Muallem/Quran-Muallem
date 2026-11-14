@@ -58,3 +58,16 @@ describe("v35 C · heavy / light letters", () => {
     expect(judgeWithTajweed("صصِرَااطَ", "سسِرَااتَ", { word: "ٱلصِّرَٰطَ" }).status).not.toBe("CORRECT");
   });
 });
+
+describe("v49 · pausing on a word (waqf) — the prompt continues after it", () => {
+  it("reports the mostly-heard word being spoken as inProgress", () => {
+    const v = verse(112, 1); // قُلْ هُوَ ٱللَّهُ أَحَدٌ
+    const r = v.refs;
+    // «قل هو الله» recited, the last word stopped on without its final vowel
+    const rec = r[0]! + r[1]! + r[2]!.slice(0, Math.max(2, r[2]!.length - 1));
+    const m = matchLivePhonemes(rec, v.text, refsFor(v));
+    expect(m.cursor).toBe(2);
+    expect(m.inProgress?.token).toBe(2);
+    expect(m.inProgress!.coverage).toBeGreaterThanOrEqual(0.5);
+  });
+});

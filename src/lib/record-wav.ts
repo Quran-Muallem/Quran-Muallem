@@ -222,7 +222,112 @@ function startKeeper(stream: MediaStream) {
  * Starts recording. `onLimit` is called once when the size limit is reached, `onInterrupted` when the
  * system takes the microphone away (phone call, another app); both should finish the recording.
  */
-export async function recordWav(onLimit: () => void, onInterrupted?: () => void, { keepAudio = false }: { keepAudio?: boolean } = {}) {
+/** v49: decodes one base64 PCM16 chunk from the native microphone into float samples. */
+export function pcm16ToFloat(b64: string): Float32Array {
+  const bin = atob(b64);
+  const n = bin.length >> 1;
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    let v = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8);
+    if (v >= 0x8000) v -= 0x10000;
+    out[i] = v / 32768;
+  }
+  return out;
+}
+
+/**
+ * v49: the same recording interface, fed by the microphone of the Android foreground service (hands-free Hifdh /
+ * Salat companion). The WebView's own microphone stops when the screen turns off; this one does not. Every chunk
+ * also fires `qm:mic-data`, so live recognition keeps stepping even when the hidden page's timers are throttled.
+ */
+async function recordNative(onLimit: () => void, onInterrupted?: () => void): Promise<Awaited<ReturnType<typeof recordWebMic>> | null> {
+  const { backgroundAudio } = await import("./audioPlayback");
+  const plugin = await backgroundAudio();
+  if (!plugin?.startMicStream) return null;
+  const outRate = TARGET_RATE;
+  const buffer = new ChunkedBuffer(outRate * 10);
+  const frames = new FrameMeter();
+  const maxSamples = Math.floor((MAX_AUDIO_BYTES - 44) / 2);
+  let stopped = false, limited = false, paused = false, lastLevel = 0, lastChunkAt = performance.now(), gotChunk = false;
+  const sub = await plugin.addListener("mic", (e) => {
+    if (stopped) return;
+    lastChunkAt = performance.now(); gotChunk = true;
+    try { window.dispatchEvent(new Event("qm:mic-tick")); } catch { /* ignore */ }
+    const pcm = pcm16ToFloat(e.pcm);
+    lastLevel = Math.min(1, rms(pcm) * 4);
+    if (paused || limited) return;
+    if (buffer.length + pcm.length > maxSamples) { limited = true; audioDebug("size limit reached (native mic)"); onLimit(); return; }
+    buffer.push(pcm); frames.push(pcm);
+    try { window.dispatchEvent(new Event("qm:mic-data")); } catch { /* ignore */ }
+  });
+  const res = await plugin.startMicStream().catch(() => null);
+  if (!res) { await sub.remove(); return null; }
+  // The service may still be starting: wait briefly for the first chunk, else use the WebView microphone.
+  if (!res.started) {
+    const t0 = performance.now();
+    while (!gotChunk && performance.now() - t0 < 2500) await new Promise((r) => setTimeout(r, 100));
+    if (!gotChunk) { await sub.remove(); void plugin.stopMicStream().catch(() => {}); audioDebug("native mic did not start, using the WebView microphone"); return null; }
+  }
+  // The service may still be starting: if no audio arrives at all, report the microphone as interrupted.
+  const watchdog = window.setInterval(() => { if (!stopped && performance.now() - lastChunkAt > 8000) { audioDebug("native mic silent for 8 s"); onInterrupted?.(); } }, 4000);
+  audioDebug("recording started", { capture: "native-service", outRate });
+  const cancel = () => {
+    if (stopped) return;
+    stopped = true;
+    window.clearInterval(watchdog);
+    void sub.remove();
+    void plugin.stopMicStream().catch(() => {});
+  };
+  const toFile = (samples: Float32Array) => new File([encodeWav([samples], outRate)], "recording.wav", { type: "audio/wav" });
+  const isSpeech = () => frames.voiced / 10 >= MIN_VOICED_SECONDS;
+  const stopSamples = (): Float32Array => {
+    if (stopped) throw new Error("emptyRecording");
+    const all = buffer.slice();
+    cancel();
+    if (all.length < outRate * 0.3 || 44 + all.length * 2 < MIN_AUDIO_BYTES) throw new Error("emptyRecording");
+    if (!isSpeech()) throw new Error("silentRecording");
+    return all;
+  };
+  return {
+    cancel,
+    pause() { paused = true; },
+    resume() { paused = false; },
+    isPaused: () => paused,
+    sampleRate: outRate,
+    level: () => (stopped || paused ? 0 : lastLevel),
+    duration: () => buffer.length / outRate,
+    totalSamples: () => buffer.length,
+    voicedSeconds: () => frames.voiced / 10,
+    voicedSecondsBetween: (from: number, to: number) => frames.voicedSecondsBetween(from, to),
+    quietestPoint: (from: number, to: number) => frames.quietestPoint(from, to),
+    samples: (from?: number, to?: number) => buffer.slice(from, to),
+    snapshot(): File | null {
+      if (stopped || !isSpeech() || buffer.length < outRate * 0.8) return null;
+      return toFile(buffer.slice());
+    },
+    stopSamples,
+    async keptAudio(): Promise<Blob | null> { return null; },
+    stop(): File { return toFile(stopSamples()); },
+    async rotateKept(): Promise<Blob | null> { return null; },
+  };
+}
+
+/**
+ * Starts a recording. `background` (v49, hands-free / Salat companion in the Android app): use the foreground
+ * service's microphone so listening survives the screen turning off; falls back to the WebView microphone.
+ */
+export async function recordWav(onLimit: () => void, onInterrupted?: () => void, { keepAudio = false, background = false }: { keepAudio?: boolean; background?: boolean } = {}) {
+  if (background) {
+    const { Capacitor } = await import("@capacitor/core");
+    if (Capacitor.getPlatform() === "android") {
+      const r = await recordNative(onLimit, onInterrupted).catch(() => null);
+      if (r) return r;
+    }
+  }
+  return recordWebMic(onLimit, onInterrupted, { keepAudio });
+}
+
+async function recordWebMic(onLimit: () => void, onInterrupted?: () => void, { keepAudio = false }: { keepAudio?: boolean } = {}) {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
   });

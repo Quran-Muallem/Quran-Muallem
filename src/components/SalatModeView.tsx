@@ -21,7 +21,7 @@ import { loadQuranPhonemes, phonemeRefs, usePhonemeLexicon } from "@/lib/quranAl
 import { locateRecitation, locatorIndex, type LocatorKind } from "@/lib/ayahLocator";
 import { loadMushaf, type Mushaf } from "@/lib/mushafData";
 import { RECITERS, getAyahAudioUrl, getReciter } from "@/lib/reciterManager";
-import { verseTimings, stopSheikhAudio, stopWordAudio } from "@/lib/audioPlayback";
+import { backgroundAudio, verseTimings, stopSheikhAudio, stopWordAudio } from "@/lib/audioPlayback";
 import { getSurahMeta } from "@/lib/quranService";
 import {
   DEFAULT_SALAT_CONFIG, SILENCE_RANGE_MS, SalatPrayerTracker, promptSpan, salatVerse, trailingErrors,
@@ -72,10 +72,25 @@ const savePrefs = (p: SalatPrefs) => { try { localStorage.setItem(STORE_KEY, JSO
 /* ───────────── v43: «سبحان الله» rakʿah reminder (bundled, works offline) ───────────── */
 
 let tasbihEl: HTMLAudioElement | null = null;
+/**
+ * v49: create, preload and unlock the «سبحان الله» player inside the «ابدأ الصلاة» tap — mobile WebViews
+ * block audio started later without a user gesture, which silenced the reminder mid-prayer.
+ */
+export function unlockSubhanAllah() {
+  tasbihEl ??= new Audio(assetUrl("salat/subhanallah.mp3"));
+  const el = tasbihEl;
+  el.preload = "auto";
+  try {
+    el.muted = true;
+    const p = el.play();
+    void p?.then(() => { el.pause(); el.currentTime = 0; el.muted = false; }).catch(() => { el.muted = false; });
+  } catch { el.muted = false; }
+}
 async function playSubhanAllah(volume: number): Promise<void> {
   stopPrompt();
   tasbihEl ??= new Audio(assetUrl("salat/subhanallah.mp3"));
   const el = tasbihEl;
+  el.muted = false;
   el.currentTime = 0;
   el.volume = Math.min(1, Math.max(0.05, volume));
   await el.play();
@@ -116,6 +131,9 @@ export function SalatModeView({ onClose, switcher }: { onClose: () => void; swit
   const [posture, setPosture] = useState<Posture | null>(null);
   const [motionRakah, setMotionRakah] = useState(0);
   const [motionError, setMotionError] = useState(false);
+  // v49: «سبحان الله» when the count passes the target (from the sensors OR the voice) — once per rakʿah.
+  const alertedFor = useRef(0);
+  const [extraWarn, setExtraWarn] = useState(false);
 
   useEffect(() => { void loadMushaf().then(setMushaf).catch(() => {}); void loadQuranPhonemes().catch(() => {}); }, []);
   useEffect(() => () => { stopPrompt(); }, []);
@@ -126,7 +144,8 @@ export function SalatModeView({ onClose, switcher }: { onClose: () => void; swit
   const targets = useMemo(() => active.map((v) => v.words.join(" ")), [active]);
   const tokens = useMemo(() => targets.flatMap((s) => s.split(" ")), [targets]);
   const refs = useMemo(() => (lexicon ? active.flatMap((v) => phonemeRefs(lexicon, v.surah, v.ayah, v.words as string[])) : null), [lexicon, active]);
-  const rec = useRecitation(targets, { phonemeRefs: refs, forceLive: true, keepAudio: false });
+  // v49: background — the prayer is followed with the screen off / phone in the pocket
+  const rec = useRecitation(targets, { phonemeRefs: refs, forceLive: true, keepAudio: false, background: true });
 
   const tracker = useRef(new SalatPrayerTracker({ silenceMs: prefs.silenceMs, promptMode: prefs.promptMode }));
   useEffect(() => { tracker.current.setConfig({ silenceMs: prefs.silenceMs, promptMode: prefs.promptMode }); }, [prefs.silenceMs, prefs.promptMode]);
@@ -236,12 +255,18 @@ export function SalatModeView({ onClose, switcher }: { onClose: () => void; swit
   // Clock: silence → prompts.
   useEffect(() => {
     if (!running) return;
-    const id = setInterval(() => {
+    let last = 0;
+    const step = () => {
+      const now = Date.now();
+      if (now - last < 200) return;
+      last = now;
       const { rec: r, prefs: p, prompting: busy } = live.current;
       if (!r.listening || r.paused && !busy) return;
-      apply(tracker.current.tick({ now: Date.now(), match: r.match, voiced: r.voicedLast(p.silenceMs / 1000), prompting: busy }));
-    }, 250);
-    return () => clearInterval(id);
+      apply(tracker.current.tick({ now, match: r.match, voiced: r.voicedLast(p.silenceMs / 1000), prompting: busy }));
+    };
+    const id = setInterval(step, 250);
+    window.addEventListener("qm:mic-tick", step); // v49: keeps going with the screen off
+    return () => { clearInterval(id); window.removeEventListener("qm:mic-tick", step); };
   }, [running, apply]);
 
   // The recording ends by itself at its size limit (≈ 12 min): start a new one, the prayer goes on.
@@ -280,15 +305,36 @@ export function SalatModeView({ onClose, switcher }: { onClose: () => void; swit
         setMotionRakah(e.rakah);
         tr.setPassive(fatihaOnlyRakah(live.current.prefs.prayer, e.rakah));
         apply(tr.motionNewRakah(now, rawLen(), e.rakah));
-      } else if (e.type === "tooMany" || e.type === "tooFew") {
-        const r = live.current.rec;
-        if (r.canPause) r.pause();
-        void playSubhanAllah(live.current.prefs.volume).catch(() => {}).finally(() => { if (r.canPause && tracker.current.state !== "IDLE") live.current.rec.resume(); });
+      } else if (e.type === "tooMany") {
+        alertExtraRef.current(e.completed + 1);
+      } else if (e.type === "tooFew") {
+        remind();
       }
     }
   }, [apply]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  /** «سبحان الله» — bypasses the rukūʿ/sujūd mute (that only silences the Sheikh's prompts). */
+  const remind = () => {
+    const r = live.current.rec;
+    if (r.canPause) r.pause();
+    void playSubhanAllah(live.current.prefs.volume).catch(() => {}).finally(() => { if (r.canPause && tracker.current.state !== "IDLE") live.current.rec.resume(); });
+  };
+  /** Too many rakʿāt: alert at once (audio + «اجلس للتشهد»), once per rakʿah number. */
+  const alertExtra = (rakah: number) => {
+    if (rakah <= alertedFor.current) return;
+    alertedFor.current = rakah;
+    setExtraWarn(true);
+    window.setTimeout(() => setExtraWarn(false), 9000);
+    remind();
+  };
+  const alertExtraRef = useRef(alertExtra);
+  alertExtraRef.current = alertExtra;
+
   const start = () => {
+    unlockSubhanAllah(); // v49: inside the tap
+    // v49: microphone foreground service — the prayer is followed with the screen off / phone in the pocket.
+    void backgroundAudio().then((p) => p?.startHandsFree({ title: ar ? "رفيق الصلاة" : t("hubSalat"), text: ar ? "رفيق الصلاة نشط – يتابع صلاتك بصمت" : t("salatWaitFatiha") })).catch(() => {});
+    alertedFor.current = 0; setExtraWarn(false);
     // v43: sensors first — iOS grants motion access only inside this tap.
     stopSensors.current?.(); stopSensors.current = null; motion.current = null;
     setPosture(null); setMotionRakah(0); setMotionError(false);
@@ -312,6 +358,7 @@ export function SalatModeView({ onClose, switcher }: { onClose: () => void; swit
     if (!rec.listening) rec.toggle();
   };
   const end = () => {
+    void backgroundAudio().then((p) => p?.stopHandsFree()).catch(() => {});
     stopSensors.current?.(); stopSensors.current = null; motion.current = null; setPosture(null);
     userStop.current = true;
     stopPrompt();
@@ -320,7 +367,7 @@ export function SalatModeView({ onClose, switcher }: { onClose: () => void; swit
     if (rec.listening) rec.reset();
     setVerses([]);
   };
-  useEffect(() => () => { userStop.current = true; stopSensors.current?.(); }, []);
+  useEffect(() => () => { userStop.current = true; stopSensors.current?.(); void backgroundAudio().then((p) => p?.stopHandsFree()).catch(() => {}); }, []);
 
   const preview = async () => {
     if (previewing) { stopPrompt(); setPreviewing(false); return; }
@@ -338,6 +385,10 @@ export function SalatModeView({ onClose, switcher }: { onClose: () => void; swit
   const target = targetRakaat(prefs.prayer, prefs.qiyamCount);
   const num = (n: number) => (ar ? n.toLocaleString("ar-EG") : String(n));
   const prayerName = ar ? `صلاة ${PRAYER_AR[prefs.prayer]}` : t(PRAYER_KEY[prefs.prayer]);
+  // v49 strict guard: whichever counter passed the target (e.g. «الركعة ٣ من ٢» in Fajr) → alert immediately.
+  useEffect(() => {
+    if (running && target != null && shownRakah > target) alertExtraRef.current(shownRakah);
+  }, [running, shownRakah, target]);
   const statusLine = [prayerName, target ? t("salatRakahOf").replace("{n}", num(shownRakah)).replace("{m}", num(target)) : t("salatRakah").replace("{n}", num(shownRakah)), posture && posture !== "CALIBRATING" ? t(POSTURE_KEY[posture]) : null].filter(Boolean).join(" • ");
 
   /* ── during the prayer ── */
@@ -355,6 +406,11 @@ export function SalatModeView({ onClose, switcher }: { onClose: () => void; swit
           <p className={`${ar ? "font-arabic text-2xl" : "text-xl"} leading-relaxed text-neutral-500`} data-salat-status="">{t(STATUS[phase.state])}</p>
           {located && <p className="font-arabic text-sm text-neutral-700" data-salat-surah={verses[0]!.surah}>{`سورة ${located.nameArabic}`}</p>}
           {prompting && <p className="text-xs text-amber-900/80" data-salat-prompting="">{t("salatPrompting")}</p>}
+          {extraWarn && (
+            <p className={`${ar ? "font-arabic text-lg" : "text-base"} max-w-xs rounded-2xl border border-amber-700/60 px-4 py-3 leading-relaxed text-amber-500`} role="alert" data-salat-extra="">
+              {t("salatExtraWarn").replace("{prayer}", ar ? PRAYER_AR[prefs.prayer] : t(PRAYER_KEY[prefs.prayer]))}
+            </p>
+          )}
           {rec.error && <p className="max-w-xs text-xs text-red-900">{t(rec.error)}</p>}
           {posture === "CALIBRATING" && <p className="max-w-xs text-sm leading-relaxed text-emerald-900" data-salat-calibrating="">{t("salatCalibrateHint")}</p>}
           {motionError && <p className="max-w-xs text-xs text-red-900" data-salat-motion-error="">{t("salatMotionDenied")}</p>}

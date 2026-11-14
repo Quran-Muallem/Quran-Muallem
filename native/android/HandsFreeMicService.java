@@ -8,7 +8,13 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
+import android.media.audiofx.AutomaticGainControl;
+import android.media.audiofx.NoiseSuppressor;
 import android.media.session.MediaSession;
+import android.util.Base64;
 import android.media.session.PlaybackState;
 import android.os.Build;
 import android.os.IBinder;
@@ -26,6 +32,11 @@ import androidx.core.app.ServiceCompat;
  * prompt) and hands them to the web layer through BackgroundAudioPlugin ("handsfree" events).
  * Started / stopped by BackgroundAudioPlugin.startHandsFree / stopHandsFree, only while the app is in the
  * foreground (Android 14 rule for microphone services).
+ *
+ * v49: the microphone itself is captured HERE (AudioRecord, 16 kHz mono PCM, VOICE_RECOGNITION) and streamed
+ * to the web layer in 100 ms chunks ("mic" events). The WebView's own microphone stops when the screen turns
+ * off; this capture belongs to the foreground service, so it keeps going in the pocket / with the screen off.
+ * Used by «المراجعة الحرة» and «رفيق الصلاة».
  */
 public class HandsFreeMicService extends Service {
     static volatile HandsFreeMicService instance;
@@ -35,6 +46,12 @@ public class HandsFreeMicService extends Service {
     static final String EXTRA_TEXT = "text";
 
     private PowerManager.WakeLock wakeLock;
+    static final int MIC_RATE = 16000;
+    private volatile boolean capturing = false;
+    private AudioRecord recorder;
+    private Thread captureThread;
+    private NoiseSuppressor ns;
+    private AutomaticGainControl agc;
     private MediaSession session;
     private String title = "Quran Muallem";
     private String text = "المراجعة الحرة نشطة - في انتظار التلاوة";
@@ -95,7 +112,49 @@ public class HandsFreeMicService extends Service {
             return START_NOT_STICKY;
         }
         if (wakeLock != null && !wakeLock.isHeld()) wakeLock.acquire(6 * 60 * 60 * 1000L);
+        BackgroundAudioPlugin.serviceReady(this);
         return START_NOT_STICKY;
+    }
+
+    /** Starts streaming the microphone to the web layer (100 ms PCM16 chunks, base64). Returns false on failure. */
+    synchronized boolean startCapture() {
+        if (capturing) return true;
+        try {
+            int min = AudioRecord.getMinBufferSize(MIC_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+            recorder = new AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, MIC_RATE, AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT, Math.max(min, MIC_RATE)); // ≥ 0.5 s of buffer
+            if (recorder.getState() != AudioRecord.STATE_INITIALIZED) { recorder.release(); recorder = null; return false; }
+            int sid = recorder.getAudioSessionId();
+            if (NoiseSuppressor.isAvailable()) { ns = NoiseSuppressor.create(sid); if (ns != null) ns.setEnabled(true); }
+            if (AutomaticGainControl.isAvailable()) { agc = AutomaticGainControl.create(sid); if (agc != null) agc.setEnabled(true); }
+            recorder.startRecording();
+        } catch (Exception e) {
+            if (recorder != null) { try { recorder.release(); } catch (Exception ignored) { } recorder = null; }
+            return false;
+        }
+        capturing = true;
+        final AudioRecord rec = recorder;
+        captureThread = new Thread(() -> {
+            short[] buf = new short[MIC_RATE / 10];
+            byte[] bytes = new byte[buf.length * 2];
+            while (capturing) {
+                int n = rec.read(buf, 0, buf.length);
+                if (n <= 0) { if (n < 0) { try { Thread.sleep(20); } catch (InterruptedException ie) { break; } } continue; }
+                for (int i = 0; i < n; i++) { bytes[2 * i] = (byte) (buf[i] & 0xff); bytes[2 * i + 1] = (byte) ((buf[i] >> 8) & 0xff); }
+                BackgroundAudioPlugin.emitMic(Base64.encodeToString(bytes, 0, n * 2, Base64.NO_WRAP), n);
+            }
+        }, "QuranMuallemMic");
+        captureThread.setPriority(Thread.MAX_PRIORITY);
+        captureThread.start();
+        return true;
+    }
+
+    synchronized void stopCapture() {
+        capturing = false;
+        if (captureThread != null) { try { captureThread.join(300); } catch (InterruptedException ignored) { } captureThread = null; }
+        if (recorder != null) { try { recorder.stop(); } catch (Exception ignored) { } recorder.release(); recorder = null; }
+        if (ns != null) { ns.release(); ns = null; }
+        if (agc != null) { agc.release(); agc = null; }
     }
 
     /** New status text on the notification / lock screen. */
@@ -121,6 +180,8 @@ public class HandsFreeMicService extends Service {
     @Override
     public void onDestroy() {
         instance = null;
+        stopCapture();
+        BackgroundAudioPlugin.keepWebViewAlive = false;
         if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
         if (session != null) { session.setActive(false); session.release(); }
         super.onDestroy();

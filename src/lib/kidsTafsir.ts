@@ -5,12 +5,13 @@
  * languages show the English text. Written for children in simple words; not a scholarly tafsir.
  * Read aloud: native text-to-speech in the app (@capacitor-community/text-to-speech), speechSynthesis on the web.
  */
+import { pauseAfter, speakSentence, storySentences, wait, STORYTELLER } from "@/lib/storyVoice";
 import part1 from "@/data/kidsTafsir1.json";
 import part2 from "@/data/kidsTafsir2.json";
 import part3 from "@/data/kidsTafsir3.json";
 import { isNativePlatform } from "@/lib/storage";
 
-export type Tri = { ar: string; de: string; en: string };
+export type Tri = { ar: string; de: string; en: string; fr: string };
 export type KidsTafsirEntry = { id: string; surah: number; ayah?: number; title: Tri; say: Tri; story: Tri; deed: Tri };
 export const KIDS_TAFSIR: KidsTafsirEntry[] = [...part1, ...part2, ...part3] as KidsTafsirEntry[];
 export type KidsGroup = { id: "fatiha" | "kursi" | "kahf" | "tabarak" | "amma"; entries: KidsTafsirEntry[] };
@@ -21,32 +22,27 @@ export const KIDS_GROUPS: KidsGroup[] = [
   { id: "tabarak", entries: KIDS_TAFSIR.filter((e) => e.surah >= 67 && e.surah <= 77) },
   { id: "amma", entries: KIDS_TAFSIR.filter((e) => e.surah >= 78) },
 ];
-export type KidsLang = "ar" | "de" | "en";
-export const kidsLang = (lang: string): KidsLang => (lang === "ar" ? "ar" : lang === "de" ? "de" : "en");
-const LOCALE: Record<KidsLang, string> = { ar: "ar-SA", de: "de-DE", en: "en-US" };
+export type KidsLang = "ar" | "de" | "en" | "fr";
+export const kidsLang = (lang: string): KidsLang => (lang === "ar" || lang === "de" || lang === "fr" ? lang : "en");
 
-/** Reads `text` aloud (stops what was being read). Resolves when finished. */
+/**
+ * Reads `text` aloud (stops what was being read). Resolves when finished.
+ * v49: the warm storyteller voice — the most natural voice on the device, sentence pauses, pitch 1.08 / rate 0.92.
+ */
+let speakRun = 0;
 export async function speak(text: string, lang: KidsLang): Promise<void> {
   await stopSpeaking();
-  if (isNativePlatform()) {
-    try {
-      const { TextToSpeech } = await import("@capacitor-community/text-to-speech");
-      await TextToSpeech.speak({ text, lang: LOCALE[lang], rate: 0.9, pitch: 1.05, volume: 1, category: "playback" });
-      return;
-    } catch { /* fall back to the web voice */ }
+  const id = ++speakRun;
+  const ss = storySentences(text);
+  for (const s of ss) {
+    if (id !== speakRun) return;
+    await speakSentence(s, lang, 1, STORYTELLER);
+    if (id !== speakRun) return;
+    await wait(pauseAfter(s));
   }
-  const synth = (globalThis as { speechSynthesis?: SpeechSynthesis }).speechSynthesis;
-  if (!synth) throw new Error("no tts");
-  await new Promise<void>((resolve) => {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = LOCALE[lang]; u.rate = 0.9; u.pitch = 1.05;
-    const v = synth.getVoices().find((x) => x.lang.toLowerCase().startsWith(lang));
-    if (v) u.voice = v;
-    u.onend = () => resolve(); u.onerror = () => resolve();
-    synth.speak(u);
-  });
 }
 export async function stopSpeaking(): Promise<void> {
+  speakRun++;
   if (isNativePlatform()) { try { const { TextToSpeech } = await import("@capacitor-community/text-to-speech"); await TextToSpeech.stop(); } catch { /* ignore */ } }
   try { (globalThis as { speechSynthesis?: SpeechSynthesis }).speechSynthesis?.cancel(); } catch { /* ignore */ }
 }

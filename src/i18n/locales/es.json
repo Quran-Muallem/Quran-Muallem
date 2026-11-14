@@ -873,5 +873,12 @@
   "storiesJourneyEnd": "🎉 ¡Llegaste al Sello de los profetas ﷺ! Completaste el viaje de Adán a Muhammad ﷺ.",
   "storiesAllRead": "🎉 ¡Muy bien! Has leído todas las historias del Corán.",
   "storiesNoVoice": "No hay voz de lectura para este idioma en el dispositivo. Instala una voz de texto a voz en los ajustes.",
-  "kidsNavStories": "Historias"
+  "kidsNavStories": "Historias",
+  "salatExtraWarn": "Atención: has completado las rak'as de {prayer} – siéntate para el tashahhud",
+  "kidsHideAyat": "Ocultar aleyas para recitar",
+  "kidsShowAyat": "Mostrar aleyas",
+  "kidsHideAgain": "Ocultar de nuevo",
+  "kidsTapReveal": "Toca para descubrir",
+  "kidsHideHint": "Recita la aleya de memoria y luego toca la nube para comprobar ⭐",
+  "storiesAmbience": "Ambiente suave"
 }

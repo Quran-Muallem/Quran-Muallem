@@ -27,6 +27,7 @@ const LANGS: { id: Language; label: string; flag: string }[] = [
   { id: "ar", label: "العربية", flag: "🌙" },
   { id: "de", label: "Deutsch", flag: "🇩🇪" },
   { id: "en", label: "English", flag: "🇬🇧" },
+  { id: "fr", label: "Français", flag: "🇫🇷" },
 ];
 
 function Section({ emoji, title, children, id }: { emoji: string; title: string; children: ReactNode; id: string }) {
@@ -84,7 +85,7 @@ export function KidsSettingsView({ open, onClose }: { open: boolean; onClose: ()
         </Section>
 
         <Section id="language" emoji="🌍" title={t("languageTitle")}>
-          <div className="grid grid-cols-3 gap-2" role="radiogroup">
+          <div className="grid grid-cols-2 gap-2" role="radiogroup">
             {LANGS.map((l) => (
               <button key={l.id} type="button" role="radio" aria-checked={language === l.id} onClick={() => void chooseLanguage(l.id)} data-kids-lang={l.id}
                 className={cn("kd-btn w-full flex-col !gap-0 px-2 text-base", language === l.id ? "kd-btn-mango" : "kd-btn-soft")}>

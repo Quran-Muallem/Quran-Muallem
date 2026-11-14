@@ -873,5 +873,12 @@
   "storiesJourneyEnd": "🎉 Kamu sampai di penutup para nabi ﷺ! Perjalanan dari Adam hingga Muhammad ﷺ selesai.",
   "storiesAllRead": "🎉 Hebat! Kamu sudah membaca semua kisah Al-Qur'an di sini.",
   "storiesNoVoice": "Tidak ada suara pembaca untuk bahasa ini. Pasang suara text-to-speech di pengaturan ponsel.",
-  "kidsNavStories": "Kisah"
+  "kidsNavStories": "Kisah",
+  "salatExtraWarn": "Perhatian: rakaat {prayer} sudah lengkap – duduklah untuk tasyahud",
+  "kidsHideAyat": "Sembunyikan ayat untuk setoran",
+  "kidsShowAyat": "Tampilkan ayat",
+  "kidsHideAgain": "Sembunyikan lagi",
+  "kidsTapReveal": "Ketuk untuk membuka",
+  "kidsHideHint": "Bacalah ayat dari hafalan, lalu ketuk awan untuk memeriksa ⭐",
+  "storiesAmbience": "Suasana tenang"
 }

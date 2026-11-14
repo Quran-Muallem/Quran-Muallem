@@ -873,5 +873,12 @@
   "storiesJourneyEnd": "🎉 Arrite te Vula e profetëve ﷺ! E përfundove udhëtimin nga Ademi te Muhamedi ﷺ.",
   "storiesAllRead": "🎉 Të lumtë! I lexove të gjitha tregimet e Kur'anit.",
   "storiesNoVoice": "Nuk ka zë leximi për këtë gjuhë në pajisje. Instalo një zë tekst-në-të-folur te cilësimet.",
-  "kidsNavStories": "Tregime"
+  "kidsNavStories": "Tregime",
+  "salatExtraWarn": "Kujdes: i përfundove rekatet e {prayer} – ulu për teshehudin",
+  "kidsHideAyat": "Fshih ajetet për t'i lexuar përmendësh",
+  "kidsShowAyat": "Shfaq ajetet",
+  "kidsHideAgain": "Fshih përsëri",
+  "kidsTapReveal": "Prek për ta zbuluar",
+  "kidsHideHint": "Lexoje ajetin përmendësh, pastaj prek renë për ta kontrolluar ⭐",
+  "storiesAmbience": "Atmosferë e qetë"
 }

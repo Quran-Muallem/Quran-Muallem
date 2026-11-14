@@ -82,7 +82,7 @@ export type KeptAudio = { blob: Blob; seconds: number };
  * failed, so the app keeps using Whisper).
  */
 export type TranscriptKind = "text" | "phonemes";
-export function useTranscribingRecorder(onTranscript: (text: string, final: boolean, kind: TranscriptKind) => void, { live = false, keepAudio = false, engine = "whisper" }: { live?: boolean; keepAudio?: boolean; engine?: "whisper" | "zipformer" } = {}) {
+export function useTranscribingRecorder(onTranscript: (text: string, final: boolean, kind: TranscriptKind) => void, { live = false, keepAudio = false, engine = "whisper", background = false }: { live?: boolean; keepAudio?: boolean; engine?: "whisper" | "zipformer"; /** v49: keep listening with the screen off (native service microphone). */ background?: boolean } = {}) {
   const [recording, setRecording] = useState(false);
   /** Recording paused by the user: the session (transcript, word states, phoneme stream) is kept. */
   const [paused, setPaused] = useState(false);
@@ -98,6 +98,8 @@ export function useTranscribingRecorder(onTranscript: (text: string, final: bool
   const segStart = useRef(0);
   const keepRef = useRef(keepAudio);
   keepRef.current = keepAudio;
+  const backgroundRef = useRef(background);
+  backgroundRef.current = background;
   const callback = useRef(onTranscript);
   callback.current = onTranscript;
   const liveRef = useRef(live);
@@ -225,7 +227,7 @@ export function useTranscribingRecorder(onTranscript: (text: string, final: bool
       // Ends only by the user, the size limit or the system taking the microphone — never by a pause.
       kept.current = null;
       segStart.current = 0;
-      handle.current = await recordWav(() => { void finish(); }, () => { void finish(); }, { keepAudio: keepRef.current });
+      handle.current = await recordWav(() => { void finish(); }, () => { void finish(); }, { keepAudio: keepRef.current, background: backgroundRef.current });
       setRecording(true);
       const active = handle.current;
       if (engineRef.current === "zipformer" && active.sampleRate === 16000) {
@@ -240,6 +242,14 @@ export function useTranscribingRecorder(onTranscript: (text: string, final: bool
           if (zf.current !== z || handle.current !== active) return;
           feed(active);
           z.timer = setInterval(() => { if (handle.current === active) feed(active); }, 250);
+          // v49: native microphone chunks also drive the stream (timers of a hidden page are throttled).
+          let lastFeed = 0;
+          const onData = () => {
+            if (zf.current !== z || handle.current !== active) { window.removeEventListener("qm:mic-data", onData); return; }
+            const now = performance.now();
+            if (now - lastFeed >= 200) { lastFeed = now; feed(active); }
+          };
+          window.addEventListener("qm:mic-data", onData);
         }).catch((e) => { if (zf.current === z) audioFallback(z, e); void preloadWhisper().catch(() => {}); });
       } else void preloadWhisper().catch(() => {});
     } catch (e) {

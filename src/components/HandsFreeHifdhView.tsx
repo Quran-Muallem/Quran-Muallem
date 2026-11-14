@@ -93,7 +93,8 @@ export function HandsFreeHifdhView({ onClose, switcher }: { onClose: () => void;
 
   const targets = useMemo(() => verses.map((v) => v.words.join(" ")), [verses]);
   const refs = useMemo(() => (lexicon ? verses.flatMap((v) => phonemeRefs(lexicon, v.surah, v.ayah, v.words as string[])) : null), [lexicon, verses]);
-  const rec = useRecitation(targets, { phonemeRefs: refs, forceLive: true, keepAudio: false });
+  // v49: background — listening goes on with the screen off (Android: the foreground service's microphone)
+  const rec = useRecitation(targets, { phonemeRefs: refs, forceLive: true, keepAudio: false, background: true });
 
   const tracker = useRef(new HandsFreeTracker());
   useEffect(() => { tracker.current.setConfig({ silenceMs: prefs.silenceMs, promptMode: prefs.promptMode, idleMs: prefs.idleMs }); }, [prefs.silenceMs, prefs.promptMode, prefs.idleMs]);
@@ -208,13 +209,20 @@ export function HandsFreeHifdhView({ onClose, switcher }: { onClose: () => void;
   // Clock.
   useEffect(() => {
     if (!running) return;
-    const id = setInterval(() => {
+    let last = 0;
+    const step = () => {
+      const now = Date.now();
+      if (now - last < 200) return;
+      last = now;
       const { rec: r, prefs: p, prompting: busy, paused: ps, verses: vs } = live.current;
       if (!r.listening || ps) return;
       const ayahOfToken = (tok: number) => { let k = tok; for (const v of vs) { if (k < v.tokenWord.length) return v.ayah; k -= v.tokenWord.length; } return null; };
-      apply(tracker.current.tick({ now: Date.now(), match: r.match, voiced: r.voicedLast(p.silenceMs / 1000), prompting: busy, ayahOfToken }));
-    }, 250);
-    return () => clearInterval(id);
+      apply(tracker.current.tick({ now, match: r.match, voiced: r.voicedLast(p.silenceMs / 1000), prompting: busy, ayahOfToken }));
+    };
+    const id = setInterval(step, 250);
+    // v49: with the screen off the page's timers are throttled — the microphone chunks keep the clock going.
+    window.addEventListener("qm:mic-tick", step);
+    return () => { clearInterval(id); window.removeEventListener("qm:mic-tick", step); };
   }, [running, apply]);
 
   // Recording size limit (≈ 12 min): start a new recording, listening goes on.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
-import { SalatPrayerTracker, findPhrase, promptSpan, salatVerse, trailingErrors, type SalatEvent } from "@/lib/SalatPrayerTracker";
+import { SalatPrayerTracker, findPhrase, promptSpan, continuationToken, salatVerse, trailingErrors, type SalatEvent } from "@/lib/SalatPrayerTracker";
 import type { LiveMatch, LiveStatus } from "@/lib/quranMatcher";
 
 const lex = JSON.parse(fs.readFileSync("public/models/quran_phonemes.json", "utf8")).surahs as string[][][];
@@ -108,9 +108,19 @@ describe("SalatPrayerTracker", () => {
     expect(promptSpan(v, 1, "words", "stall")).toMatchObject({ ayah: 1, fromWord: 2, toWord: 4, text: "هُوَ ٱللَّهُ أَحَدٌ" });
     expect(promptSpan(v, 4, "words", "stall")).toMatchObject({ ayah: 2, fromWord: 1, toWord: 2 });
     expect(promptSpan(v, 3, "words", "mistake")).toMatchObject({ ayah: 1, fromWord: 1, toWord: 3 });
-    expect(promptSpan(v, 5, "ayah", "stall")).toMatchObject({ ayah: 2, fromWord: 1, toWord: 2 });
+    expect(promptSpan(v, 4, "ayah", "stall")).toMatchObject({ ayah: 2, fromWord: 1, toWord: 2 });
+    // v49: part of the verse already recited → the rest of it, never the word just said
+    expect(promptSpan(v, 5, "ayah", "stall")).toMatchObject({ ayah: 2, fromWord: 2, toWord: 2 });
+    expect(promptSpan(v, 2, "ayah", "mistake")).toMatchObject({ ayah: 1, fromWord: 1, toWord: 4 });
     expect(promptSpan(v, 9, "words", "stall")).toBeNull();
     expect(trailingErrors(["CORRECT", "ERROR", "ERROR", "PENDING"], 3)).toBe(2);
+  });
+
+  it("prompts after a word the reciter stopped on (waqf drops its last vowel)", () => {
+    const statuses = ["CORRECT", "PENDING", "PENDING", "PENDING"] as const;
+    expect(continuationToken({ cursor: 1, statuses: [...statuses], inProgress: { token: 1, coverage: 0.8 } })).toBe(2);
+    expect(continuationToken({ cursor: 1, statuses: [...statuses], inProgress: { token: 1, coverage: 0.2 } })).toBe(1);
+    expect(continuationToken({ cursor: 1, statuses: [...statuses], inProgress: null })).toBe(1);
   });
 
   it("knows rukūʿ from the tasbīḥ when the takbīr was too quiet", () => {
