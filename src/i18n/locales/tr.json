@@ -974,5 +974,6 @@
   "kidsStarsBest": "Bu suredeki en iyin: {n} ⭐",
   "kidsReciteAgain": "Tekrar oku",
   "kidsWordsRead": "{m} kelimeden {n} tanesini okudun",
-  "correctionLockHint": "Kelimeyi tekrarla ve ayeti bitir"
+  "correctionLockHint": "Kelimeyi tekrarla ve ayeti bitir",
+  "identifyingSurah": "Sure tanınıyor…"
 }

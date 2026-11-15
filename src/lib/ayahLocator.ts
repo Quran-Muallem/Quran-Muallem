@@ -20,6 +20,10 @@ import { core } from "@/lib/quranAlignment";
 import { normalizeArabic } from "@/lib/quranMatcher";
 
 export const THRESHOLD = 0.85;
+/** Walking back from a confident hit (same surah, right before it) may accept a noisier opening. */
+export const EXTEND_THRESHOLD = 0.6;
+/** A hit this close (core characters) to the end of its verse snaps to the next verse. */
+const SNAP = 6;
 /** Characters needed before a lookup (≈ 4–5 words of phonemes / letters). */
 export const MIN_CHARS = 26;
 const WINDOW = 40;
@@ -143,11 +147,39 @@ export function locateRecitation(ix: LocatorIndex, transcript: string): Located 
     const q = codes.slice(off, off + WINDOW);
     const hit = locateWindow(ix, q);
     if (!hit) continue;
-    const g = ix.owner[Math.min(hit.pos, ix.owner.length - 1)]!;
+    // v56: a hit on the last few characters of a verse is the start of the next one (an isti'ādha / basmala
+    // before it was absorbed as noise).
+    let hp = Math.min(hit.pos, ix.owner.length - 1);
+    const g0 = ix.owner[hp]!;
+    const inBasmala = (ix.surah[g0] === 1 && ix.ayah[g0] === 1) || (ix.surah[g0] === 27 && ix.ayah[g0] === 30 && ix.word[g0]! >= 4);
+    if (!inBasmala) { let j = hp; while (j < ix.owner.length && j - hp <= SNAP && ix.surah[ix.owner[j]!] === ix.surah[g0] && ix.ayah[ix.owner[j]!] === ix.ayah[g0]) j++;
+      if (j < ix.owner.length && j - hp <= SNAP) hp = j; }
+    hit.pos = hp;
+    const g = ix.owner[hp]!;
     const s = ix.surah[g]!, a = ix.ayah[g]!;
-    // The basmala alone says nothing (it is recited before every surah): keep looking after it.
+    // The basmala alone says nothing (it is recited before every surah): keep looking after it. v56: that
+    // includes the basmala inside an-Naml 27:30 («…وَإِنَّهُۥ بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ», words 5–8) — a
+    // basmala before An-Naba was taken for it.
     if (s === 1 && a === 1) continue;
-    return { surah: s, ayah: a, word: ix.word[g]!, score: hit.score, startRaw: raw[off]! };
+    if (s === 27 && a === 30 && ix.word[g]! >= 4) continue;
+    // v56: the first confident window may start a verse or two late (a noisy opening, e.g. «عَمَّ يَتَسَاءَلُونَ»
+    // heard as «عَمممَاايَااتَااسَااااءَلُون»). Walk back over the transcript before it: as long as the earlier
+    // words still fit the text just before the hit in the same surah (≥ EXTEND_THRESHOLD), the start moves back.
+    let pos = hit.pos, o = off;
+    const back = (step: number): boolean => {
+      const o2 = Math.max(0, o - step);
+      const q2 = codes.slice(o2, o2 + WINDOW);
+      const from = Math.max(0, pos - (o - o2) - 14), to = Math.min(ix.chars.length, pos + WINDOW);
+      const r = align(q2, ix.chars, from, to);
+      const g2 = ix.owner[Math.min(r.start, ix.owner.length - 1)]!;
+      // the text must really move back with the transcript (not absorb an isti'ādha / basmala as noise)
+      if (1 - r.cost / q2.length < EXTEND_THRESHOLD || pos - r.start < Math.ceil((o - o2) * 0.75) || ix.surah[g2] !== s) return false;
+      pos = r.start; o = o2;
+      return true;
+    };
+    while (o > 0 && (back(8) || back(4) || back(2) || back(1))) { /* walk back */ }
+    const g3 = ix.owner[Math.min(pos, ix.owner.length - 1)]!;
+    return { surah: s, ayah: ix.ayah[g3]!, word: ix.word[g3]!, score: hit.score, startRaw: raw[o]! };
   }
   return null;
 }

@@ -974,5 +974,6 @@
   "kidsStarsBest": "Më e mira jote në këtë sure: {n} ⭐",
   "kidsReciteAgain": "Lexo përsëri",
   "kidsWordsRead": "Lexove {n} nga {m} fjalë",
-  "correctionLockHint": "Përsërite fjalën dhe përfundo ajetin"
+  "correctionLockHint": "Përsërite fjalën dhe përfundo ajetin",
+  "identifyingSurah": "Po identifikohet surja…"
 }

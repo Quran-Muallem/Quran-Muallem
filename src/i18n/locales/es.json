@@ -974,5 +974,6 @@
   "kidsStarsBest": "Tu mejor resultado en esta sura: {n} ⭐",
   "kidsReciteAgain": "Recitar otra vez",
   "kidsWordsRead": "Leíste {n} de {m} palabras",
-  "correctionLockHint": "Repite la palabra y termina la aleya"
+  "correctionLockHint": "Repite la palabra y termina la aleya",
+  "identifyingSurah": "Identificando la sura…"
 }

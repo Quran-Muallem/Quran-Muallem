@@ -9,6 +9,7 @@ import type { CopyKey } from "@/lib/i18n";
 import { useVoiceProfile } from "@/lib/userAdaptation";
 import { useMistakeHaptics } from "@/lib/useMistakeHaptics";
 import { deferLiveMistakes, instantLiveMistakes, tokenVerses } from "@/lib/liveMistakes";
+import { holdStartup, useStartupIdentification } from "@/lib/recitationStartup";
 import { combineLock, lockComplete, lockSegment, startLock, type CorrectionLock } from "@/lib/correctionLock";
 
 const speechErrorKey = (code: SpeechErrorCode | null): CopyKey | null =>
@@ -76,8 +77,12 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
   const verseOf = useMemo(() => tokenVerses(targets), [targets]);
   // v53: «تصحيح فوري» (default) — a mistaken word turns red the moment the reciter moves past it.
   const instant = useSettings().instantCorrection;
-  const liveStatuses = useMemo(() => (!listening ? match.statuses : instant ? instantLiveMistakes(match.statuses, match.cursor) : deferLiveMistakes(match.statuses, verseOf, match.cursor)),
-    [listening, match.statuses, match.cursor, verseOf, instant]);
+  // v56: silent Surah / Ayah identification window at the start (recitationStartup.ts).
+  const transcriptKindNow = (useWhisper && textEngine === "phonemes" ? "phonemes" : "text") as "phonemes" | "text";
+  const ident = useStartupIdentification({ listening, match, transcript, kind: transcriptKindNow });
+  const liveStatuses = useMemo(() => (!listening ? match.statuses
+    : holdStartup(instant ? instantLiveMistakes(match.statuses, match.cursor) : deferLiveMistakes(match.statuses, verseOf, match.cursor), ident.identifying, ident.graceTokens)),
+    [listening, match.statuses, match.cursor, verseOf, instant, ident.identifying, ident.graceTokens]);
 
   // Reset (v38 «إعادة»): the session is dropped, nothing of it is saved.
   const reset = useCallback(() => { setLock(null); session.current = false; stopListening(); resetTranscript(); setWhisperText(""); whisper.cancel(); setBase(null); }, [stopListening, resetTranscript, whisper.cancel]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -86,25 +91,27 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
   const latestFull = useRef({ text: fullTranscript, kind: textEngine });
   latestFull.current = { text: fullTranscript, kind: textEngine };
   /** Keep recording, but judge only what is said from now on (used for the automatic page turn). */
+  const resetGrace = ident.resetGrace;
   const rebase = useCallback(() => {
-    setLock(null);
+    setLock(null); resetGrace();
     const { text, kind } = latestFull.current;
     setBase({ kind, chars: text.length, words: text.trim() ? text.trim().split(/\s+/).length : 0 });
-  }, []);
+  }, [resetGrace]);
 
   /**
    * Keep recording, but judge from `pos` of the current transcript on (raw phoneme characters / words) —
    * used when the verse was detected elsewhere in the Quran and the Mushaf jumped there.
    */
+  const restartIdent = ident.restart;
   const rebaseBy = useCallback((pos: number) => {
-    setLock(null);
+    setLock(null); restartIdent(); // v56: judged against the located passage → new identification window
     const { text, kind } = latestFull.current;
     setBase((cur) => {
       const words = text.trim() ? text.trim().split(/\s+/).length : 0;
       if (kind === "phonemes") { const chars = (cur?.kind === "phonemes" ? cur.chars : 0) + pos; return { kind, chars, words }; }
       return { kind, chars: text.length, words: Math.min(words, (cur?.kind === "text" ? cur.words : 0) + pos) };
     });
-  }, []);
+  }, [restartIdent]);
 
   // Session end → callback with the final match.
   const session = useRef(false);
@@ -151,6 +158,8 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
       setBase({ kind, chars: text.length, words: text.trim() ? text.trim().split(/\s+/).length : 0 });
       setLock(l);
     },
+    /** v56: true during the silent Surah / Ayah identification window at the start (no correction yet). */
+    identifying: ident.identifying,
     /** True while the cursor is held in the corrected verse. */
     correctionLocked: !!lock?.locked,
     /** Statuses to show: while reciting, mistakes of the verse being recited stay neutral (v38). */

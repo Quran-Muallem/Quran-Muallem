@@ -974,5 +974,6 @@
   "kidsStarsBest": "Ton meilleur score dans cette sourate : {n} ⭐",
   "kidsReciteAgain": "Réciter encore",
   "kidsWordsRead": "Tu as lu {n} mots sur {m}",
-  "correctionLockHint": "Répète le mot et termine le verset"
+  "correctionLockHint": "Répète le mot et termine le verset",
+  "identifyingSurah": "Identification de la sourate…"
 }

@@ -974,5 +974,6 @@
   "kidsStarsBest": "اس سورت میں تمہارا بہترین: {n} ⭐",
   "kidsReciteAgain": "دوبارہ پڑھو",
   "kidsWordsRead": "تم نے {m} میں سے {n} الفاظ پڑھے",
-  "correctionLockHint": "لفظ دہرائیں اور آیت مکمل کریں"
+  "correctionLockHint": "لفظ دہرائیں اور آیت مکمل کریں",
+  "identifyingSurah": "سورت کی پہچان ہو رہی ہے…"
 }

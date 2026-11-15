@@ -974,5 +974,6 @@
   "kidsStarsBest": "Dein Bestes in dieser Sure: {n} ⭐",
   "kidsReciteAgain": "Noch einmal lesen",
   "kidsWordsRead": "Du hast {n} von {m} Wörtern gelesen",
-  "correctionLockHint": "Wiederhole das Wort und beende die Āya"
+  "correctionLockHint": "Wiederhole das Wort und beende die Āya",
+  "identifyingSurah": "Sure wird erkannt …"
 }

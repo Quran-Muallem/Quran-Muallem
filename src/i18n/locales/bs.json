@@ -974,5 +974,6 @@
   "kidsStarsBest": "Tvoj najbolji rezultat u ovoj suri: {n} ⭐",
   "kidsReciteAgain": "Uči ponovo",
   "kidsWordsRead": "Proučio si {n} od {m} riječi",
-  "correctionLockHint": "Ponovi riječ i završi ajet"
+  "correctionLockHint": "Ponovi riječ i završi ajet",
+  "identifyingSurah": "Prepoznajem suru…"
 }

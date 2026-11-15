@@ -740,6 +740,16 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
         </div>
       )}
 
+      {/* v56: silent identification window at the start — no correction until the surah is confirmed */}
+      {rec.identifying && !detected && (
+        <div role="status" aria-live="polite" data-identifying=""
+          className="pointer-events-none fixed inset-x-0 z-50 flex justify-center px-4 animate-in fade-in"
+          style={{ top: "calc(env(safe-area-inset-top) + 64px)" }}>
+          <span className="flex items-center gap-2 rounded-full px-4 py-1.5 text-[0.8rem] font-semibold text-[#f3d27a] shadow-lg" style={{ background: "rgba(11,42,33,.92)", boxShadow: "0 0 0 1px rgba(212,175,55,.55)" }}>
+            <span className="h-2 w-2 animate-pulse rounded-full bg-[#34d399]" aria-hidden="true" />{t("identifyingSurah")}
+          </span>
+        </div>
+      )}
       {/* the page — swipe right for the next page (Arabic books open to the left) */}
       <div ref={pageArea} className="touch-pan-y select-none" data-rec-state={`${rec.listening ? "on" : "off"}${rec.paused ? " paused" : ""}${rec.correctionLocked ? " locked" : ""}`}
         onTouchStart={(e) => { const p = e.touches[0]; if (p) touch.current = { x: p.clientX, y: p.clientY }; }}

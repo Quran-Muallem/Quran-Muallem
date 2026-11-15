@@ -974,5 +974,6 @@
   "kidsStarsBest": "Terbaik kamu dalam surah ini: {n} ⭐",
   "kidsReciteAgain": "Baca lagi",
   "kidsWordsRead": "Kamu membaca {n} daripada {m} perkataan",
-  "correctionLockHint": "Ulang perkataan itu dan habiskan ayat ini"
+  "correctionLockHint": "Ulang perkataan itu dan habiskan ayat ini",
+  "identifyingSurah": "Mengenal pasti surah…"
 }

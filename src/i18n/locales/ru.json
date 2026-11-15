@@ -974,5 +974,6 @@
   "kidsStarsBest": "Твой лучший результат в этой суре: {n} ⭐",
   "kidsReciteAgain": "Прочитать ещё раз",
   "kidsWordsRead": "Ты прочитал {n} из {m} слов",
-  "correctionLockHint": "Повтори слово и дочитай аят"
+  "correctionLockHint": "Повтори слово и дочитай аят",
+  "identifyingSurah": "Определяем суру…"
 }

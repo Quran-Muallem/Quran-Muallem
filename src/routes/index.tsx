@@ -78,6 +78,7 @@ import { ayahMarker, toArabicDigits, type Ayah } from "@/lib/quranService";
 import { useSurahList, useSurahText } from "@/lib/useQuran";
 import { useAyahPlayer } from "@/lib/useAyahPlayer";
 import { getReciter } from "@/lib/reciterManager";
+import { holdStartup, useStartupIdentification } from "@/lib/recitationStartup";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -522,7 +523,16 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
   const listening = useWhisper ? whisper.recording : speech.isListening;
   // v38: while reciting, red / orange appear only once their verse is finished (liveMistakes.ts).
   const verseOf = useMemo(() => tokenVerses(texts), [texts]);
-  const liveStatuses = useMemo(() => (!listening ? match.statuses : settings.instantCorrection ? instantLiveMistakes(match.statuses, match.cursor) : deferLiveMistakes(match.statuses, verseOf, match.cursor)), [listening, match.statuses, match.cursor, verseOf, settings.instantCorrection]);
+  // v56: silent Surah / Ayah identification window at the start (recitationStartup.ts): no red, no
+  // correction until the passage is confirmed here or switched to the surah actually recited.
+  const ident = useStartupIdentification({ listening, match, transcript, kind: useWhisper && textKind === "phonemes" ? "phonemes" : "text" });
+  const resetGraceP = ident.resetGrace;
+  const identRestartP = useRef(ident.restart);
+  identRestartP.current = ident.restart;
+  useEffect(() => { resetGraceP(); }, [texts, resetGraceP]); // another passage: token indices changed meaning
+  const liveStatuses = useMemo(() => (!listening ? match.statuses
+    : holdStartup(settings.instantCorrection ? instantLiveMistakes(match.statuses, match.cursor) : deferLiveMistakes(match.statuses, verseOf, match.cursor), ident.identifying, ident.graceTokens)),
+    [listening, match.statuses, match.cursor, verseOf, settings.instantCorrection, ident.identifying, ident.graceTokens]);
   // Word colours shared with the Mushaf (RecitationContext): a passage recited there shows the same
   // green / orange / red here; a new recitation replaces them verse by verse as the reciter reaches them.
   const colors = useWordColors();
@@ -651,8 +661,11 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
     if (viewKey.current === key) return;
     viewKey.current = key;
     // Jumped while reciting: keep recording. The passage settles in steps (new surah → its text loads →
-    // the verse range is clamped), so every change shortly after the jump is part of it.
+    // the verse range is clamped), so every change shortly after the jump is part of it. v56: on a slow
+    // device that took longer than 8 s and reset the recording — the located surah stays protected while
+    // the microphone is on.
     if (Date.now() < autoJump.current) return;
+    if (listeningRefP.current && jumpedSurah.current === target.surahId) return;
     reset();
   }, [target.surahId, from, to, target.mode, useWhisper]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -661,6 +674,11 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
   // are matched against all 114 surahs (≥ 85 %, one unique place); the passage switches to that surah and
   // verse, the recording goes on and is judged from there, and a short note says what was recognised.
   const autoJump = useRef(0);
+  /** v56: the surah the passage jumped to while reciting (kept while the microphone stays on). */
+  const jumpedSurah = useRef<number | null>(null);
+  const listeningRefP = useRef(listening);
+  listeningRefP.current = listening;
+  useEffect(() => { if (!listening) jumpedSurah.current = null; }, [listening]);
   const [detected, setDetected] = useState<{ surah: number; ayah: number } | null>(null);
   const locateAfter = useRef(0);
   const liveRef = useRef({ transcript, match, target, from, kind: (useWhisper && textKind === "phonemes" ? "phonemes" : "text") as "phonemes" | "text" });
@@ -683,9 +701,11 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
         const same = hit.surah === live.target.surahId && hit.ayah === live.from;
         if (same && hit.startRaw === 0) return;
         locateAfter.current = Date.now() + 3000;
+        identRestartP.current(); // v56: new silent identification window for the located passage
         setBase((cur) => ({ kind, pos: (cur?.kind === kind ? cur.pos : 0) + hit.startRaw }));
         if (!same) {
           autoJump.current = Date.now() + 8000;
+          jumpedSurah.current = hit.surah;
           onTargetChange({ ...live.target, surahId: hit.surah, fromAyah: hit.ayah, toAyah: hit.ayah + MAX_RANGE - 1 });
           setDetected({ surah: hit.surah, ayah: hit.ayah });
         }
@@ -847,6 +867,16 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
           style={{ top: "calc(env(safe-area-inset-top) + 64px)" }}>
           <span className="rounded-full px-4 py-2 text-sm font-semibold text-emerald-950 shadow-xl" style={{ background: GOLD_GRADIENT }}>
             {t("autoDetected").replace("{surah}", (language === "ar" ? list[detected.surah - 1]?.nameArabic : list[detected.surah - 1]?.nameSimple) ?? String(detected.surah)).replace("{ayah}", num(detected.ayah))}
+          </span>
+        </div>
+      )}
+      {/* v56: silent identification window at the start — no correction until the surah is confirmed */}
+      {ident.identifying && !detected && (
+        <div role="status" aria-live="polite" data-identifying=""
+          className="pointer-events-none fixed inset-x-0 z-50 flex justify-center px-4 animate-in fade-in"
+          style={{ top: "calc(env(safe-area-inset-top) + 64px)" }}>
+          <span className="flex items-center gap-2 rounded-full px-4 py-1.5 text-[0.8rem] font-semibold text-[#f3d27a] shadow-lg" style={{ background: "rgba(11,42,33,.92)", boxShadow: "0 0 0 1px rgba(212,175,55,.55)" }}>
+            <span className="h-2 w-2 animate-pulse rounded-full bg-[#34d399]" aria-hidden="true" />{t("identifyingSurah")}
           </span>
         </div>
       )}

@@ -577,6 +577,7 @@ export const copy = {
   kidsReciteAgain: ["اقرأ مرة أخرى", "Recite again"],
   kidsWordsRead: ["قرأت {n} من {m} كلمة", "You read {n} of {m} words"],
   correctionLockHint: ["أعد الكلمة وأكمل الآية", "Repeat the word and finish this verse"],
+  identifyingSurah: ["جارٍ التعرّف على السورة…", "Identifying the surah…"],
   hubTajweedSub: ["دليل مختصر بالأمثلة", "A short guide with examples"],
   hubHadith: ["كتب الحديث", "Hadith library"],
   hubHadithSub: ["صحيح البخاري وصحيح مسلم مع البحث", "Sahih al-Bukhari and Sahih Muslim, with search"],

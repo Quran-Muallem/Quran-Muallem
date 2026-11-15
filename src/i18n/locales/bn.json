@@ -974,5 +974,6 @@
   "kidsStarsBest": "এই সূরায় তোমার সেরা: {n} ⭐",
   "kidsReciteAgain": "আবার পড়ো",
   "kidsWordsRead": "তুমি {m}টির মধ্যে {n}টি শব্দ পড়েছ",
-  "correctionLockHint": "শব্দটি আবার বলো এবং আয়াতটি শেষ করো"
+  "correctionLockHint": "শব্দটি আবার বলো এবং আয়াতটি শেষ করো",
+  "identifyingSurah": "সূরা শনাক্ত করা হচ্ছে…"
 }
