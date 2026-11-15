@@ -128,26 +128,41 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
   const pageArea = useRef<HTMLDivElement>(null);
   const [barH, setBarH] = useState(0);
   const [textHeight, setTextHeight] = useState<number | undefined>(undefined);
-  const fit = useCallback(() => {
+  // v54.2: React error #185 (maximum update depth) on some phones — the measurement fed back into itself.
+  // Now: positions are measured relative to the document (not the scroll position), and if the height keeps
+  // flipping between values within a short burst we settle on the smaller one until the next real resize.
+  const fitLog = useRef<{ t: number; n: number; seen: number[]; frozen: number | null }>({ t: 0, n: 0, seen: [], frozen: null });
+  const fit = useCallback((fromResize?: unknown) => {
     const area = pageArea.current;
     if (!area) return;
+    const log = fitLog.current;
+    if (fromResize || (log.frozen !== null && performance.now() - log.t > 1500)) log.frozen = null;
+    if (log.frozen !== null) return;
     const vh = window.visualViewport?.height ?? window.innerHeight;
     const bar = document.querySelector<HTMLElement>("[data-recite-bar]");
     const bottom = bar ? bar.getBoundingClientRect().top - PAGE_GAP_PX : vh - PAGE_GAP_PX;
-    const top = area.getBoundingClientRect().top;
+    const top = area.getBoundingClientRect().top + (window.scrollY || 0) - (window.visualViewport?.offsetTop ?? 0);
     // Everything of the page that is not the 15 lines: running head, frame, page number.
     const frame = area.firstElementChild as HTMLElement | null;
     const text = area.querySelector<HTMLElement>("[data-mushaf-text]");
     const chrome = frame && text ? frame.getBoundingClientRect().height - text.getBoundingClientRect().height : FRAME_PX;
     const next = Math.max(MIN_TEXT_PX, Math.floor(bottom - top - chrome));
-    setTextHeight((cur) => (cur !== undefined && Math.abs(cur - next) < 2 ? cur : next));
+    const now = performance.now();
+    if (now - log.t > 600) { log.t = now; log.n = 0; log.seen = []; }
+    setTextHeight((cur) => {
+      if (cur !== undefined && Math.abs(cur - next) < 2) return cur;
+      log.n += 1; log.seen.push(next);
+      if (log.n > 6) { log.frozen = Math.min(...log.seen); return log.frozen; } // oscillating → settle
+      return next;
+    });
   }, []);
   useLayoutEffect(() => {
     fit();
     const vv = window.visualViewport;
-    window.addEventListener("resize", fit);
-    vv?.addEventListener("resize", fit);
-    return () => { window.removeEventListener("resize", fit); vv?.removeEventListener("resize", fit); };
+    const onResize = () => fit(true);
+    window.addEventListener("resize", onResize);
+    vv?.addEventListener("resize", onResize);
+    return () => { window.removeEventListener("resize", onResize); vv?.removeEventListener("resize", onResize); };
   });
 
   // Jump to the requested surah / verse.
@@ -735,7 +750,7 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
         hint={mode === "MEMORIZATION_MODE" ? { onClick: giveHint, used: hints.size, disabled: !nextHint() } : undefined}
         onMic={() => { player.pause(); rec.toggle(); }} getLevel={rec.getLevel} status={rec.paused ? t("recitePausedStatus") : status}
         paused={rec.paused} onPause={rec.canPause ? () => { if (rec.paused) rec.resume(); else { rec.pause(); } } : undefined}
-        onHeight={setBarH}
+        onHeight={(h) => setBarH((cur) => (Math.abs(cur - h) < 1 ? cur : Math.round(h)))}
         onReset={rec.listening || liveShown || rec.match.recited > 0 || saved != null || reviewReady != null || pageHasColours ? resetSession : undefined}
         onReview={!rec.listening && !review && reviewReady ? () => setReview(reviewReady) : undefined} reviewCount={reviewReady?.items.length ?? 0}
         extra={showMine || wordFix ? (

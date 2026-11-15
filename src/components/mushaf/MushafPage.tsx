@@ -72,6 +72,9 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, mar
   // Lines that are naturally longer are condensed slightly; all lines are justified edge to edge.
   useLayoutEffect(() => {
     if (flow) return; // flowing text: no fitting to the printed lines
+    // v54.2: only real changes set state (a ResizeObserver callback that changes nothing must not re-render,
+    // otherwise some phones loop until React error #185).
+    let lastKey = "";
     const run = () => {
       const box = wrap.current, m = measure.current;
       if (!box || !m) return;
@@ -85,8 +88,8 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, mar
       const lf = maxTextHeight && roomy < want ? Math.max(MIN_LINE_HEIGHT, maxTextHeight / (LINES_PER_PAGE * want)) : LINE_HEIGHT;
       const byHeight = maxTextHeight ? maxTextHeight / (LINES_PER_PAGE * lf) : Infinity;
       let fs = Math.max(11, Math.min(32, byWidth, byHeight));
-      setLineFactor(lf);
-      setBoxSize(fs);
+      setLineFactor((c) => (c === lf ? c : lf));
+      setBoxSize((c) => (c === fs ? c : fs));
       const widths = Array.from(m.children).map((el) => (el as HTMLElement).scrollWidth);
       if (centered) {
         const max = Math.max(...widths, 1);
@@ -99,9 +102,12 @@ export function MushafPage({ mushaf, page, statuses, hidden, hinted, cursor, mar
         if (w && natural > avail) next[i] = { width: natural, scale: avail / natural };
         else if (w && natural < avail * SHORT_LINE) shortLines[i] = true;
       });
-      setFontSize(fs);
-      setSqueeze(next);
-      setShort(shortLines);
+      const key = JSON.stringify([avail, fs, lf, next, shortLines]);
+      if (key === lastKey) return;
+      lastKey = key;
+      setFontSize((c) => (c === fs ? c : fs));
+      setSqueeze((c) => (JSON.stringify(c) === JSON.stringify(next) ? c : next));
+      setShort((c) => (JSON.stringify(c) === JSON.stringify(shortLines) ? c : shortLines));
     };
     run();
     void document.fonts?.ready.then(run);
