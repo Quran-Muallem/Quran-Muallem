@@ -14,8 +14,15 @@ import { KidsTafsirDrawer } from "@/components/kids/KidsTafsirDrawer";
 import { JOURNEY, useSurahStars } from "@/components/kids/KidsStarJourney";
 import { stopSheikhAudio } from "@/lib/audioPlayback";
 import { starChime } from "@/lib/storyAmbience";
+import { useRecitation } from "@/lib/useRecitation";
+import { phonemeRefs, usePhonemeLexicon } from "@/lib/quranAlignment";
+import { loadMushaf, type Mushaf } from "@/lib/mushafData";
+import type { LiveStatus } from "@/lib/quranMatcher";
+import { Mic, Square } from "lucide-react";
 
 const HIDE_KEY = "qm.kids.hide";
+/** v54: live recitation covers the first verses of the surah (like the Recite tab's range). */
+const KIDS_RANGE = 15;
 
 const KEY = "qm.kids.surah";
 export function kidsSurah(): number {
@@ -42,6 +49,37 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
   const size = Math.max(26, settings.quranFontSize);
   const num = (n: number) => (ar ? toArabicDigits(n) : String(n));
 
+  // v54: live recitation with word-by-word highlighting (same engine as the adult Mushaf).
+  const lexicon = usePhonemeLexicon();
+  const [mushafWords, setMushafWords] = useState<Mushaf | null>(null);
+  useEffect(() => { void loadMushaf().then(setMushafWords).catch(() => {}); }, []);
+  const win = useMemo(() => (ayahs ?? []).slice(0, KIDS_RANGE), [ayahs]);
+  const targets = useMemo(() => win.map((a) => a.text), [win]);
+  const refs = useMemo(() => {
+    if (!lexicon || !mushafWords || !win.length) return null;
+    const out: (string | null)[] = [];
+    for (const a of win) {
+      const words = mushafWords.words(surah, a.number);
+      if (words.join(" ") !== a.text) return null;
+      out.push(...phonemeRefs(lexicon, surah, a.number, words));
+    }
+    return out;
+  }, [lexicon, mushafWords, win, surah]);
+  const rec = useRecitation(targets, { phonemeRefs: refs, forceLive: true });
+  const offsets = useMemo(() => { let o = 0; return targets.map((t) => { const at = o; o += t.split(" ").length; return at; }); }, [targets]);
+  const reciting = rec.listening || rec.match.recited > 0;
+  const cursor = rec.listening ? rec.match.cursor : -1;
+  const { reset: resetRec } = rec;
+  useEffect(() => { resetRec(); }, [surah]); // eslint-disable-line react-hooks/exhaustive-deps
+  const micToggle = () => { if (!rec.listening) { stopSheikhAudio(); setTapped(null); resetRec(); } rec.toggle(); };
+  /** A verse fully recited during this session (its clouds open by themselves). */
+  const recitedVerse = (i: number) => reciting && i < win.length && rec.match.cursor >= offsets[i]! + targets[i]!.split(" ").length;
+  const wordCls = (st: LiveStatus | undefined, current: boolean) => cn("rounded-lg px-0.5 transition-colors",
+    current && "bg-[var(--kd-sun)] ring-2 ring-[var(--kd-mango)]",
+    st === "CORRECT" && "bg-[#d1fae5] text-[#047857]",
+    st === "WARNING" && "bg-[#fef3c7] text-[#b45309]",
+    st === "ERROR" && "bg-[#DC2626]/15 text-[#DC2626] ring-[1.5px] ring-[#DC2626]");
+
   useEffect(() => {
     const ac = new AbortController();
     setAyahs(null); setFailed(false); setTapped(null); setRevealed(new Set());
@@ -63,7 +101,7 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
   );
 
   return (
-    <div className="space-y-4 pb-[110px]" data-kids-mushaf={surah} data-kids-hide={hide ? "on" : "off"}>
+    <div className="space-y-4 pb-[170px]" data-kids-mushaf={surah} data-kids-hide={hide ? "on" : "off"}>
       {nav("top")}
       {/* toolbar: hide the verses to recite from memory */}
       <div className="kd-card kd-3d flex items-center gap-2 p-2" dir={ar ? "rtl" : "ltr"}>
@@ -100,7 +138,7 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
         )}
         {ayahs && (
           <ol className="divide-y-2 divide-dashed px-2 pb-3" style={{ borderColor: "var(--kd-edge)" }}>
-            {ayahs.map((a) => (hide && !revealed.has(a.number)) ? (
+            {ayahs.map((a, ai) => (hide && !revealed.has(a.number) && !recitedVerse(ai)) ? (
               <li key={a.number} className="py-2">
                 {/* a cloud cover with a golden star border — tap to reveal */}
                 <button type="button" onClick={() => reveal(a.number)} data-kids-cloud={a.number}
@@ -115,10 +153,15 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
             ) : (
               <li key={a.number} className={cn("relative", sparkle === a.number && "kd-pop")}>
                 {sparkle === a.number && <span aria-hidden="true" className="pointer-events-none absolute -top-1 start-3 z-10 text-2xl kids-star">⭐</span>}
-                <button type="button" onClick={() => setTapped(a.number)} data-kids-ayah={a.number}
+                <button type="button" onClick={() => { if (!rec.listening) setTapped(a.number); }} data-kids-ayah={a.number}
                   className={cn("kd-quran block w-full rounded-[22px] px-3 py-3 text-start transition", tapped === a.number ? "bg-[var(--kd-sun)]" : "active:bg-[var(--kd-sky)]")}
                   style={{ fontSize: size, lineHeight: 2.25 }}>
-                  {a.text}
+                  {reciting && ai < win.length
+                    ? a.text.split(" ").map((w, wi) => {
+                        const k = offsets[ai]! + wi;
+                        return <span key={wi} data-kids-word={k} data-status={rec.liveStatuses[k] ?? "PENDING"} className={wordCls(rec.liveStatuses[k], k === cursor)}>{w}{" "}</span>;
+                      })
+                    : a.text}
                   <span aria-hidden="true" className="ms-2 inline-flex h-[1.5em] min-w-[1.5em] translate-y-[-0.1em] items-center justify-center rounded-full align-middle font-sans text-[0.45em] font-black text-white"
                     style={{ background: "var(--kd-turquoise)", boxShadow: "0 3px 0 var(--kd-turquoise-deep)" }}>{toArabicDigits(a.number)}</span>
                 </button>
@@ -128,6 +171,19 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
         )}
       </article>
       {ayahs && nav("bottom")}
+      {rec.match.done && !rec.listening && (
+        <p className="kd-card kd-3d kd-pop p-4 text-center text-lg font-black" dir={ar ? "rtl" : "ltr"} data-kids-mic-done="">⭐ {t("kidsMicDone")} ⭐</p>
+      )}
+      {ayahs && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+5.5rem)] z-30 flex justify-center px-4" data-kids-mic="">
+          <button type="button" onClick={micToggle} aria-pressed={rec.listening} data-kids-mic-btn=""
+            className={cn("pointer-events-auto kd-btn flex min-h-[3.5rem] items-center gap-2 rounded-full px-6 text-lg font-black shadow-xl", rec.listening ? "kd-btn-coral ring-4 ring-[#fb7185]/40" : "")}
+            dir={ar ? "rtl" : "ltr"}>
+            {rec.listening ? <Square className="h-6 w-6 fill-current" aria-hidden="true" /> : <Mic className="h-7 w-7" aria-hidden="true" />}
+            <span>{rec.listening ? t("kidsMicListening") : t("kidsMicStart")}</span>
+          </button>
+        </div>
+      )}
       {tapped != null && <KidsTafsirDrawer surah={surah} ayah={tapped} withSheikh onClose={() => { stopSheikhAudio(); setTapped(null); }} />}
       {picker && <KidsSurahPicker current={surah} onPick={(s) => { setPicker(false); go(s); }} onClose={() => setPicker(false)} />}
     </div>

@@ -951,5 +951,10 @@
   "tajAnnounce": "Tadschwīd-Hinweis: {rule}. Hör dir die richtige Aussprache an.",
   "tajCheckWord": "achte auf dieses Wort",
   "setInstantCorrection": "Sofortige Korrektur beim Rezitieren",
-  "setInstantCorrectionDesc": "Bei einem falschen Wort stoppt es sofort: Das Wort wird rot mit seiner Regel, die Regel wird angesagt und der Scheich spricht das Wort vor. Tippe auf ein rotes Wort, um es zu hören."
+  "setInstantCorrectionDesc": "Bei einem falschen Wort stoppt es sofort: Das Wort wird rot mit seiner Regel, die Regel wird angesagt und der Scheich spricht das Wort vor. Tippe auf ein rotes Wort, um es zu hören.",
+  "kidsMicStart": "Lies vor – ich höre zu",
+  "kidsMicStop": "Stopp",
+  "kidsMicListening": "Ich höre zu … lies vor!",
+  "kidsMicDone": "Super! Du hast alles gelesen",
+  "menuLanguage": "App-Sprache"
 }

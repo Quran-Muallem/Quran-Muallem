@@ -951,5 +951,10 @@
   "tajAnnounce": "Tedžvidska napomena: {rule}. Poslušaj ispravan izgovor.",
   "tajCheckWord": "pazi na ovu riječ",
   "setInstantCorrection": "Trenutno ispravljanje tokom učenja",
-  "setInstantCorrectionDesc": "Kod pogrešne riječi odmah stane: riječ postane crvena s pravilom, pravilo se najavi i hafiz izgovori riječ. Dodirni crvenu riječ da je čuješ."
+  "setInstantCorrectionDesc": "Kod pogrešne riječi odmah stane: riječ postane crvena s pravilom, pravilo se najavi i hafiz izgovori riječ. Dodirni crvenu riječ da je čuješ.",
+  "kidsMicStart": "Uči – slušam te",
+  "kidsMicStop": "Stani",
+  "kidsMicListening": "Slušam te… uči!",
+  "kidsMicDone": "Bravo! Proučio si sve",
+  "menuLanguage": "Jezik aplikacije"
 }

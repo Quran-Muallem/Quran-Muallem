@@ -2,6 +2,7 @@
  * v48 «قصص القرآن وقصص الأنبياء»: two tabs — the Prophets' journey through time and stories from the Quran —
  * and the story reader. Used in normal mode (المزيد / home) and inside the kids storybook layout.
  */
+import { StoryEmblem, hasStoryEmblem } from "@/components/stories/StoryEmblem";
 import { useBackLayer } from "@/lib/backStack";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
@@ -47,14 +48,16 @@ export function QuranStoriesView({ kids, onOpen }: { kids: boolean; onOpen: (id:
   const L = storyLang(language);
   const p = useStoryProgress();
   return (
-    <ul className="grid grid-cols-2 gap-3" dir={L === "ar" ? "rtl" : "ltr"} data-quran-stories="">
+    <ul className={cn("grid grid-cols-2 gap-3", !kids && "pb-[100px]")} dir={L === "ar" ? "rtl" : "ltr"} data-quran-stories="">
       {QURAN_STORIES.map((s, i) => (
         <li key={s.id}>
           <button type="button" onClick={() => onOpen(s.id)} data-quran-story={s.id}
-            className={cn("relative flex h-full w-full flex-col items-center gap-1 p-4 text-center active:translate-y-[2px]", kids ? "text-white" : "rounded-2xl border border-accent/25 bg-card text-foreground")}
+            className={cn("relative flex h-full w-full flex-col items-center gap-1 p-4 text-center active:translate-y-[2px]", kids ? "text-white" : "sx-card rounded-2xl text-[var(--sx-ink)]")}
             style={kids ? { background: TILES[i % TILES.length], borderRadius: 28, borderBottom: "6px solid rgba(0,0,0,.18)" } : undefined}>
             {p.done[s.id] && <span className="absolute end-2 top-2 text-lg" aria-label="⭐">⭐</span>}
-            <span className="text-4xl leading-tight" aria-hidden="true">{s.emoji}</span>
+            {kids || !hasStoryEmblem(s.id)
+              ? <span className="text-4xl leading-tight" aria-hidden="true">{s.emoji}</span>
+              : <StoryEmblem id={s.id} className="h-[92px] w-[92px] drop-shadow-[0_6px_12px_rgba(0,0,0,.22)]" />}
             <span className={cn("font-black leading-snug", L === "ar" ? "font-arabic text-lg" : "text-base")}>{s.name[L]}</span>
             <span className={cn("text-xs font-semibold", kids ? "opacity-90" : "text-muted-foreground")}>{s.era[L]}</span>
           </button>

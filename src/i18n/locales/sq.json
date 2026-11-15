@@ -951,5 +951,10 @@
   "tajAnnounce": "Vërejtje texhvidi: {rule}. Dëgjo shqiptimin e saktë.",
   "tajCheckWord": "kujdes këtë fjalë",
   "setInstantCorrection": "Korrigjim i menjëhershëm gjatë leximit",
-  "setInstantCorrectionDesc": "Te një fjalë e gabuar ndalet menjëherë: fjala bëhet e kuqe me rregullin e saj, rregulli njoftohet dhe hoxha e shqipton fjalën. Prek një fjalë të kuqe për ta dëgjuar."
+  "setInstantCorrectionDesc": "Te një fjalë e gabuar ndalet menjëherë: fjala bëhet e kuqe me rregullin e saj, rregulli njoftohet dhe hoxha e shqipton fjalën. Prek një fjalë të kuqe për ta dëgjuar.",
+  "kidsMicStart": "Lexo – po të dëgjoj",
+  "kidsMicStop": "Ndalo",
+  "kidsMicListening": "Po të dëgjoj… lexo!",
+  "kidsMicDone": "Të lumtë! I lexove të gjitha",
+  "menuLanguage": "Gjuha e aplikacionit"
 }

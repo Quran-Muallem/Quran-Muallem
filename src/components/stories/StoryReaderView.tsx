@@ -3,6 +3,7 @@
  * spoken paragraph highlighted and scrolled into view, chapters, «الآيات المرتبطة بالقصة» (Sheikh audio +
  * open in the Mushaf), «العبرة والدرس المستفاد», and «المحطة التالية» to travel on step by step.
  */
+import { StoryEmblem, hasStoryEmblem } from "@/components/stories/StoryEmblem";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -94,7 +95,9 @@ export function StoryReaderView({ story, look, onBack, onOpen }: { story: Story;
               {t("storyMiracle")}: {(MIRACLES as Record<string, Record<string, string>>)[story.id]?.[L] ?? ""}
             </span>
           </div>
-        ) : <p className="text-5xl leading-tight tracking-widest" aria-hidden="true">{story.emoji.replace(/[\u2728\u2726\u2727]/gu, "")}</p>}
+        ) : !kidsLook0 && hasStoryEmblem(story.id)
+          ? <div className="flex justify-center"><StoryEmblem id={story.id} className="h-28 w-28 drop-shadow-[0_8px_14px_rgba(0,0,0,.2)]" /></div>
+          : <p className="text-5xl leading-tight tracking-widest" aria-hidden="true">{story.emoji.replace(/[\u2728\u2726\u2727]/gu, "")}</p>}
         <h1 className={cn("mt-2 font-black leading-snug", rtl ? "font-arabic text-3xl" : "text-2xl")}>{story.name[L]}</h1>
         {!rtl && <p className="font-arabic text-lg">{story.name.ar}</p>}
         <p className={cn("mt-1 text-sm font-bold", !story.final && look.soft)}>{story.era[L]}</p>

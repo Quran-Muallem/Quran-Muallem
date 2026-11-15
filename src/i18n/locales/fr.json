@@ -951,5 +951,10 @@
   "tajAnnounce": "Remarque de tajwid : {rule}. Écoute la bonne prononciation.",
   "tajCheckWord": "attention à ce mot",
   "setInstantCorrection": "Correction immédiate pendant la récitation",
-  "setInstantCorrectionDesc": "À un mot erroné, il s'arrête aussitôt : le mot devient rouge avec sa règle, la règle est annoncée et le cheikh prononce le mot. Touche un mot rouge pour l'écouter."
+  "setInstantCorrectionDesc": "À un mot erroné, il s'arrête aussitôt : le mot devient rouge avec sa règle, la règle est annoncée et le cheikh prononce le mot. Touche un mot rouge pour l'écouter.",
+  "kidsMicStart": "Récite – j'écoute",
+  "kidsMicStop": "Arrêter",
+  "kidsMicListening": "J'écoute… récite !",
+  "kidsMicDone": "Bravo ! Tu as tout récité",
+  "menuLanguage": "Langue de l'app"
 }

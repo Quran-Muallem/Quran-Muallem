@@ -951,5 +951,10 @@
   "tajAnnounce": "Nota de tayuid: {rule}. Escucha la pronunciación correcta.",
   "tajCheckWord": "revisa esta palabra",
   "setInstantCorrection": "Corrección inmediata al recitar",
-  "setInstantCorrectionDesc": "Ante una palabra errónea se detiene al instante: la palabra se pone roja con su regla, se anuncia la regla y el jeque la pronuncia. Toca una palabra roja para oírla."
+  "setInstantCorrectionDesc": "Ante una palabra errónea se detiene al instante: la palabra se pone roja con su regla, se anuncia la regla y el jeque la pronuncia. Toca una palabra roja para oírla.",
+  "kidsMicStart": "Recita – te escucho",
+  "kidsMicStop": "Parar",
+  "kidsMicListening": "Te escucho… ¡recita!",
+  "kidsMicDone": "¡Muy bien! Lo recitaste todo",
+  "menuLanguage": "Idioma de la app"
 }

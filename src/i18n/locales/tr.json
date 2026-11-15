@@ -951,5 +951,10 @@
   "tajAnnounce": "Tecvid uyarısı: {rule}. Doğru telaffuzu dinle.",
   "tajCheckWord": "bu kelimeye dikkat et",
   "setInstantCorrection": "Okurken anında düzeltme",
-  "setInstantCorrectionDesc": "Yanlış bir kelimede hemen durur: kelime kuralıyla birlikte kırmızı olur, kural söylenir ve kâri kelimeyi okur. Dinlemek için kırmızı kelimeye dokun."
+  "setInstantCorrectionDesc": "Yanlış bir kelimede hemen durur: kelime kuralıyla birlikte kırmızı olur, kural söylenir ve kâri kelimeyi okur. Dinlemek için kırmızı kelimeye dokun.",
+  "kidsMicStart": "Oku – seni dinliyorum",
+  "kidsMicStop": "Dur",
+  "kidsMicListening": "Dinliyorum… oku!",
+  "kidsMicDone": "Aferin! Hepsini okudun",
+  "menuLanguage": "Uygulama dili"
 }

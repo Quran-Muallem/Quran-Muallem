@@ -951,5 +951,10 @@
   "tajAnnounce": "Peringatan tajwid: {rule}. Dengar sebutan yang betul.",
   "tajCheckWord": "perhatikan perkataan ini",
   "setInstantCorrection": "Pembetulan segera semasa membaca",
-  "setInstantCorrectionDesc": "Pada perkataan yang salah ia berhenti serta-merta: perkataan menjadi merah dengan hukumnya, hukum diumumkan dan syeikh menyebut perkataan itu. Ketik perkataan merah untuk mendengarnya."
+  "setInstantCorrectionDesc": "Pada perkataan yang salah ia berhenti serta-merta: perkataan menjadi merah dengan hukumnya, hukum diumumkan dan syeikh menyebut perkataan itu. Ketik perkataan merah untuk mendengarnya.",
+  "kidsMicStart": "Bacalah – saya mendengar",
+  "kidsMicStop": "Berhenti",
+  "kidsMicListening": "Saya mendengar… bacalah!",
+  "kidsMicDone": "Syabas! Kamu membaca semuanya",
+  "menuLanguage": "Bahasa aplikasi"
 }

@@ -1,16 +1,16 @@
 import { useEffect, type ReactNode } from "react";
 import { useBackLayer } from "@/lib/backStack";
-import { BellRing, BookOpen, BookOpenCheck, ChevronLeft, ChevronRight, Clock, Compass, Download, Headphones, Home, Library, Mic, Search, Settings, Share2, SunMoon, Target, Type, X } from "lucide-react";
+import { BellRing, BookOpen, BookOpenCheck, ChevronDown, ChevronLeft, ChevronRight, Clock, Compass, Download, Globe, Headphones, Home, Library, Mic, Search, Settings, Share2, SunMoon, Target, Type, X } from "lucide-react";
 import { LargePrintToggle } from "@/components/LargePrintToggle";
 import { PrayingPersonIcon } from "@/components/icons/PrayingPersonIcon";
 import { updateSettings } from "@/lib/settings";
 import type { HubSection } from "@/components/IslamicHubView";
 import type { SettingsPage } from "@/components/SettingsModal";
-import { AppLogo, AppWordmark, GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
-import { TOTAL_PAGES } from "@/lib/mushafData";
-import { SURAH_META, toArabicDigits } from "@/lib/quranService";
+import { AppLogo, AppWordmark, GOLD, GOLD_LIGHT, alpha } from "@/components/ornaments";
+import { toArabicDigits } from "@/lib/quranService";
 
 import { directionFor, useI18n, type CopyKey } from "@/lib/i18n";
+import { languageInfo } from "@/i18n";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { cn } from "@/lib/utils";
 
@@ -122,7 +122,17 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
           <button type="button" onClick={onClose} aria-label={t("close")} className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--sx-gold)] hover:bg-[var(--sx-chip)]"><X className="h-5 w-5" /></button>
         </div>
 
-        {profile && <div className="mt-3">{profile}</div>}
+        {/* v54: profile + a prominent language pill (opens Settings → Language, the same setting) */}
+        <div className="mt-3 flex flex-wrap items-center gap-2" data-menu-top="">
+          {profile}
+          <button type="button" data-menu-language="" aria-label={t("menuLanguage")}
+            onClick={go(() => window.dispatchEvent(new CustomEvent("qm:open-settings", { detail: "language" })))}
+            className="flex h-10 items-center gap-1.5 rounded-full border-2 border-[var(--sx-gold)] bg-[var(--sx-chip)] pe-3 ps-2.5 text-[0.95rem] font-extrabold text-[var(--sx-ink)] shadow-sm active:scale-[.98]">
+            <Globe className="h-5 w-5 shrink-0 text-[var(--sx-gold)]" aria-hidden="true" />
+            <span className={language === "ar" || language === "ur" ? "font-arabic text-[1.05rem]" : undefined}>{languageInfo(language).native}</span>
+            <ChevronDown className="h-4 w-4 shrink-0 text-[var(--sx-gold)]" aria-hidden="true" />
+          </button>
+        </div>
 
         {/* v51: large print — the first thing in the menu */}
         <LargePrintToggle className="mt-4" />
@@ -143,38 +153,8 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
         <MenuGroup title={t("menuGroupMore")} rows={more} go={go} t={t} />
         <MenuGroup title={t("menuGroupSettings")} rows={settingsRows} go={go} t={t} />
 
-        <div className="my-4 h-px" style={{ background: alpha(GOLD, 0.4) }} />
-        {onGoTo && (
-          <button type="button" onClick={go(onGoTo)} data-menu-goto="" className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-emerald-950" style={{ background: GOLD_GRADIENT }}>
-            <BookOpen className="h-5 w-5" />{t("goTo")}
-          </button>
-        )}
-        {!onGoTo && <h2 className="mb-2 text-xs font-medium text-[var(--sx-ink-soft)]">{t("goTo")}</h2>}
-        <div className={onGoTo ? "hidden" : "space-y-2"}>
-          <label className="block text-xs text-[var(--sx-ink-soft)]">{t("surah")}
-            <select value={surah} onChange={(e) => { onSurah(Number(e.target.value)); onClose(); }} className={selectCls}>
-              {SURAH_META.map((s) => <option key={s.id} value={s.id}>{language === "ar" ? `${toArabicDigits(s.id)}. ${s.nameArabic}` : `${s.id}. ${s.nameSimple}`}</option>)}
-            </select>
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <label className="block text-xs text-[var(--sx-ink-soft)]">{t("juz")}
-              <select value={juz} onChange={(e) => { onJuz(Number(e.target.value)); onClose(); }} className={selectCls}>
-                {Array.from({ length: 30 }, (_, i) => <option key={i} value={i + 1}>{num(i + 1)}</option>)}
-              </select>
-            </label>
-            <label className="block text-xs text-[var(--sx-ink-soft)]">{t("pageLabel")}
-              <select value={page} onChange={(e) => { onPage(Number(e.target.value)); onClose(); }} className={selectCls}>
-                {Array.from({ length: TOTAL_PAGES }, (_, i) => <option key={i} value={i + 1}>{num(i + 1)}</option>)}
-              </select>
-            </label>
-          </div>
-          {current === "mushaf" && <div className="grid grid-cols-2 gap-2 pt-1" dir="rtl">
-            <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)} className={pageBtn}><ChevronRight className="h-4 w-4" />{t("prevPage")}</button>
-            <button type="button" disabled={page >= TOTAL_PAGES} onClick={() => onPage(page + 1)} className={pageBtn}>{t("nextPage")}<ChevronLeft className="h-4 w-4" /></button>
-          </div>}
-        </div>
+        {/* v54: «Go to» removed from the menu (the Mushaf sub-bar has its own surah/page picker). */}
 
-        {/* v53: the language lives only in Settings → App appearance → Language */}
       </aside>
     </div>
   );
@@ -203,8 +183,6 @@ function MenuGroup({ title, rows, go, t }: { title: string; rows: { key: string;
   );
 }
 
-const selectCls = "mt-1 h-10 w-full rounded-xl border border-amber-400/40 bg-[var(--sx-card)] px-2 text-sm text-[var(--sx-ink)]";
-const pageBtn = "flex items-center justify-center gap-1 rounded-xl border border-amber-400/40 px-2 py-2 text-xs text-[var(--sx-gold)] disabled:opacity-40";
 
 export default MushafMenu;
 /** The same menu under its app-wide name. */

@@ -6,7 +6,6 @@ import { playWord, stopWordAudio, type WordVoice } from "@/lib/audioPlayback";
 import { getReciter } from "@/lib/reciterManager";
 import { useSettings } from "@/lib/settings";
 import { wordFeatures, type WordFeature } from "@/lib/wordTajweed";
-import { PLAIN, isVoiceLang, speakSentence } from "@/lib/storyVoice";
 import { useI18n, type CopyKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -53,19 +52,10 @@ export function VoiceWordFix({ fix, showExpected = true, onClose, className }: {
   const red = fix.status !== "WARNING";
   const audioState = audio?.id === fix.id ? audio.state : null;
 
-  // v53: tap on a red word → the Sheikh's word right away; instant correction → the rule is announced first.
+  // v54: red word (tap or instant correction) → only the real Sheikh's voice, no spoken pre-warning.
+  // The rule is shown visually as the red badge.
   useEffect(() => {
-    if (!fix.auto) return;
-    let live = true;
-    void (async () => {
-      if (fix.auto === "announce") {
-        const rule = features[0] ? t(FEATURE_KEY[features[0]]) : t("tajCheckWord");
-        const lang = isVoiceLang(language) ? language : "en";
-        try { await speakSentence(t("tajAnnounce").replace("{rule}", rule), lang, 1, PLAIN); } catch { /* no voice: go straight to the Sheikh */ }
-      }
-      if (live) listen();
-    })();
-    return () => { live = false; };
+    if (fix.auto) listen();
   }, [fix.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const listen = () => {

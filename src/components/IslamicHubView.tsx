@@ -187,7 +187,7 @@ export function SubViewBar({ title, backLabel, onBack, onClose }: { title: strin
   const { t, language } = useI18n();
   const Back = isRtl(language) ? ChevronRight : ChevronLeft;
   return (
-    <div className="sticky top-[calc(max(0.6rem,env(safe-area-inset-top))+3.375rem)] z-20 -mx-5 -mt-5 flex min-h-[56px] items-center gap-2 border-b border-[color:var(--sx-card-border)] bg-[var(--sx-sheet-top)] px-5 py-1.5 backdrop-blur-xl" data-subview-bar="">
+    <div className="sticky top-[calc(max(0.6rem,env(safe-area-inset-top))+3.375rem)] z-20 -mx-5 -mt-5 flex min-h-[56px] items-center gap-2 border-b border-[color:var(--sx-card-border)] bg-[var(--sx-header)] px-5 py-1.5 backdrop-blur-xl" data-subview-bar="">
       <button type="button" onClick={onBack} data-subview-back="" className="sx-chip flex h-11 max-w-[38%] shrink-0 items-center gap-1 rounded-2xl pe-3 ps-2 text-[0.95rem] font-bold text-[var(--sx-ink)]">
         <Back className="h-5 w-5 shrink-0" aria-hidden="true" /><span className="truncate">{backLabel}</span>
       </button>
