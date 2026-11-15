@@ -5,13 +5,18 @@
  */
 import { useSyncExternalStore } from "react";
 
-const KEY = "qm.kids.reciteStars.v1";
+/** v56: one persistent key for the stars of every surah (best result kept). */
+export const KIDS_STARS_KEY = "qm_kids_surah_stars";
+const OLD_KEY = "qm.kids.reciteStars.v1";
 const listeners = new Set<() => void>();
 let cache: Record<number, number> | null = null;
 
 function read(): Record<number, number> {
   if (cache) return cache;
-  try { cache = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Record<number, number>; } catch { cache = {}; }
+  try {
+    const raw = localStorage.getItem(KIDS_STARS_KEY) ?? localStorage.getItem(OLD_KEY) ?? "{}"; // migrate v55 results
+    cache = JSON.parse(raw) as Record<number, number>;
+  } catch { cache = {}; }
   return cache!;
 }
 
@@ -28,13 +33,23 @@ export function creditRecitationStars(surah: number, stars: number): number {
   if (stars <= before) return 0;
   cur[surah] = stars;
   cache = cur;
-  try { localStorage.setItem(KEY, JSON.stringify(cur)); } catch { /* ignore */ }
+  try { localStorage.setItem(KIDS_STARS_KEY, JSON.stringify(cur)); } catch { /* ignore */ }
   listeners.forEach((l) => l());
+  try { window.dispatchEvent(new CustomEvent("qm:kids-stars", { detail: { surah, stars, total: recitationStarTotal(cur) } })); } catch { /* ignore */ }
   return stars - before;
 }
 
-export function useRecitationStars(): Record<number, number> {
-  return useSyncExternalStore((l) => { listeners.add(l); return () => listeners.delete(l); }, read, read);
+function subscribe(l: () => void) {
+  listeners.add(l);
+  // another WebView tab / window wrote the stars → re-read
+  const onStorage = (e: StorageEvent) => { if (e.key === KIDS_STARS_KEY) { cache = null; l(); } };
+  window.addEventListener("storage", onStorage);
+  return () => { listeners.delete(l); window.removeEventListener("storage", onStorage); };
 }
+export function useRecitationStars(): Record<number, number> {
+  return useSyncExternalStore(subscribe, read, read);
+}
+/** Test helper: forget the in-memory copy. */
+export const resetKidsStarsCache = () => { cache = null; };
 
 export const recitationStarTotal = (m: Record<number, number>) => Object.values(m).reduce((a, b) => a + b, 0);

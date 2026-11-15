@@ -3,7 +3,6 @@
  * «مصحف الأطفال», «تفسير للأطفال», «رحلة النجوم للحفظ». (Adult widgets — آية اليوم, واصل من حيث توقفت,
  * statistics — are not shown.)
  */
-import { recitationStarTotal, useRecitationStars } from "@/lib/kidsRecitationStars";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { AppLogo } from "@/components/ornaments";
@@ -15,8 +14,7 @@ import { toArabicDigits } from "@/lib/quranService";
 export function KidsHome({ userName }: { userName?: string | null }) {
   const { t, language } = useI18n();
   const ar = language === "ar";
-  const recited = useRecitationStars();
-  const stars = Object.values(useSurahStars()).reduce((a, b) => a + b, 0) + recitationStarTotal(recited); // v55: + live-recitation stars
+  const stars = Object.values(useSurahStars()).reduce((a, b) => a + b, 0); // v56: includes the Kids Mushaf recitation stars (per surah, best)
   const cards = [
     { id: "mushaf", emoji: "📗", arTitle: "مصحف الأطفال", title: t("kidsMushafTitle"), sub: t("kidsMushafSub"), cls: "from-emerald-300 to-emerald-500 text-emerald-950", go: openKidsMushaf },
     { id: "kidsTafsir", emoji: "📚", arTitle: "تفسير للأطفال", title: t("kidsTafsirTitle"), sub: t("kidsTafsirSub"), cls: "from-sky-200 to-sky-400 text-sky-950", go: () => openKidsSection("kidsTafsir") },

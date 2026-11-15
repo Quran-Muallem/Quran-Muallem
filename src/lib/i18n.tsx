@@ -426,7 +426,7 @@ export const copy = {
   kidsJourneyTitle: ["رحلة النجوم للحفظ", "My Hifdh Star Journey"],
   kidsJourneySub: ["اجمع النجوم مع كل سورة تقرؤها وتحفظها.", "Collect stars with every surah you read and memorise."],
   kidsJourneyStart: ["ابدأ رحلتك واجمع أول نجمة!", "Start your journey and collect your first star!"],
-  kidsJourneyHow: ["⭐ تدرّبت عليها · ⭐⭐ قرأتها كاملة · ⭐⭐⭐ حفظتها. اضغط على سورة لتفتحها في المصحف.", "⭐ practised · ⭐⭐ read completely · ⭐⭐⭐ memorised. Tap a surah to open it in the Mushaf."],
+  kidsJourneyHow: ["⭐ تدرّبت عليها · ⭐⭐ قرأتها كاملة · ⭐⭐⭐ حفظتها، وحتى ⭐⭐⭐⭐⭐ عند القراءة بصوتك في مصحف الأطفال. اضغط على سورة لتفتحها في المصحف.", "⭐ practised · ⭐⭐ read completely · ⭐⭐⭐ memorised. Up to ⭐⭐⭐⭐⭐ for reciting aloud in the Kids Mushaf. Tap a surah to open it in the Mushaf."],
   kidsMushafTitle: ["مصحف الأطفال", "Kids Mushaf"],
   kidsMushafSub: ["آية في كل سطر بخط واضح وتشكيل كامل – اضغط على أي آية لتفسير مبسّط.", "One verse per line in a clear script with full vowels – tap any verse for a simple tafsir."],
   navCompanion: ["المرافق", "Companion"],

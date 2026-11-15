@@ -5,6 +5,7 @@
  * memorised). New stars since the last visit pop in with a praise («أحسنت يا بطل!»).
  * `KidsPraiseToast` (mounted once in the app) cheers whenever a surah badge is earned in Kids Mode.
  */
+import { useRecitationStars } from "@/lib/kidsRecitationStars";
 import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useBadges, onBadgeEarned } from "@/lib/badges";
@@ -21,6 +22,7 @@ const SEEN_KEY = "qm.kids.stars.v1";
 export function useSurahStars(): Record<number, number> {
   const progress = useProgress();
   const badges = useBadges();
+  const recited = useRecitationStars();
   return useMemo(() => {
     const out: Record<number, number> = {};
     for (const s of JOURNEY) {
@@ -33,8 +35,10 @@ export function useSurahStars(): Record<number, number> {
       const b = badges.earned[String(s)];
       out[s] = b?.goldAt || (n > 0 && memorised === n) ? 3 : b?.silverAt ? 2 : practised > 0 ? 1 : 0;
     }
+    // v56: stars earned by reciting aloud in the Kids Mushaf (1–5, saved per surah) — the higher value counts
+    for (const [k, v] of Object.entries(recited)) out[Number(k)] = Math.max(out[Number(k)] ?? 0, Math.min(5, v));
     return out;
-  }, [progress, badges]);
+  }, [progress, badges, recited]);
 }
 
 export function KidsStarJourney({ onOpenSurah }: { onOpenSurah?: (surah: number) => void }) {
@@ -79,8 +83,8 @@ export function KidsStarJourney({ onOpenSurah }: { onOpenSurah?: (surah: number)
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-black text-white" style={{ background: st === 3 ? "var(--kd-mango, #f59e0b)" : "var(--kd-turquoise, #14b8a6)" }}>{num(s)}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-arabic text-lg leading-snug">{meta?.nameArabic}</span>
-                  <span className="mt-0.5 flex gap-0.5 text-lg" aria-label={`${st}/3`}>
-                    {[0, 1, 2].map((k) => (
+                  <span className="mt-0.5 flex gap-0.5 text-lg" aria-label={`${st}/5`}>
+                    {[0, 1, 2, 3, 4].map((k) => (
                       <span key={k} className={cn(k < st ? "" : "opacity-20 grayscale", k < st && fresh.has(s) && "kids-star")} style={k < st && fresh.has(s) ? { animationDelay: `${k * 180}ms` } : undefined}>⭐</span>
                     ))}
                   </span>

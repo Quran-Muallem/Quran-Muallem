@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { FirstLaunchBasmalah } from "@/components/FirstLaunchBasmalah";
 import { CORRECTION_GRACE_MS, combineLock, lockComplete, lockSegment, startLock, type CorrectionLock } from "@/lib/correctionLock";
 import { CrashBoundary } from "@/components/CrashBoundary";
 import { useBackLayer } from "@/lib/backStack";
@@ -325,6 +326,7 @@ export function App() {
         <BadgesModal open={badgesOpen !== null} initialSurah={badgesOpen?.surah ?? null} onOpenChange={(o) => { if (!o) setBadgesOpen(null); }}
           onOpenSurah={(s) => { jump({ surahId: s, focus: 1 }); setTab("mushaf"); window.scrollTo({ top: 0 }); }} />
         {!splash && <BadgeCelebration onShowAll={(s) => setBadgesOpen({ surah: s })} />}
+        {!splash && <FirstLaunchBasmalah language={language} />}
         {/* v47: in Kids Mode the full settings are replaced by the child-locked «إعدادات الأطفال» */}
         {settings.kidsMode
           ? <KidsSettingsView open={settingsOpen !== null} onClose={() => setSettingsOpen(null)} />
@@ -512,7 +514,7 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
     [lock, texts, refs, runMatch, profile]); // eslint-disable-line react-hooks/exhaustive-deps
   const match = useMemo(() => (lock && segMatch ? combineLock(texts, lock, segMatch) : runMatch(texts, refs)),
     [lock, segMatch, texts, refs, runMatch, profile]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (lock?.locked && lockComplete(segMatch)) setLock({ ...lock, locked: false }); }, [lock, segMatch]);
+  useEffect(() => { if (lock?.locked && lockComplete(segMatch, lock)) setLock({ ...lock, locked: false }); }, [lock, segMatch]);
   useEffect(() => { setLock(null); }, [texts, base]); // a new passage / jump: no lock
   const pendingFixP = useRef<number | null>(null);
   const graceP = useRef(0);

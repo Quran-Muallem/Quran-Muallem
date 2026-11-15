@@ -69,7 +69,7 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
   const match = useMemo(() => (lock && segMatch ? combineLock(targets, lock, segMatch) : run(targets, phonemeRefs)),
     [lock, segMatch, targets, phonemeRefs, run, profile]); // eslint-disable-line react-hooks/exhaustive-deps
   // The last word of the locked verse was matched → release: the following verses join the same segment.
-  useEffect(() => { if (lock?.locked && lockComplete(segMatch)) setLock({ ...lock, locked: false }); }, [lock, segMatch]);
+  useEffect(() => { if (lock?.locked && lockComplete(segMatch, lock)) setLock({ ...lock, locked: false }); }, [lock, segMatch]);
   const listening = useWhisper ? whisper.recording : speech.isListening;
   const processing = useWhisper && whisper.transcribing;
   // v38: while reciting, red / orange appear only once their verse is finished (see liveMistakes.ts).
@@ -81,6 +81,8 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
 
   // Reset (v38 «إعادة»): the session is dropped, nothing of it is saved.
   const reset = useCallback(() => { setLock(null); session.current = false; stopListening(); resetTranscript(); setWhisperText(""); whisper.cancel(); setBase(null); }, [stopListening, resetTranscript, whisper.cancel]); // eslint-disable-line react-hooks/exhaustive-deps
+  // test hook (only when localStorage «qm.debugRec» is set): what the matcher sees
+  try { if (localStorage.getItem("qm.debugRec")) (window as unknown as { __qmRec?: unknown }).__qmRec = { full: fullTranscript, transcript, base, lock, seg: segMatch?.statuses, segIP: segMatch?.inProgress }; } catch { /* ignore */ }
   const latestFull = useRef({ text: fullTranscript, kind: textEngine });
   latestFull.current = { text: fullTranscript, kind: textEngine };
   /** Keep recording, but judge only what is said from now on (used for the automatic page turn). */
@@ -130,10 +132,11 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
   }, [match.done, listening, finalOnly, useWhisper, transcript, stopListening]);
 
   const toggle = useCallback(() => {
-    setLock(null);
-    if (useWhisper) { if (!whisper.recording) { setWhisperText(""); setBase(null); } whisper.toggle(); return; }
+    // v56: the correction lock is cleared only when a NEW recitation starts — clearing it on stop made the
+    // final judgement use the transcript from the correction on only, so every earlier verse turned red.
+    if (useWhisper) { if (!whisper.recording) { setLock(null); setWhisperText(""); setBase(null); } whisper.toggle(); return; }
     if (speech.isListening) stopListening();
-    else { if (latest.current.done || latest.current.recited) resetTranscript(); startListening(); }
+    else { setLock(null); if (latest.current.done || latest.current.recited) resetTranscript(); startListening(); }
   }, [useWhisper, whisper, speech.isListening, stopListening, resetTranscript, startListening]);
 
   return {

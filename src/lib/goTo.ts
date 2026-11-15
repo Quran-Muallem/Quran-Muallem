@@ -6,7 +6,7 @@ import translatedNames from "@/data/surahNamesTranslated.json";
 const NAMES_BY_LANG = (translatedNames as { names: Record<string, string[]> }).names;
 const TRANSLATED: string[][] = Object.values(NAMES_BY_LANG);
 /** Meaning of a surah name in the app language («Die Kuh»), if there is one. */
-export const surahMeaning = (surah: number, language: string): string | undefined => NAMES_BY_LANG[language === "sq" ? "en" : language]?.[surah - 1];
+export const surahMeaning = (surah: number, language: string): string | undefined => NAMES_BY_LANG[language]?.[surah - 1];
 
 export type GoToTarget = { page: number } | { surah: number; ayah: number };
 

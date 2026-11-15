@@ -2,7 +2,6 @@
  * v47 Kids home: ONLY the three adventure cards — «مصحف الأطفال», «تفسير وقصص للأطفال», «رحلة النجوم للحفظ»
  * — big, illustrated and bouncy, plus the star counter.
  */
-import { recitationStarTotal, useRecitationStars } from "@/lib/kidsRecitationStars";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { toArabicDigits } from "@/lib/quranService";
@@ -13,8 +12,7 @@ import { KidsBadge, Sparkles, StarMeter, type KidsBadgeId } from "@/components/k
 export function KidsHomeView({ userName, onGo }: { userName?: string | null; onGo: (t: KidsTab) => void }) {
   const { t, language } = useI18n();
   const ar = language === "ar";
-  const recited = useRecitationStars();
-  const stars = Object.values(useSurahStars()).reduce((a, b) => a + b, 0) + recitationStarTotal(recited); // v55: + live-recitation stars
+  const stars = Object.values(useSurahStars()).reduce((a, b) => a + b, 0); // v56: includes the Kids Mushaf recitation stars (per surah, best)
   const num = (n: number) => (ar ? toArabicDigits(n) : String(n));
   const cards: { id: KidsTab; badge: KidsBadgeId; emoji: string; deco: string; arTitle: string; title: string; sub: string; bg: string; edge: string }[] = [
     { id: "journey", badge: "journey", emoji: "⭐", deco: "⭐", arTitle: "رحلة النجوم للحفظ", title: t("kidsJourneyTitle"), sub: t("kidsJourneySub"), bg: "linear-gradient(150deg,#fde47a 0%,#f8b21a 55%,#ef9a06 100%)", edge: "#c97d00" },

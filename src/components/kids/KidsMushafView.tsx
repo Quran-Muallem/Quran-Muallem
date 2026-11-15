@@ -4,6 +4,8 @@
  * «السورة التالية» buttons above and below the surah, plus a colourful surah picker.
  * Tapping a verse opens the kids tafsir drawer (read-aloud + the Sheikh's recitation of that verse).
  */
+import { surahMeaning } from "@/lib/goTo";
+import { getTranslation, loadTranslation } from "@/lib/quranContent";
 import { KidsBadge, Sparkles } from "@/components/kids/KidsArt";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
@@ -36,6 +38,17 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
   const { t, language } = useI18n();
   const ar = language === "ar";
   const settings = useSettings();
+  // v56: interlinear translation under every verse when the app language is not Arabic (the translation
+  // chosen for that language in Settings; downloaded once, then kept on the device).
+  const [trans, setTrans] = useState<{ surah: number; verses: string[] } | null>(null);
+  const trId = language === "ar" ? null : getTranslation(settings.translations[language], language).id;
+  useEffect(() => {
+    if (!trId) { setTrans(null); return; }
+    let live = true;
+    loadTranslation(trId, language, surah).then((v) => { if (live) setTrans({ surah, verses: v }); }).catch(() => { if (live) setTrans(null); });
+    return () => { live = false; };
+  }, [trId, language, surah]);
+  const verseTr = (n: number) => (trans && trans.surah === surah ? trans.verses[n - 1] ?? "" : "");
   const [ayahs, setAyahs] = useState<Ayah[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -91,6 +104,9 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
   // v55 automatic stop on the last word of the surah, then a forgiving 1–5 star result.
   const [result, setResult] = useState<{ stars: number; added: number; read: number; total: number } | null>(null);
   const best = useRecitationStars();
+  const journeyStars = useSurahStars();
+  const starsNow = useRef(journeyStars);
+  starsNow.current = journeyStars;
   const finished = rec.listening && rec.match.done;
   useEffect(() => { if (finished) rec.toggle(); }, [finished]); // eslint-disable-line react-hooks/exhaustive-deps
   const wasListening = useRef(false);
@@ -102,7 +118,9 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
     const total = rec.match.total || 1;
     const read = Math.min(total, rec.match.recited);
     const stars = kidsStarsFor(read / total);
-    const added = creditRecitationStars(surah, stars);
+    const before = Math.max(starsNow.current[surah] ?? 0, best[surah] ?? 0); // v56: journey + recitation (best)
+    creditRecitationStars(surah, stars);
+    const added = Math.max(0, stars - before);
     setResult({ stars, added, read, total });
     starChime(0.2);
   }, [rec.listening]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -159,7 +177,12 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
           <KidsBadge id="mushaf" className="relative h-16 w-16 kd-float" />
           <button type="button" onClick={() => setPicker(true)} className="kd-btn kd-btn-mango !min-h-0 px-5 py-2 text-sm" data-kids-picker-open="">📖 {t("kidsPickSurah")}</button>
           <h1 className="relative mt-2 font-arabic text-4xl font-black leading-snug">سورة {meta?.nameArabic}</h1>
-          <p className="text-sm font-bold kd-ink-soft" dir={ar ? "rtl" : "ltr"}>{!ar && `${meta?.nameSimple} · `}{t("kidsVersesCount").replace("{n}", num(meta?.versesCount ?? 0))}</p>
+          {!ar && meta && (
+            <p className="relative text-lg font-extrabold leading-snug" dir="ltr" data-kids-surah-title="">
+              {meta.nameSimple}{surahMeaning(surah, language) ? ` (${surahMeaning(surah, language)})` : ""}
+            </p>
+          )}
+          <p className="text-sm font-bold kd-ink-soft" dir={ar ? "rtl" : "ltr"}>{t("kidsVersesCount").replace("{n}", num(meta?.versesCount ?? 0))}</p>
         </header>
         {surah !== 1 && surah !== 9 && (
           <p className="kd-quran px-4 py-3 text-center" data-basmala-flow="" style={{ fontSize: `clamp(22px, ${(size * 0.85).toFixed(1)}px, 44px)`, lineHeight: 1.9, color: "var(--kd-turquoise-deep)" }}>{BASMALAH}</p>
@@ -200,6 +223,12 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
                     : a.text}
                   <span aria-hidden="true" className="ms-2 inline-flex h-[1.5em] min-w-[1.5em] translate-y-[-0.1em] items-center justify-center rounded-full align-middle font-sans text-[0.45em] font-black text-white"
                     style={{ background: "var(--kd-turquoise)", boxShadow: "0 3px 0 var(--kd-turquoise-deep)" }}>{toArabicDigits(a.number)}</span>
+                  {verseTr(a.number) && (
+                    <span className="kd-translation mt-1 block border-t-2 border-dashed border-[color:var(--kd-sky,#bae6fd)] pt-2 font-sans text-[1.02rem] font-semibold leading-relaxed text-[#334155]"
+                      dir={language === "ur" ? "rtl" : "ltr"} lang={language} style={{ fontSize: "1.02rem", lineHeight: 1.6, fontFamily: language === "ur" ? "var(--font-arabic)" : undefined }} data-kids-translation={a.number}>
+                      {verseTr(a.number)}
+                    </span>
+                  )}
                 </button>
               </li>
             ))}
@@ -216,7 +245,7 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
             <h2 className={cn("font-black leading-snug", ar ? "font-arabic text-[1.7rem]" : "text-2xl")}>{t(`kidsRate${result.stars}` as "kidsRate5")}</h2>
             <p className="text-sm font-bold kd-ink-soft">{t("kidsWordsRead").replace("{n}", num(result.read)).replace("{m}", num(result.total))}</p>
             <p className="rounded-2xl bg-[rgba(255,255,255,.85)] px-3 py-2 text-base font-black text-[#7a4b00] shadow-[inset_0_0_0_2px_#fcd34d]" data-kids-result-added={result.added}>
-              {result.added > 0 ? t("kidsStarsAdded").replace("{n}", num(result.added)) : t("kidsStarsBest").replace("{n}", num(best[surah] ?? result.stars))}
+              {result.added > 0 ? t("kidsStarsAdded").replace("{n}", num(result.added)) : t("kidsStarsBest").replace("{n}", num(Math.max(journeyStars[surah] ?? 0, result.stars)))}
             </p>
             <div className="grid grid-cols-2 gap-3 pt-1">
               <button type="button" className="kd-btn kd-btn-coral w-full text-base" onClick={() => { setResult(null); micToggle(); }} data-kids-result-again="">{t("kidsReciteAgain")}</button>
@@ -226,12 +255,15 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
         </div>
       )}
       {ayahs && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+5.5rem)] z-30 flex justify-center px-4" data-kids-mic="">
-          <button type="button" onClick={micToggle} aria-pressed={rec.listening} data-kids-mic-btn=""
-            className={cn("pointer-events-auto kd-btn flex min-h-[3.5rem] items-center gap-2 rounded-full px-6 text-lg font-black shadow-xl", rec.listening ? "kd-btn-coral ring-4 ring-[#fb7185]/40" : "")}
+        <div className={cn("pointer-events-none fixed inset-x-0 bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+5.5rem)] z-30 flex px-4", rec.listening ? "justify-center" : "justify-end")} data-kids-mic="">
+          {/* v56: idle → a round button in the corner (keeps the verses and their translation readable);
+              listening → the wide «I'm listening» pill in the middle */}
+          <button type="button" onClick={micToggle} aria-pressed={rec.listening} data-kids-mic-btn="" aria-label={rec.listening ? t("kidsMicStop") : t("kidsMicStart")}
+            className={cn("pointer-events-auto kd-btn flex items-center gap-2 rounded-full font-black shadow-xl",
+              rec.listening ? "kd-btn-coral min-h-[3.5rem] px-6 text-lg ring-4 ring-[#fb7185]/40" : "h-[4.25rem] w-[4.25rem] justify-center !p-0 ring-4 ring-white/70")}
             dir={ar ? "rtl" : "ltr"}>
-            {rec.listening ? <Square className="h-6 w-6 fill-current" aria-hidden="true" /> : <Mic className="h-7 w-7" aria-hidden="true" />}
-            <span>{rec.listening ? t("kidsMicListening") : t("kidsMicStart")}</span>
+            {rec.listening ? <Square className="h-6 w-6 fill-current" aria-hidden="true" /> : <Mic className="h-8 w-8" aria-hidden="true" />}
+            {rec.listening && <span>{t("kidsMicListening")}</span>}
           </button>
         </div>
       )}
@@ -256,7 +288,14 @@ export function KidsSurahPicker({ current, onPick, onClose }: { current: number;
         style={{ background: TILE[i % TILE.length], borderRadius: 22, borderBottom: "4px solid rgba(0,0,0,.18)" }}>
         <span className="text-xs font-black opacity-90">{ar ? toArabicDigits(s) : s}</span>
         <span className="font-arabic text-lg font-bold leading-tight">{getSurahMeta(s)?.nameArabic}</span>
-        <span className="text-[0.7rem] leading-none">{"⭐".repeat(stars[s] ?? 0) || "·"}</span>
+        {!ar && (
+          <span className="block text-[0.72rem] font-bold leading-tight" data-kids-pick-name="">
+            {getSurahMeta(s)?.nameSimple}{surahMeaning(s, language) ? <span className="block font-semibold opacity-90">({surahMeaning(s, language)})</span> : null}
+          </span>
+        )}
+        <span className="mt-0.5 flex gap-px text-[0.62rem] leading-none" aria-label={`${stars[s] ?? 0}/5`} data-kids-pick-stars={stars[s] ?? 0}>
+          {[0, 1, 2, 3, 4].map((k) => <span key={k} className={k < (stars[s] ?? 0) ? "" : "opacity-30 grayscale"}>⭐</span>)}
+        </span>
       </button>
     </li>
   );

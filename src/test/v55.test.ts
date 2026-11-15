@@ -9,13 +9,13 @@ describe("v55 – Ayah Correction Lock", () => {
   const before = matchLive("قل اعوذ بكلب الفلق", T); // word 2 wrong
   it("starts at the mistaken word and freezes what came before", () => {
     const l = startLock(before, T, 2)!;
-    expect(l).toMatchObject({ k: 2, verse: 0, verseEnd: 3, locked: true });
+    expect(l).toMatchObject({ k: 2, verse: 0, verseStart: 0, verseEnd: 3, locked: true });
     expect(l.frozen).toEqual(before.statuses.slice(0, 2));
   });
   it("while locked nothing of the next verse is judged, nothing of this verse turns red", () => {
     const l = startLock(before, T, 2)!;
     const seg = lockSegment(T, null, l);
-    expect(seg.targets).toEqual(["بِرَبِّ ٱلْفَلَقِ"]);
+    expect(seg.targets).toEqual(T); // v56: the whole verse + the next one as look-ahead (never judged while locked)
     // the reciter jumps ahead without repeating: no red cascade, cursor stays on the corrected word
     const m = combineLock(T, l, matchLive("من شر", seg.targets));
     expect(m.statuses.slice(2)).toEqual(["PENDING", "PENDING", "PENDING", "PENDING", "PENDING", "PENDING"]);
