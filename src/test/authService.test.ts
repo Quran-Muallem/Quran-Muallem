@@ -38,8 +38,9 @@ describe("legal texts & data deletion", () => {
     const { deleteAllData } = await import("@/lib/dataReset");
     await startWithName("Test");
     localStorage.setItem("hifz.progress.v1", "{}"); localStorage.setItem("hifz.settings", "{}"); localStorage.setItem("other.app", "keep");
+    localStorage.setItem("qm.prayer.settings.v1", "{}"); localStorage.setItem("qm_kids_surah_stars", "{}"); localStorage.setItem("qm.lastCrash", "{}");
     await deleteAllData();
-    expect(Object.keys(localStorage).filter((k) => k.startsWith("hifz."))).toEqual([]);
+    expect(Object.keys(localStorage).filter((k) => /^(hifz\.|qm\.|qm_)/.test(k))).toEqual([]);
     expect(localStorage.getItem("other.app")).toBe("keep");
     expect(getAuthState().status).toBe("signedOut");
   });

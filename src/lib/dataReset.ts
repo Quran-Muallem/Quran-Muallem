@@ -6,7 +6,9 @@
 import { isNativePlatform } from "@/lib/storage";
 import { signOut } from "@/lib/authService";
 
-const PREFIX = "hifz.";
+/** Every key the app writes starts with one of these (v56.2: `qm.` / `qm_` were missed before — prayer
+ *  location, kids stars, stories, crash log, favourites stayed on the device). */
+const PREFIXES = ["hifz.", "qm.", "qm_"];
 
 export async function deleteAllData(): Promise<void> {
   try { await signOut(); } catch { /* continue */ }
@@ -16,7 +18,7 @@ export async function deleteAllData(): Promise<void> {
     try { await (await import("@capacitor/preferences")).Preferences.clear(); } catch { /* plugin missing */ }
   }
   try {
-    for (const k of Object.keys(localStorage)) if (k.startsWith(PREFIX)) localStorage.removeItem(k);
+    for (const k of Object.keys(localStorage)) if (PREFIXES.some((p) => k.startsWith(p))) localStorage.removeItem(k);
   } catch { /* storage blocked */ }
   try { sessionStorage.clear(); } catch { /* ignore */ }
 
