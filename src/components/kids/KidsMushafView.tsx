@@ -129,10 +129,10 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
   /** A verse fully recited during this session (its clouds open by themselves). */
   const recitedVerse = (i: number) => reciting && i < win.length && rec.match.cursor >= offsets[i]! + targets[i]!.split(" ").length;
   const wordCls = (st: LiveStatus | undefined, current: boolean) => cn("rounded-lg px-0.5 transition-colors",
-    current && "bg-[var(--kd-sun)] ring-2 ring-[var(--kd-mango)]",
+    current && "bg-[var(--kd-sun)] text-[#1e3a5f] ring-2 ring-[var(--kd-mango)]", // dark ink on the yellow mark (also in «night»)
     st === "CORRECT" && "bg-[#d1fae5] text-[#047857]",
     st === "WARNING" && "bg-[#fef3c7] text-[#b45309]",
-    st === "ERROR" && "bg-[#DC2626]/15 text-[#DC2626] ring-[1.5px] ring-[#DC2626]");
+    st === "ERROR" && "bg-[#fee2e2] text-[#b91c1c] ring-[1.5px] ring-[#DC2626]"); // light chip like green / orange: readable on every kids theme
 
   useEffect(() => {
     const ac = new AbortController();
@@ -224,8 +224,10 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
                   <span aria-hidden="true" className="ms-2 inline-flex h-[1.5em] min-w-[1.5em] translate-y-[-0.1em] items-center justify-center rounded-full align-middle font-sans text-[0.45em] font-black text-white"
                     style={{ background: "var(--kd-turquoise)", boxShadow: "0 3px 0 var(--kd-turquoise-deep)" }}>{toArabicDigits(a.number)}</span>
                   {verseTr(a.number) && (
-                    <span className="kd-translation mt-1 block border-t-2 border-dashed border-[color:var(--kd-sky,#bae6fd)] pt-2 font-sans text-[1.02rem] font-semibold leading-relaxed text-[#334155]"
-                      dir={language === "ur" ? "rtl" : "ltr"} lang={language} style={{ fontSize: "1.02rem", lineHeight: 1.6, fontFamily: language === "ur" ? "var(--font-arabic)" : undefined }} data-kids-translation={a.number}>
+                    <span className="kd-translation mt-1 block border-t-2 border-dashed pt-2 font-sans text-[1.02rem] font-semibold leading-relaxed"
+                      dir={language === "ur" ? "rtl" : "ltr"} lang={language}
+                      // v56.4: theme colours (was a fixed slate #334155 — invisible on the «night» kids theme)
+                      style={{ fontSize: "1.02rem", lineHeight: 1.6, fontFamily: language === "ur" ? "var(--font-arabic)" : undefined, color: "var(--kd-ink-soft)", borderColor: "color-mix(in srgb, var(--kd-ink-soft) 40%, transparent)" }} data-kids-translation={a.number}>
                       {verseTr(a.number)}
                     </span>
                   )}
@@ -255,15 +257,15 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
         </div>
       )}
       {ayahs && (
-        <div className={cn("pointer-events-none fixed inset-x-0 bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+5.5rem)] z-30 flex px-4", rec.listening ? "justify-center" : "justify-end")} data-kids-mic="">
-          {/* v56: idle → a round button in the corner (keeps the verses and their translation readable);
-              listening → the wide «I'm listening» pill in the middle */}
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+5.5rem)] z-30 flex justify-center px-4" data-kids-mic="">
+          {/* v56.4: one wide bar in both states (as asked) — idle: turquoise «Recite – I'm listening» with the mic,
+              listening: coral «I'm listening… recite!» with the stop square */}
           <button type="button" onClick={micToggle} aria-pressed={rec.listening} data-kids-mic-btn="" aria-label={rec.listening ? t("kidsMicStop") : t("kidsMicStart")}
-            className={cn("pointer-events-auto kd-btn flex items-center gap-2 rounded-full font-black shadow-xl",
-              rec.listening ? "kd-btn-coral min-h-[3.5rem] px-6 text-lg ring-4 ring-[#fb7185]/40" : "h-[4.25rem] w-[4.25rem] justify-center !p-0 ring-4 ring-white/70")}
+            className={cn("pointer-events-auto kd-btn flex min-h-[3.5rem] items-center gap-2 rounded-full px-6 text-lg font-black shadow-xl",
+              rec.listening ? "kd-btn-coral ring-4 ring-[#fb7185]/40" : "ring-4 ring-white/70")}
             dir={ar ? "rtl" : "ltr"}>
-            {rec.listening ? <Square className="h-6 w-6 fill-current" aria-hidden="true" /> : <Mic className="h-8 w-8" aria-hidden="true" />}
-            {rec.listening && <span>{t("kidsMicListening")}</span>}
+            {rec.listening ? <Square className="h-6 w-6 fill-current" aria-hidden="true" /> : <Mic className="h-6 w-6" aria-hidden="true" />}
+            <span>{rec.listening ? t("kidsMicListening") : t("kidsMicStart")}</span>
           </button>
         </div>
       )}
