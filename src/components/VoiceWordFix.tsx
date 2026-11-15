@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, Loader2, UserRoundPlus, Volume2, X } from "lucide-react";
 import { GOLD_LIGHT, alpha } from "@/components/ornaments";
 import { addVariant } from "@/lib/userAdaptation";
-import { playWord, stopWordAudio, type WordVoice } from "@/lib/audioPlayback";
+import { playWord, stopWordAudio, wordAudioDone, type WordVoice } from "@/lib/audioPlayback";
 import { getReciter } from "@/lib/reciterManager";
 import { useSettings } from "@/lib/settings";
 import { wordFeatures, type WordFeature } from "@/lib/wordTajweed";
@@ -36,7 +36,7 @@ const FEATURE_KEY: Record<WordFeature, CopyKey> = {
  * Tajweed features, the word played in the selected Sheikh's voice, what was heard, and
  * "Add to my voice profile". In memorization the word is shown too — it was already revealed in red.
  */
-export function VoiceWordFix({ fix, showExpected = true, onClose, className }: { fix: WordFix; showExpected?: boolean; onClose: () => void; className?: string }) {
+export function VoiceWordFix({ fix, showExpected = true, onClose, className, onSheikhDone }: { fix: WordFix; showExpected?: boolean; onClose: () => void; className?: string; /** v55: the Sheikh finished the word of an instant correction. */ onSheikhDone?: () => void }) {
   const { t, language } = useI18n();
   const settings = useSettings();
   const reciter = getReciter(settings.reciterId);
@@ -61,9 +61,10 @@ export function VoiceWordFix({ fix, showExpected = true, onClose, className }: {
   const listen = () => {
     if (!fix.surah || !fix.ayah || !wordNumber) return;
     setAudio({ id: fix.id, state: "loading" });
+    const auto = fix.auto;
     void playWord({ quranComId: reciter.quranComId, surah: fix.surah, ayah: fix.ayah, word: wordNumber })
-      .then((voice) => setAudio({ id: fix.id, state: voice }))
-      .catch(() => setAudio({ id: fix.id, state: "failed" }));
+      .then(async (voice) => { setAudio({ id: fix.id, state: voice }); await wordAudioDone(); if (auto) onSheikhDone?.(); })
+      .catch(() => { setAudio({ id: fix.id, state: "failed" }); if (auto) onSheikhDone?.(); });
   };
 
   return (

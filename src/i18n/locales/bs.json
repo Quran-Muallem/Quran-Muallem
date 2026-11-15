@@ -960,5 +960,19 @@
   "crashTitle": "Ovaj ekran je imao problem",
   "crashBody": "Ostatak aplikacije radi. Pokušaj ponovo ili idi na početnu. Ako se ponovi, pošalji nam snimak ekrana «Detalja».",
   "crashRetry": "Pokušaj ponovo",
-  "crashHome": "Na početnu"
+  "crashHome": "Na početnu",
+  "promptWords": "Nekoliko riječi",
+  "promptWordsSub": "Sljedeće 2–3 riječi",
+  "promptAyah": "Cijeli ajet",
+  "promptAyahSub": "Ajet u cijelosti",
+  "kidsRate5": "Mašallah! Prvak Kur'ana ⭐",
+  "kidsRate4": "Bravo, šampione! Divno učenje",
+  "kidsRate3": "Odlično! Nastavi vježbati",
+  "kidsRate2": "Lijep početak! Pokušaj ponovo",
+  "kidsRate1": "Allah te blagoslovio za trud!",
+  "kidsStarsAdded": "{n} ⭐ dodano na Putovanje zvijezda",
+  "kidsStarsBest": "Tvoj najbolji rezultat u ovoj suri: {n} ⭐",
+  "kidsReciteAgain": "Uči ponovo",
+  "kidsWordsRead": "Proučio si {n} od {m} riječi",
+  "correctionLockHint": "Ponovi riječ i završi ajet"
 }

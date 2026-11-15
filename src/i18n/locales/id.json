@@ -960,5 +960,19 @@
   "crashTitle": "Layar ini mengalami masalah",
   "crashBody": "Bagian lain aplikasi tetap berfungsi. Coba lagi atau kembali ke beranda. Jika terulang, kirim tangkapan layar «Detail».",
   "crashRetry": "Coba lagi",
-  "crashHome": "Ke beranda"
+  "crashHome": "Ke beranda",
+  "promptWords": "Beberapa kata",
+  "promptWordsSub": "2–3 kata berikutnya",
+  "promptAyah": "Ayat lengkap",
+  "promptAyahSub": "Seluruh ayat",
+  "kidsRate5": "Masya Allah! Juara Al-Qur'an ⭐",
+  "kidsRate4": "Bagus sekali, jagoan! Bacaan yang indah",
+  "kidsRate3": "Hebat! Terus berlatih",
+  "kidsRate2": "Awal yang bagus! Coba lagi",
+  "kidsRate1": "Semoga Allah memberkahimu karena sudah mencoba!",
+  "kidsStarsAdded": "{n} ⭐ ditambahkan ke Perjalanan Bintang",
+  "kidsStarsBest": "Terbaikmu di surah ini: {n} ⭐",
+  "kidsReciteAgain": "Baca lagi",
+  "kidsWordsRead": "Kamu membaca {n} dari {m} kata",
+  "correctionLockHint": "Ulangi kata itu dan selesaikan ayat ini"
 }

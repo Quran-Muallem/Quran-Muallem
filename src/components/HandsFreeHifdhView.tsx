@@ -12,6 +12,7 @@
  * Logic: HandsFreeTracker (src/lib/HandsFreeHifdhService.ts). Recognition: useRecitation (on-device, nothing
  * recorded or kept). Prompts: the Salat Mode's Sheikh player (src/lib/sheikhPrompt.ts).
  */
+import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Bluetooth, Headphones, Pause, Play, Smartphone, Square, Volume2, X } from "lucide-react";
 import { GlowStart, StudioCard, StudioShell, StudioSlider, studioChoice } from "@/components/companion/Studio";
@@ -384,7 +385,9 @@ export function HandsFreeHifdhView({ onClose, switcher }: { onClose: () => void;
         <div className="grid grid-cols-2 gap-2" role="radiogroup">
           {(["words", "ayah"] as const).map((m) => (
             <button key={m} type="button" role="radio" aria-checked={prefs.promptMode === m} onClick={() => setPrefs({ promptMode: m })} className={studioChoice(prefs.promptMode === m)} data-hf-mode={m}>
-              <span className="font-arabic">{m === "words" ? "كلمات قليلة" : "آية كاملة"}</span>
+              {/* v55: localized in all 13 languages (was hard-coded Arabic) */}
+              <span className={cn("block font-bold", language === "ar" || language === "ur" ? "font-arabic" : undefined)}>{t(m === "words" ? "promptWords" : "promptAyah")}</span>
+              <span className="block text-xs font-medium opacity-75">{t(m === "words" ? "promptWordsSub" : "promptAyahSub")}</span>
             </button>
           ))}
         </div>

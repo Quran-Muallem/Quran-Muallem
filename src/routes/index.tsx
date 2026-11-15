@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { CORRECTION_GRACE_MS, combineLock, lockComplete, lockSegment, startLock, type CorrectionLock } from "@/lib/correctionLock";
 import { CrashBoundary } from "@/components/CrashBoundary";
 import { useBackLayer } from "@/lib/backStack";
 import { stepAppFontScale } from "@/lib/settings";
@@ -502,9 +503,20 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
     return fullTranscript.trim().split(/\s+/).slice(base.pos).join(" ");
   }, [fullTranscript, base]);
   const profile = useVoiceProfile(); // re-judge when a word is added to the voice profile
-  const match = useMemo(() => (useWhisper && textKind === "phonemes" && refs
-    ? matchLivePhonemes(transcript, texts, refs, { final: !whisper.recording })
-    : matchLive(transcript, texts)), [transcript, texts, profile, textKind, refs, whisper.recording]); // eslint-disable-line react-hooks/exhaustive-deps
+  // v55 «Ayah Correction Lock» (correctionLock.ts), as in the Mushaf.
+  const [lock, setLock] = useState<CorrectionLock | null>(null);
+  const runMatch = useCallback((tg: readonly string[], rf: readonly (string | null)[] | null | undefined) => (useWhisper && textKind === "phonemes" && rf
+    ? matchLivePhonemes(transcript, tg, rf, { final: !whisper.recording })
+    : matchLive(transcript, tg)), [transcript, textKind, useWhisper, whisper.recording]);
+  const segMatch = useMemo(() => { if (!lock) return null; const seg = lockSegment(texts, refs, lock); return runMatch(seg.targets, seg.refs); },
+    [lock, texts, refs, runMatch, profile]); // eslint-disable-line react-hooks/exhaustive-deps
+  const match = useMemo(() => (lock && segMatch ? combineLock(texts, lock, segMatch) : runMatch(texts, refs)),
+    [lock, segMatch, texts, refs, runMatch, profile]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (lock?.locked && lockComplete(segMatch)) setLock({ ...lock, locked: false }); }, [lock, segMatch]);
+  useEffect(() => { setLock(null); }, [texts, base]); // a new passage / jump: no lock
+  const pendingFixP = useRef<number | null>(null);
+  const graceP = useRef(0);
+  const resumeCorrectedP = useRef<() => void>(() => {});
   const listening = useWhisper ? whisper.recording : speech.isListening;
   // v38: while reciting, red / orange appear only once their verse is finished (liveMistakes.ts).
   const verseOf = useMemo(() => tokenVerses(texts), [texts]);
@@ -554,11 +566,24 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
   // v53 instant correction (as in the Mushaf): stop at a confirmed wrong word, announce its rule, Sheikh's word.
   const announcedP = useRef(new Set<number>());
   useEffect(() => { if (!listening) announcedP.current = new Set(); }, [listening]);
+  resumeCorrectedP.current = () => {
+    const tk = pendingFixP.current;
+    pendingFixP.current = null;
+    if (tk != null) {
+      const l = startLock(match, texts, tk);
+      if (l) { setBase({ kind: textKind, pos: textKind === "phonemes" ? fullTranscript.length : (fullTranscript.trim() ? fullTranscript.trim().split(/\s+/).length : 0) }); window.setTimeout(() => setLock(l), 0); }
+    }
+    graceP.current = performance.now() + CORRECTION_GRACE_MS;
+    if (tk != null) setWordFix(null);
+    if (whisper.paused) whisper.resume();
+  };
   useEffect(() => {
     if (!listening || !useWhisper || whisper.paused || !settings.errorDetection || !settings.instantCorrection) return;
+    if (performance.now() < graceP.current) return;
     const tk = firstNewError(liveStatuses, announcedP.current);
     if (tk < 0) return;
     announcedP.current.add(tk);
+    pendingFixP.current = tk;
     whisper.pause();
     tapWord(tk, "announce");
   }, [liveStatuses]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -865,7 +890,7 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
       {/* Start / stop right above the surah title; it stays reachable (sticky) while the text scrolls along */}
       <div className={cn("-mx-1 rounded-3xl px-1 transition-colors", listening && "sticky top-[calc(max(1rem,env(safe-area-inset-top))+3.25rem)] z-20 bg-background/85 shadow-lg backdrop-blur")}>
         <MicButton recording={listening} busy={processing || text.status !== "ready"} getLevel={useWhisper ? whisper.getLevel : undefined} wave={!useWhisper} compact={listening}
-          paused={useWhisper && whisper.paused} onPause={useWhisper ? () => { if (whisper.paused) whisper.resume(); else whisper.pause(); } : undefined}
+          paused={useWhisper && whisper.paused} onPause={useWhisper ? () => { if (whisper.paused) resumeCorrectedP.current(); else whisper.pause(); } : undefined}
           statusText={useWhisper ? (settings.whisperLive ? t("listeningWhisperLive") : t("recording")) : t("listening")} onClick={toggleMic} label={t("record")} />
       </div>
 
@@ -883,7 +908,10 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
             clean={settings.mushafStyle === "clean" ? { fontSize: settings.quranFontSize } : undefined} cursor={match.cursor} masked={masked} hints={hints} active={listening} playingAyah={player.playing ? player.ayah : null}
             onWordTap={listening ? undefined : tapWord} />
         )}
-        {wordFix && <VoiceWordFix fix={wordFix} onClose={() => setWordFix(null)} className="mt-3" />}
+        {lock?.locked && listening && !whisper.paused && (
+          <p className="mx-auto mt-3 w-fit rounded-full bg-[#DC2626] px-4 py-1.5 text-sm font-bold text-[#ffffff] shadow-lg animate-in fade-in" role="status" data-correction-lock="">🔒 {t("correctionLockHint")}</p>
+        )}
+        {wordFix && <VoiceWordFix fix={wordFix} onClose={() => setWordFix(null)} className="mt-3" onSheikhDone={() => window.setTimeout(() => { if (pendingFixP.current != null) resumeCorrectedP.current(); }, 250)} />}
         {surahDone && !listening ? <p role="status" className="mt-4 text-center text-sm font-semibold text-success">{t("surahComplete").replace("{name}", language === "ar" ? meta?.nameArabic ?? "" : meta?.nameSimple ?? "")}</p>
           : match.done && !listening && <p className="mt-4 text-center text-sm text-success">{t("passageDone")}</p>}
       </div>

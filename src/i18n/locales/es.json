@@ -960,5 +960,19 @@
   "crashTitle": "Esta pantalla tuvo un problema",
   "crashBody": "El resto de la app funciona. Inténtalo de nuevo o vuelve al inicio. Si se repite, envíanos una captura de «Detalles».",
   "crashRetry": "Reintentar",
-  "crashHome": "Ir al inicio"
+  "crashHome": "Ir al inicio",
+  "promptWords": "Pocas palabras",
+  "promptWordsSub": "Siguientes 2–3 palabras",
+  "promptAyah": "Aleya completa",
+  "promptAyahSub": "Versículo entero",
+  "kidsRate5": "¡Masha'Allah! Campeón del Corán ⭐",
+  "kidsRate4": "¡Muy bien, campeón! Lectura maravillosa",
+  "kidsRate3": "¡Genial! Sigue practicando",
+  "kidsRate2": "¡Un buen comienzo! Inténtalo otra vez",
+  "kidsRate1": "¡Que Allah te bendiga por intentarlo!",
+  "kidsStarsAdded": "{n} ⭐ añadidas a tu viaje de estrellas",
+  "kidsStarsBest": "Tu mejor resultado en esta sura: {n} ⭐",
+  "kidsReciteAgain": "Recitar otra vez",
+  "kidsWordsRead": "Leíste {n} de {m} palabras",
+  "correctionLockHint": "Repite la palabra y termina la aleya"
 }

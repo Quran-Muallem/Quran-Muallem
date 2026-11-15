@@ -1,4 +1,5 @@
 import { firstNewError } from "@/lib/liveMistakes";
+import { CORRECTION_GRACE_MS } from "@/lib/correctionLock";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Bookmark, ChevronDown, Loader2, RefreshCw, Rows3, Settings } from "lucide-react";
 import { MushafPage, type WordKey } from "@/components/mushaf/MushafPage";
@@ -397,8 +398,21 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
   // pauses, the word turns red with its Tajweed note, the rule is announced and the Sheikh says the word.
   const announced = useRef(new Set<number>());
   useEffect(() => { if (rec.listening && !rec.paused) return; if (!rec.listening) announced.current = new Set(); }, [rec.listening, rec.paused]);
+  // v55: the corrected word and the moment the Sheikh finished (breathing room before the next correction).
+  const pendingFix = useRef<number | null>(null);
+  const graceUntil = useRef(0);
+  const resumeCorrected = useRef<() => void>(() => {});
+  resumeCorrected.current = () => {
+    const tk = pendingFix.current;
+    pendingFix.current = null;
+    if (tk != null) rec.correctAt(tk); // hold the cursor in this verse until its last word
+    graceUntil.current = performance.now() + CORRECTION_GRACE_MS;
+    if (tk != null) setWordFix(null); // the verse to repeat must be visible (the word stays marked on the page)
+    if (rec.paused) rec.resume();
+  };
   useEffect(() => {
     if (!rec.listening || rec.paused || !settings.errorDetection || !settings.instantCorrection) return;
+    if (performance.now() < graceUntil.current) return;
     const tk = firstNewError(rec.liveStatuses, announced.current);
     if (tk < 0) return;
     announced.current.add(tk);
@@ -409,11 +423,26 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
     const word = mushaf.words(s2!, a2!)[w2! - 1] ?? "";
     if (!word) return;
     // Audio would be heard by the microphone: interrupt only where the session can pause (on-device engines).
-    if (rec.canPause) rec.pause();
+    if (rec.canPause) { rec.pause(); pendingFix.current = tk; }
     setWordFix({ id: k, word, heard: rec.match.heard[tk] ?? null, surah: s2, ayah: a2, status: "ERROR", auto: rec.canPause ? "announce" : undefined });
   }, [rec.liveStatuses]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const active = rec.listening || rec.match.recited > 0;
+  // v55 smooth auto-scroll (page mode and «one verse per line» / large print): when the word expected next
+  // leaves the comfortable reading zone (between the header and the recite bar), its line is centred.
+  const cursorAyah = rec.listening ? (() => { const k = keys[keyOfToken[rec.match.cursor] ?? -1]; return k ? k.slice(0, k.lastIndexOf(":")) : ""; })() : "";
+  useEffect(() => {
+    if (!rec.listening) return;
+    const id = window.setTimeout(() => {
+      const el = document.querySelector<HTMLElement>("[data-mushaf-text] [data-cursor]") ?? document.querySelector<HTMLElement>("[data-cursor]");
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const top = (document.querySelector("header")?.getBoundingClientRect().bottom ?? 0) + 24;
+      const bottom = (document.querySelector("[data-recite-bar]")?.getBoundingClientRect().top ?? window.innerHeight) - 24;
+      if (r.top < top || r.bottom > bottom) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 60);
+    return () => window.clearTimeout(id);
+  }, [rec.listening, cursorAyah, rec.match.cursor]); // eslint-disable-line react-hooks/exhaustive-deps
   const pageKeys = useMemo(() => verses.flatMap((v) => v.words.map((w) => `${v.surah}:${v.ayah}:${w}`)), [verses]);
   const showPast = settings.showPastMistakes, detectErrors = settings.errorDetection;
   const statuses = useMemo(() => {
@@ -712,7 +741,7 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
       )}
 
       {/* the page — swipe right for the next page (Arabic books open to the left) */}
-      <div ref={pageArea} className="touch-pan-y select-none"
+      <div ref={pageArea} className="touch-pan-y select-none" data-rec-state={`${rec.listening ? "on" : "off"}${rec.paused ? " paused" : ""}${rec.correctionLocked ? " locked" : ""}`}
         onTouchStart={(e) => { const p = e.touches[0]; if (p) touch.current = { x: p.clientX, y: p.clientY }; }}
         onTouchEnd={(e) => {
           const s = touch.current, p = e.changedTouches[0];
@@ -749,13 +778,16 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
       <ReciteBar docked mode={mode} onMode={(m) => { setMode(m); }} listening={rec.listening} busy={rec.processing}
         hint={mode === "MEMORIZATION_MODE" ? { onClick: giveHint, used: hints.size, disabled: !nextHint() } : undefined}
         onMic={() => { player.pause(); rec.toggle(); }} getLevel={rec.getLevel} status={rec.paused ? t("recitePausedStatus") : status}
-        paused={rec.paused} onPause={rec.canPause ? () => { if (rec.paused) rec.resume(); else { rec.pause(); } } : undefined}
+        paused={rec.paused} onPause={rec.canPause ? () => { if (rec.paused) resumeCorrected.current(); else { rec.pause(); } } : undefined}
         onHeight={(h) => setBarH((cur) => (Math.abs(cur - h) < 1 ? cur : Math.round(h)))}
         onReset={rec.listening || liveShown || rec.match.recited > 0 || saved != null || reviewReady != null || pageHasColours ? resetSession : undefined}
         onReview={!rec.listening && !review && reviewReady ? () => setReview(reviewReady) : undefined} reviewCount={reviewReady?.items.length ?? 0}
-        extra={showMine || wordFix ? (
+        extra={showMine || wordFix || (rec.correctionLocked && rec.listening) ? (
           <div className="space-y-1.5">
-            {wordFix && <VoiceWordFix fix={wordFix} onClose={() => setWordFix(null)} />}
+            {rec.correctionLocked && rec.listening && !rec.paused && (
+              <p className="mx-auto mb-2 w-fit rounded-full bg-[#DC2626] px-4 py-1.5 text-sm font-bold text-[#ffffff] shadow-lg animate-in fade-in" role="status" data-correction-lock="">🔒 {t("correctionLockHint")}</p>
+            )}
+            {wordFix && <VoiceWordFix fix={wordFix} onClose={() => setWordFix(null)} onSheikhDone={() => window.setTimeout(() => { if (pendingFix.current != null) resumeCorrected.current(); }, 250)} />}
             {showMine && (
               <RecitationPlayerBar compact showRecord={false} recording={rec.listening} elapsed={rec.elapsed} onRecord={rec.toggle}
                 saved={mine} canKeep={rec.useWhisper} />

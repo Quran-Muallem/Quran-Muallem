@@ -313,6 +313,18 @@ export function verseTimings(quranComId: number, surah: number, ayah: number, wi
 /** The element `playClip` uses (to wait for its end). */
 export const currentWordAudio = () => wordAudio;
 
+/** v55: resolves once the word clip that is playing now has stopped (end of segment, ended, or stopped). */
+export function wordAudioDone(timeoutMs = 6000): Promise<void> {
+  const a = wordAudio;
+  if (!a || a.paused) return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = () => { clearTimeout(t); a.removeEventListener("pause", done); a.removeEventListener("ended", done); resolve(); };
+    const t = setTimeout(done, timeoutMs);
+    a.addEventListener("pause", done);
+    a.addEventListener("ended", done);
+  });
+}
+
 export function stopWordAudio() {
   if (wordStop) { clearTimeout(wordStop); wordStop = null; }
   wordAudio?.pause();

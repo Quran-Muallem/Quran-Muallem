@@ -960,5 +960,19 @@
   "crashTitle": "Skrin ini menghadapi masalah",
   "crashBody": "Bahagian lain aplikasi masih berfungsi. Cuba lagi atau kembali ke utama. Jika berulang, hantar tangkapan skrin «Butiran».",
   "crashRetry": "Cuba lagi",
-  "crashHome": "Ke utama"
+  "crashHome": "Ke utama",
+  "promptWords": "Beberapa perkataan",
+  "promptWordsSub": "2–3 perkataan seterusnya",
+  "promptAyah": "Ayat penuh",
+  "promptAyahSub": "Seluruh ayat",
+  "kidsRate5": "Masya-Allah! Juara al-Quran ⭐",
+  "kidsRate4": "Syabas, juara! Bacaan yang hebat",
+  "kidsRate3": "Hebat! Teruskan berlatih",
+  "kidsRate2": "Permulaan yang baik! Cuba lagi",
+  "kidsRate1": "Semoga Allah memberkatimu kerana mencuba!",
+  "kidsStarsAdded": "{n} ⭐ ditambah ke Perjalanan Bintang",
+  "kidsStarsBest": "Terbaik kamu dalam surah ini: {n} ⭐",
+  "kidsReciteAgain": "Baca lagi",
+  "kidsWordsRead": "Kamu membaca {n} daripada {m} perkataan",
+  "correctionLockHint": "Ulang perkataan itu dan habiskan ayat ini"
 }

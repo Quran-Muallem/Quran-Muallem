@@ -960,5 +960,19 @@
   "crashTitle": "Ky ekran pati një problem",
   "crashBody": "Pjesa tjetër e aplikacionit funksionon. Provo përsëri ose kthehu në kreu. Nëse përsëritet, na dërgo një pamje të «Detajeve».",
   "crashRetry": "Provo përsëri",
-  "crashHome": "Te kreu"
+  "crashHome": "Te kreu",
+  "promptWords": "Pak fjalë",
+  "promptWordsSub": "2–3 fjalët e radhës",
+  "promptAyah": "Ajeti i plotë",
+  "promptAyahSub": "I gjithë vargu",
+  "kidsRate5": "Mashallah! Kampion i Kuranit ⭐",
+  "kidsRate4": "Të lumtë, kampion! Lexim i mrekullueshëm",
+  "kidsRate3": "Shkëlqyeshëm! Vazhdo të ushtrohesh",
+  "kidsRate2": "Fillim i bukur! Provo përsëri",
+  "kidsRate1": "Allahu të bekoftë për përpjekjen!",
+  "kidsStarsAdded": "{n} ⭐ u shtuan në Udhëtimin e Yjeve",
+  "kidsStarsBest": "Më e mira jote në këtë sure: {n} ⭐",
+  "kidsReciteAgain": "Lexo përsëri",
+  "kidsWordsRead": "Lexove {n} nga {m} fjalë",
+  "correctionLockHint": "Përsërite fjalën dhe përfundo ajetin"
 }

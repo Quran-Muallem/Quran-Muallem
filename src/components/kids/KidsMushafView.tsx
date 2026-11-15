@@ -5,7 +5,7 @@
  * Tapping a verse opens the kids tafsir drawer (read-aloud + the Sheikh's recitation of that verse).
  */
 import { KidsBadge, Sparkles } from "@/components/kids/KidsArt";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
@@ -18,11 +18,13 @@ import { useRecitation } from "@/lib/useRecitation";
 import { phonemeRefs, usePhonemeLexicon } from "@/lib/quranAlignment";
 import { loadMushaf, type Mushaf } from "@/lib/mushafData";
 import type { LiveStatus } from "@/lib/quranMatcher";
+import { creditRecitationStars, kidsStarsFor, useRecitationStars } from "@/lib/kidsRecitationStars";
 import { Mic, Square } from "lucide-react";
 
 const HIDE_KEY = "qm.kids.hide";
-/** v54: live recitation covers the first verses of the surah (like the Recite tab's range). */
-const KIDS_RANGE = 15;
+/** v54/v55: live recitation covers the whole surah (every surah of the children's journey has ≤ 56 verses);
+ *  very long surahs are limited to their first verses. */
+const KIDS_RANGE = 60;
 
 const KEY = "qm.kids.surah";
 export function kidsSurah(): number {
@@ -71,7 +73,41 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
   const cursor = rec.listening ? rec.match.cursor : -1;
   const { reset: resetRec } = rec;
   useEffect(() => { resetRec(); }, [surah]); // eslint-disable-line react-hooks/exhaustive-deps
-  const micToggle = () => { if (!rec.listening) { stopSheikhAudio(); setTapped(null); resetRec(); } rec.toggle(); };
+  const micToggle = () => { if (!rec.listening) { stopSheikhAudio(); setTapped(null); setResult(null); resetRec(); } rec.toggle(); };
+
+  // v55 smooth auto-scroll: the verse being recited stays in the middle of the screen.
+  const curAyah = useMemo(() => {
+    if (!rec.listening) return -1;
+    let i = 0;
+    while (i + 1 < offsets.length && rec.match.cursor >= offsets[i + 1]!) i++;
+    return win[i]?.number ?? -1;
+  }, [rec.listening, rec.match.cursor, offsets, win]);
+  useEffect(() => {
+    if (curAyah < 0) return;
+    const el = document.querySelector(`[data-kids-ayah="${curAyah}"], [data-kids-cloud="${curAyah}"]`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [curAyah]);
+
+  // v55 automatic stop on the last word of the surah, then a forgiving 1–5 star result.
+  const [result, setResult] = useState<{ stars: number; added: number; read: number; total: number } | null>(null);
+  const best = useRecitationStars();
+  const finished = rec.listening && rec.match.done;
+  useEffect(() => { if (finished) rec.toggle(); }, [finished]); // eslint-disable-line react-hooks/exhaustive-deps
+  const wasListening = useRef(false);
+  useEffect(() => {
+    if (rec.listening) { wasListening.current = true; return; }
+    if (!wasListening.current) return;
+    wasListening.current = false;
+    if (!rec.match.done) return; // stopped by hand before the end: no rating
+    const total = rec.match.total || 1;
+    const read = Math.min(total, rec.match.recited);
+    const stars = kidsStarsFor(read / total);
+    const added = creditRecitationStars(surah, stars);
+    setResult({ stars, added, read, total });
+    starChime(0.2);
+  }, [rec.listening]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => setResult(null), [surah]);
+  const nextInJourney = (() => { const i = JOURNEY.indexOf(surah); return i >= 0 && i + 1 < JOURNEY.length ? JOURNEY[i + 1]! : surah + 1; })();
   /** A verse fully recited during this session (its clouds open by themselves). */
   const recitedVerse = (i: number) => reciting && i < win.length && rec.match.cursor >= offsets[i]! + targets[i]!.split(" ").length;
   const wordCls = (st: LiveStatus | undefined, current: boolean) => cn("rounded-lg px-0.5 transition-colors",
@@ -171,8 +207,23 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
         )}
       </article>
       {ayahs && nav("bottom")}
-      {rec.match.done && !rec.listening && (
-        <p className="kd-card kd-3d kd-pop p-4 text-center text-lg font-black" dir={ar ? "rtl" : "ltr"} data-kids-mic-done="">⭐ {t("kidsMicDone")} ⭐</p>
+      {result && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgba(15,23,42,.45)] p-5" role="dialog" aria-modal="true" data-kids-result={result.stars} dir={ar ? "rtl" : "ltr"}>
+          <div className="kd-card kd-3d kd-pop relative w-full max-w-sm space-y-3 overflow-visible p-6 text-center" style={{ background: "linear-gradient(170deg,#fffdf3 0%,#fff3c4 100%)" }}>
+            <p className="text-[2.6rem] leading-none tracking-[0.12em]" aria-label={`${result.stars} / 5`}>
+              {Array.from({ length: 5 }, (_, i) => <span key={i} className={i < result.stars ? "kd-pop inline-block" : "inline-block opacity-25 grayscale"} style={{ animationDelay: `${150 + i * 140}ms` }}>⭐</span>)}
+            </p>
+            <h2 className={cn("font-black leading-snug", ar ? "font-arabic text-[1.7rem]" : "text-2xl")}>{t(`kidsRate${result.stars}` as "kidsRate5")}</h2>
+            <p className="text-sm font-bold kd-ink-soft">{t("kidsWordsRead").replace("{n}", num(result.read)).replace("{m}", num(result.total))}</p>
+            <p className="rounded-2xl bg-[rgba(255,255,255,.85)] px-3 py-2 text-base font-black text-[#7a4b00] shadow-[inset_0_0_0_2px_#fcd34d]" data-kids-result-added={result.added}>
+              {result.added > 0 ? t("kidsStarsAdded").replace("{n}", num(result.added)) : t("kidsStarsBest").replace("{n}", num(best[surah] ?? result.stars))}
+            </p>
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <button type="button" className="kd-btn kd-btn-coral w-full text-base" onClick={() => { setResult(null); micToggle(); }} data-kids-result-again="">{t("kidsReciteAgain")}</button>
+              <button type="button" className="kd-btn w-full text-base" disabled={nextInJourney > 114} onClick={() => { setResult(null); go(nextInJourney); }} data-kids-result-next="">{t("kidsNextSurah")} {ar ? "←" : "→"}</button>
+            </div>
+          </div>
+        </div>
       )}
       {ayahs && (
         <div className="pointer-events-none fixed inset-x-0 bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+5.5rem)] z-30 flex justify-center px-4" data-kids-mic="">

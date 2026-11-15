@@ -960,5 +960,19 @@
   "crashTitle": "Bu ekranda bir sorun oluştu",
   "crashBody": "Uygulamanın geri kalanı çalışıyor. Tekrar dene ya da ana sayfaya dön. Tekrarlarsa «Ayrıntılar»ın ekran görüntüsünü gönder.",
   "crashRetry": "Tekrar dene",
-  "crashHome": "Ana sayfa"
+  "crashHome": "Ana sayfa",
+  "promptWords": "Birkaç kelime",
+  "promptWordsSub": "Sonraki 2–3 kelime",
+  "promptAyah": "Tam ayet",
+  "promptAyahSub": "Ayetin tamamı",
+  "kidsRate5": "Maşallah! Kur'an şampiyonu ⭐",
+  "kidsRate4": "Aferin şampiyon! Harika okudun",
+  "kidsRate3": "Harika! Çalışmaya devam et",
+  "kidsRate2": "Güzel bir başlangıç! Tekrar dene",
+  "kidsRate1": "Denediğin için Allah razı olsun!",
+  "kidsStarsAdded": "Yıldız yolculuğuna {n} ⭐ eklendi",
+  "kidsStarsBest": "Bu suredeki en iyin: {n} ⭐",
+  "kidsReciteAgain": "Tekrar oku",
+  "kidsWordsRead": "{m} kelimeden {n} tanesini okudun",
+  "correctionLockHint": "Kelimeyi tekrarla ve ayeti bitir"
 }

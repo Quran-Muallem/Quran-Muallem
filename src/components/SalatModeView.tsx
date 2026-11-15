@@ -11,6 +11,7 @@
  * verse audio cut to the words (Quran.com word timings; offline: the verse file, cut proportionally),
  * faded in softly; recognition pauses while a prompt plays so the prompt is not taken for the reader.
  */
+import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Clock3, Play, Smartphone, Square, Volume2 } from "lucide-react";
 import { GlowStart, PlacementCard, PrayerCard, RakahDots, StudioCard, StudioShell, StudioSlider, studioChoice } from "@/components/companion/Studio";
@@ -496,8 +497,9 @@ export function SalatModeView({ onClose, switcher }: { onClose: () => void; swit
         <div className="grid grid-cols-2 gap-2" role="radiogroup">
           {(["words", "ayah"] as const).map((m) => (
             <button key={m} type="button" role="radio" aria-checked={prefs.promptMode === m} onClick={() => setPrefs({ promptMode: m })} data-salat-mode={m} className={studioChoice(prefs.promptMode === m)}>
-              <span className="block font-arabic">{m === "words" ? "كلمات قليلة" : "آية كاملة"}</span>
-              {!ar && <span className="block text-xs font-medium opacity-75">{t(m === "words" ? "salatWords" : "salatAyah")}</span>}
+              {/* v55: localized in all 13 languages (was hard-coded Arabic) */}
+              <span className={cn("block font-bold", language === "ar" || language === "ur" ? "font-arabic" : undefined)}>{t(m === "words" ? "promptWords" : "promptAyah")}</span>
+              <span className="block text-xs font-medium opacity-75">{t(m === "words" ? "promptWordsSub" : "promptAyahSub")}</span>
             </button>
           ))}
         </div>

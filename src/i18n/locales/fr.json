@@ -960,5 +960,19 @@
   "crashTitle": "Cet écran a rencontré un problème",
   "crashBody": "Le reste de l'app fonctionne. Réessaie ou reviens à l'accueil. Si cela se répète, envoie-nous une capture des «Détails».",
   "crashRetry": "Réessayer",
-  "crashHome": "Accueil"
+  "crashHome": "Accueil",
+  "promptWords": "Quelques mots",
+  "promptWordsSub": "2 à 3 mots suivants",
+  "promptAyah": "Āya complète",
+  "promptAyahSub": "Verset entier",
+  "kidsRate5": "Machallah ! Champion du Coran ⭐",
+  "kidsRate4": "Bravo, champion ! Superbe lecture",
+  "kidsRate3": "Super ! Continue de t'entraîner",
+  "kidsRate2": "Un beau début ! Essaie encore",
+  "kidsRate1": "Qu'Allah te bénisse pour ton essai !",
+  "kidsStarsAdded": "{n} ⭐ ajoutées à ton voyage des étoiles",
+  "kidsStarsBest": "Ton meilleur score dans cette sourate : {n} ⭐",
+  "kidsReciteAgain": "Réciter encore",
+  "kidsWordsRead": "Tu as lu {n} mots sur {m}",
+  "correctionLockHint": "Répète le mot et termine le verset"
 }
