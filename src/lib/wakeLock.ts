@@ -55,4 +55,3 @@ export function useKeepAwake(active: boolean) {
   }, [active]);
 }
 
-export const wakeLockSupported = () => !!api();

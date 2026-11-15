@@ -34,7 +34,6 @@ let language: Language = "ar";
 let el: HTMLAudioElement | null = null;
 
 export const setHubPlayerLanguage = (l: Language) => { language = l; };
-export const hubPlayerState = () => state.get();
 export function useHubPlayer(): HubPlayerState { return useSyncExternalStore(state.subscribe, state.get, state.get); }
 const patch = (p: Partial<NonNullable<HubPlayerState>>) => { const s = state.get(); if (s) state.set({ ...s, ...p }); };
 
@@ -48,7 +47,6 @@ function announce(playing: boolean) {
   const c = current(), s = state.get();
   if (!c || !s) return;
   const meta = getSurahMeta(c.surah);
-  const ar = language === "ar" || language === "ur";
   const texts = sessionTexts((k) => translate(language, k), {
     language, surahArabic: meta?.nameArabic ?? "", surahSimple: meta?.nameSimple ?? "", ayah: s.ayah,
     reciterArabic: c.r.ar, reciterEnglish: c.r.en,

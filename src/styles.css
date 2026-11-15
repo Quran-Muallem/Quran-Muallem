@@ -328,9 +328,6 @@ html[lang="ar"] nav { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
 .dhikr-bump { animation: dhikr-bump .18s ease-out; }
 @media (prefers-reduced-motion: reduce) { .badge-rays, .badge-spark, .badge-shine, .dhikr-bump { animation: none; } .badge-pop { animation-duration: .01s; } }
 /* Reciter pill: audio wave */
-@keyframes reciter-wave { 0%, 100% { transform: scaleY(.35) } 50% { transform: scaleY(1) } }
-.reciter-wave { transform-origin: bottom; animation: reciter-wave .9s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .reciter-wave { animation: none; } }
 
 /* v38 «ألوان أحكام التجويد» (Quran.com's scheme; lighter tones on the dark page themes) */
 :root {
@@ -419,7 +416,6 @@ html[data-kids="on"] {
   --tj-idgham-mutajanis: #a1a1a1; --tj-ghunnah: #ff7e1e;
 }
 html[data-kids="on"] button { min-height: 2.75rem; }
-html[data-kids="on"] .kids-hide { display: none !important; }
 @keyframes kids-star { 0% { transform: scale(0) rotate(-30deg); opacity: 0; } 60% { transform: scale(1.25) rotate(8deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
 .kids-star { animation: kids-star 700ms cubic-bezier(.2,.9,.3,1.3) both; }
 

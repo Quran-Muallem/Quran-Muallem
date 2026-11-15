@@ -45,6 +45,9 @@ describe("v53 – no 4-point sparkles", () => {
     });
     const hits = walk(path.resolve(__dirname, "..")).filter((p) => !p.includes(`${path.sep}test${path.sep}`) && bad.test(fs.readFileSync(p, "utf8")));
     expect(hits).toEqual([]);
+    // v56.3: lucide's four-pointed «Sparkles» icon is the same AI sparkle in another form
+    const lucide = walk(path.resolve(__dirname, "..")).filter((p) => !p.includes(`${path.sep}test${path.sep}`) && /\bSparkles\b[^\n]*from "lucide-react"|<Sparkles\b/.test(fs.readFileSync(p, "utf8")));
+    expect(lucide).toEqual([]);
   });
 });
 

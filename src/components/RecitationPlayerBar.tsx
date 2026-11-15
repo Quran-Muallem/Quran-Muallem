@@ -55,9 +55,9 @@ export function RecitationPlayerBar({ recording, elapsed, onRecord, busy = false
     releaseUrl(url.current); url.current = null;
     setPlaying(false); setPos(0);
   };
-  useEffect(() => { stopPlayback(); setConfirm(false); return stopPlayback; }, [saved?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { stopPlayback(); setConfirm(false); return stopPlayback; }, [saved?.id]);
   // Never play back while recording (the microphone would pick it up).
-  useEffect(() => { if (recording) stopPlayback(); }, [recording]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (recording) stopPlayback(); }, [recording]);
   useEffect(() => { if (!confirm) return; const id = setTimeout(() => setConfirm(false), 3000); return () => clearTimeout(id); }, [confirm]);
 
   const togglePlay = async () => {

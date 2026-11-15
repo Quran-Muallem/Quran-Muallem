@@ -23,8 +23,8 @@ import { useRecitation } from "@/lib/useRecitation";
 import { loadQuranPhonemes, phonemeRefs, usePhonemeLexicon } from "@/lib/quranAlignment";
 import { locateRecitation, locatorIndex, type LocatorKind } from "@/lib/ayahLocator";
 import { loadMushaf, type Mushaf } from "@/lib/mushafData";
-import { RECITERS, getAyahAudioUrl, getReciter } from "@/lib/reciterManager";
-import { backgroundAudio, verseTimings, stopSheikhAudio, stopWordAudio } from "@/lib/audioPlayback";
+import { RECITERS, getReciter } from "@/lib/reciterManager";
+import { backgroundAudio, stopSheikhAudio } from "@/lib/audioPlayback";
 import { getSurahMeta } from "@/lib/quranService";
 import {
   DEFAULT_SALAT_CONFIG, SILENCE_RANGE_MS, SalatPrayerTracker, promptSpan, salatVerse, trailingErrors,
@@ -320,7 +320,7 @@ export function SalatModeView({ onClose, switcher }: { onClose: () => void; swit
         remind();
       }
     }
-  }, [apply]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [apply]);
 
   /** «سبحان الله» — bypasses the rukūʿ/sujūd mute (that only silences the Sheikh's prompts). */
   const remind = () => {

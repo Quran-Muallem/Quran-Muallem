@@ -11,9 +11,11 @@ import { directionFor, useI18n } from "@/lib/i18n";
 import { kidsTafsirFor, stopSpeaking } from "@/lib/kidsTafsir";
 import { getSurahMeta, toArabicDigits } from "@/lib/quranService";
 import { KidsTafsirCards } from "@/components/kids/KidsTafsirView";
+import { useDismissLayer } from "@/lib/backStack";
 
 export function KidsTafsirDrawer({ surah, ayah, onClose, withSheikh = false }: { surah: number; ayah: number; onClose: () => void; withSheikh?: boolean }) {
   const [playing, setPlaying] = useState(false);
+  useDismissLayer(true, onClose); // Escape + Android back
   const listen = async () => {
     if (playing) { stopSheikhAudio(); setPlaying(false); return; }
     try {

@@ -7,7 +7,7 @@ import { useId } from "react";
 import { cn } from "@/lib/utils";
 import { star5 } from "@/components/kids/KidsArt";
 
-const GOLD = "#d4af37", GOLD_HI = "#f3d27a", INK = "#3b2a10", EMER = "#0f6b48", SKY = "#9fd3f5", SEA = "#2f8fd0", SAND = "#e9c98f";
+const GOLD = "#d4af37", GOLD_HI = "#f3d27a", INK = "#3b2a10", EMER = "#0f6b48", SEA = "#2f8fd0", SAND = "#e9c98f";
 
 export const MIRACLE_IDS = ["adam", "idris", "nuh", "hud", "salih", "ibrahim", "lut", "ismail-ishaq", "yaqub", "yusuf", "ayyub", "shuayb", "musa-harun", "dawud", "sulaiman", "yunus", "zakariya-yahya", "isa", "muhammad"] as const;
 export const hasMiracleIcon = (id: string) => (MIRACLE_IDS as readonly string[]).includes(id);

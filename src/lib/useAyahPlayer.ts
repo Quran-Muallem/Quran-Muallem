@@ -92,7 +92,7 @@ export function useAyahPlayer({ reciterId, surah, from, to, repeat = false, repe
   }, []);
 
   // Changing surah / range stops playback and resets to the start of the range.
-  useEffect(() => { token.current++; if (audio.current) endSession(); stopAudio(); setPlaying(false); setLoading(false); setAyah(from); }, [surah, from, to]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { token.current++; if (audio.current) endSession(); stopAudio(); setPlaying(false); setLoading(false); setAyah(from); }, [surah, from, to]);
   // Changing the Sheikh keeps the position: if a verse is playing, it starts again with the new voice.
   const playingRef = useRef(false);
   playingRef.current = playing || loading;

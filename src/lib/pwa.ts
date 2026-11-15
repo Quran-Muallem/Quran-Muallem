@@ -17,6 +17,3 @@ export function registerServiceWorker(): void {
   });
 }
 
-/** True when started from the Home Screen (iOS) or as an installed app. */
-export const isStandalone = () =>
-  typeof window !== "undefined" && (window.matchMedia?.("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true);

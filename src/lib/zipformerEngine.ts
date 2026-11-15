@@ -38,7 +38,6 @@ export type ZipformerState =
   | { status: "error"; message: string };
 
 const state = createSignal<ZipformerState>({ status: "unknown" });
-export const getZipformerState = () => state.get();
 export function useZipformerState(): ZipformerState {
   return useSyncExternalStore(state.subscribe, state.get, state.get);
 }

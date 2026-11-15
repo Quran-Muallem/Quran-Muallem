@@ -57,5 +57,18 @@ export default defineConfig({
     emptyOutDir: true,
     target: ["es2020", "safari14", "chrome90"],
     chunkSizeWarningLimit: 1500,
+    rolldownOptions: {
+      output: {
+        // v56.3: the app shell was one 2.4 MB chunk. Libraries, bundled data and app code are now separate
+        // files — still static imports, loaded together at start, so nothing loads later than before.
+        codeSplitting: {
+          groups: [
+            { name: "vendor-react", test: /node_modules[\\/](react|react-dom|scheduler|@tanstack)[\\/]/, priority: 30 },
+            { name: "vendor", test: /node_modules[\\/]/, priority: 20 },
+            { name: "data", test: /src[\\/]data[\\/](?!hisnMuslim)/, priority: 10 }, // Hisn al-Muslim stays lazy (adhkar)
+          ],
+        },
+      },
+    },
   },
 });

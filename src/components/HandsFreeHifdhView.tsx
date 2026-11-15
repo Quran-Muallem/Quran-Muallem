@@ -14,7 +14,7 @@
  */
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Bluetooth, Headphones, Pause, Play, Smartphone, Square, Volume2, X } from "lucide-react";
+import { Bluetooth, Headphones, Pause, Play, Smartphone, Square, Volume2 } from "lucide-react";
 import { GlowStart, StudioCard, StudioShell, StudioSlider, studioChoice } from "@/components/companion/Studio";
 import { useI18n } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -150,7 +150,7 @@ export function HandsFreeHifdhView({ onClose, switcher }: { onClose: () => void;
       } else if (e.type === "prompt") void prompt(e.token, e.reason, e.mode);
       else if (e.type === "idle" && e.entry) setLog(addHandsFreeLog(e.entry));
     }
-  }, [prompt, pushStatus, status]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [prompt, pushStatus, status]);
 
   // Voice heard → the silence clock restarts.
   useEffect(() => {

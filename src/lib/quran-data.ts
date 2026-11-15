@@ -42,13 +42,3 @@ export const SURAHS: Surah[] = [
 
 export type Mark = "ok" | "missing" | "order" | "tashkeel";
 
-/** Deterministic mock analysis: marks a few words per ayah with feedback categories. */
-export function mockAnalysis(words: string[], seed: number): Mark[] {
-  return words.map((_, i) => {
-    const v = (i * 7 + seed * 3) % 11;
-    if (v === 2) return "missing";
-    if (v === 5) return "order";
-    if (v === 8) return "tashkeel";
-    return "ok";
-  });
-}

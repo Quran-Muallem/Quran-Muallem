@@ -1,17 +1,15 @@
 import { useEffect, type ReactNode } from "react";
 import { useBackLayer } from "@/lib/backStack";
-import { BellRing, BookOpen, BookOpenCheck, ChevronDown, ChevronLeft, ChevronRight, Clock, Compass, Download, Globe, Headphones, Home, Library, Mic, Search, Settings, Share2, SunMoon, Target, Type, X } from "lucide-react";
+import { BellRing, BookOpen, BookOpenCheck, ChevronDown, Clock, Compass, Download, Globe, Headphones, Home, Library, Mic, Search, Settings, Share2, SunMoon, Target, Type, X } from "lucide-react";
 import { LargePrintToggle } from "@/components/LargePrintToggle";
 import { PrayingPersonIcon } from "@/components/icons/PrayingPersonIcon";
 import { updateSettings } from "@/lib/settings";
 import type { HubSection } from "@/components/IslamicHubView";
 import type { SettingsPage } from "@/components/SettingsModal";
-import { AppLogo, AppWordmark, GOLD, GOLD_LIGHT, alpha } from "@/components/ornaments";
-import { toArabicDigits } from "@/lib/quranService";
+import { AppLogo, AppWordmark, GOLD, alpha } from "@/components/ornaments";
 
 import { directionFor, useI18n, type CopyKey } from "@/lib/i18n";
 import { languageInfo } from "@/i18n";
-import { LanguageSelector } from "@/components/LanguageSelector";
 import { cn } from "@/lib/utils";
 
 /** Prayer times, Qibla, adhkar, Tajweed and Hadith live together in the Islamic hub ("hub"). */
@@ -30,38 +28,20 @@ export function BurgerButton({ onClick, label }: { onClick: () => void; label: s
   );
 }
 
-/** Search button (opens the Quran search), next to the burger. */
-export function SearchButton({ onClick, label }: { onClick: () => void; label: string }) {
-  return (
-    <button type="button" onClick={onClick} aria-label={label}
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-amber-200"
-      style={{ background: alpha("var(--mf-page-deep)", 0.85), boxShadow: `inset 0 0 0 1px ${alpha(GOLD_LIGHT, 0.5)}` }}>
-      <Search className="h-5 w-5" aria-hidden="true" />
-    </button>
-  );
-}
 
 /**
- * The app's side menu (burger), available on every screen: navigation, surah / juz / page selection
- * (opens the Mushaf there), settings and invite. `current` marks the screen that is open.
+ * The app's side menu (burger), available on every screen: navigation, companion, hub sections,
+ * settings pages and invite. `current` marks the screen that is open.
  */
-export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, onJuz, onNavigate, onSettings, onInvite, onSearch, onGoTo, onCompanion, onHub, onSettingsPage, profile, current = "mushaf" }: {
+export function MushafMenu({ open, onClose, onNavigate, onSettings, onInvite, onSearch, onCompanion, onHub, onSettingsPage, profile, current = "mushaf" }: {
   current?: AppTab;
   open: boolean;
   onClose: () => void;
-  page: number;
-  surah: number;
-  juz: number;
-  onPage: (p: number) => void;
-  onSurah: (s: number) => void;
-  onJuz: (j: number) => void;
   onNavigate: (tab: AppTab) => void;
   onSettings: () => void;
   onInvite: () => void;
   /** Opens the Quran search (surah, verse, words). */
   onSearch?: (() => void) | undefined;
-  /** v33: the Mushaf's own «اذهب إلى» dialog (all surahs, search, recently read) instead of the pickers. */
-  onGoTo?: (() => void) | undefined;
   /** v51 flat menu: the companion, a hub section, a settings page, and the account row. */
   onCompanion?: () => void;
   onHub?: (s: HubSection) => void;
@@ -69,7 +49,6 @@ export function MushafMenu({ open, onClose, page, surah, juz, onPage, onSurah, o
   profile?: ReactNode;
 }) {
   const { t, language } = useI18n();
-  const num = (n: number) => (language === "ar" ? toArabicDigits(n) : String(n));
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -185,5 +164,3 @@ function MenuGroup({ title, rows, go, t }: { title: string; rows: { key: string;
 
 
 export default MushafMenu;
-/** The same menu under its app-wide name. */
-export const AppMenu = MushafMenu;

@@ -1,16 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { matchLive, type LiveMatch } from "@/lib/quranMatcher";
+import type { LiveMatch } from "@/lib/quranMatcher";
 import { useSpeechRecognition, type SpeechErrorCode } from "@/lib/useSpeechRecognition";
 import { useTranscribingRecorder } from "@/lib/use-transcribing-recorder";
 import { useSettings } from "@/lib/settings";
 import { speechEngineFor, useRecognizer } from "@/lib/speechEngine";
-import { matchLivePhonemes } from "@/lib/quranAlignment";
 import type { CopyKey } from "@/lib/i18n";
-import { useVoiceProfile } from "@/lib/userAdaptation";
 import { useMistakeHaptics } from "@/lib/useMistakeHaptics";
-import { deferLiveMistakes, instantLiveMistakes, tokenVerses } from "@/lib/liveMistakes";
-import { holdStartup, useStartupIdentification } from "@/lib/recitationStartup";
-import { combineLock, lockComplete, lockSegment, startLock, type CorrectionLock } from "@/lib/correctionLock";
+import { useLiveJudgement } from "@/lib/useLiveJudgement";
+import { startLock } from "@/lib/correctionLock";
 
 const speechErrorKey = (code: SpeechErrorCode | null): CopyKey | null =>
   code === "not-allowed" ? "errMic" : code === "audio-capture" ? "errNoMic" : code === "network" ? "errSpeechNetwork" : code === "unsupported" ? "errUnsupported" : code ? "errFailed" : null;
@@ -55,34 +52,14 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
     if (base.kind === "phonemes") return fullTranscript.slice(base.chars);
     return fullTranscript.trim().split(/\s+/).slice(base.words).join(" ");
   }, [fullTranscript, base]);
-  // Re-judged when the voice profile changes (a word added to it turns green at once).
-  const profile = useVoiceProfile();
-  // v55 «Ayah Correction Lock» (correctionLock.ts): after a correction only the rest of that verse is judged.
-  const [lock, setLock] = useState<CorrectionLock | null>(null);
-  const run = useCallback((tg: readonly string[], rf: readonly (string | null)[] | null | undefined) => (useWhisper && textEngine === "phonemes" && rf
-    ? matchLivePhonemes(transcript, tg, rf, { final: !whisper.recording })
-    : matchLive(transcript, tg)), [transcript, textEngine, useWhisper, whisper.recording]);
-  const segMatch = useMemo(() => {
-    if (!lock) return null;
-    const seg = lockSegment(targets, phonemeRefs, lock);
-    return run(seg.targets, seg.refs);
-  }, [lock, targets, phonemeRefs, run, profile]); // eslint-disable-line react-hooks/exhaustive-deps
-  const match = useMemo(() => (lock && segMatch ? combineLock(targets, lock, segMatch) : run(targets, phonemeRefs)),
-    [lock, segMatch, targets, phonemeRefs, run, profile]); // eslint-disable-line react-hooks/exhaustive-deps
-  // The last word of the locked verse was matched → release: the following verses join the same segment.
-  useEffect(() => { if (lock?.locked && lockComplete(segMatch, lock)) setLock({ ...lock, locked: false }); }, [lock, segMatch]);
   const listening = useWhisper ? whisper.recording : speech.isListening;
   const processing = useWhisper && whisper.transcribing;
-  // v38: while reciting, red / orange appear only once their verse is finished (see liveMistakes.ts).
-  const verseOf = useMemo(() => tokenVerses(targets), [targets]);
-  // v53: «تصحيح فوري» (default) — a mistaken word turns red the moment the reciter moves past it.
-  const instant = useSettings().instantCorrection;
-  // v56: silent Surah / Ayah identification window at the start (recitationStartup.ts).
-  const transcriptKindNow = (useWhisper && textEngine === "phonemes" ? "phonemes" : "text") as "phonemes" | "text";
-  const ident = useStartupIdentification({ listening, match, transcript, kind: transcriptKindNow });
-  const liveStatuses = useMemo(() => (!listening ? match.statuses
-    : holdStartup(instant ? instantLiveMistakes(match.statuses, match.cursor) : deferLiveMistakes(match.statuses, verseOf, match.cursor), ident.identifying, ident.graceTokens)),
-    [listening, match.statuses, match.cursor, verseOf, instant, ident.identifying, ident.graceTokens]);
+  // v56.3: matcher → correction lock (v55) → identification window (v56) → live colours (v38 / v53),
+  // shared with the Tasmīʿ view (useLiveJudgement.ts).
+  const { match, segMatch, lock, setLock, liveStatuses, ident } = useLiveJudgement({
+    targets, refs: phonemeRefs, transcript, phonemeText: useWhisper && textEngine === "phonemes",
+    final: !whisper.recording, listening, instant: useSettings().instantCorrection,
+  });
 
   // Reset (v38 «إعادة»): the session is dropped, nothing of it is saved.
   const reset = useCallback(() => { setLock(null); session.current = false; stopListening(); resetTranscript(); setWhisperText(""); whisper.cancel(); setBase(null); }, [stopListening, resetTranscript, whisper.cancel]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -96,7 +73,7 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
     setLock(null); resetGrace();
     const { text, kind } = latestFull.current;
     setBase({ kind, chars: text.length, words: text.trim() ? text.trim().split(/\s+/).length : 0 });
-  }, [resetGrace]);
+  }, [resetGrace, setLock]);
 
   /**
    * Keep recording, but judge from `pos` of the current transcript on (raw phoneme characters / words) —
@@ -111,7 +88,7 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
       if (kind === "phonemes") { const chars = (cur?.kind === "phonemes" ? cur.chars : 0) + pos; return { kind, chars, words }; }
       return { kind, chars: text.length, words: Math.min(words, (cur?.kind === "text" ? cur.words : 0) + pos) };
     });
-  }, [restartIdent]);
+  }, [restartIdent, setLock]);
 
   // Session end → callback with the final match.
   const session = useRef(false);
@@ -144,7 +121,7 @@ export function useRecitation(targets: readonly string[], { onSessionEnd, phonem
     if (useWhisper) { if (!whisper.recording) { setLock(null); setWhisperText(""); setBase(null); } whisper.toggle(); return; }
     if (speech.isListening) stopListening();
     else { setLock(null); if (latest.current.done || latest.current.recited) resetTranscript(); startListening(); }
-  }, [useWhisper, whisper, speech.isListening, stopListening, resetTranscript, startListening]);
+  }, [useWhisper, whisper, speech.isListening, stopListening, resetTranscript, startListening, setLock]);
 
   return {
     /** "phonemes" while the Zipformer engine judges this recitation. */

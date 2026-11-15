@@ -109,7 +109,3 @@ export function buildMushaf(layout: Layout, data: Words): Mushaf {
   };
 }
 
-/** Text of a verse as one string (words joined by spaces), or null if the data is not loaded. */
-export async function verseText(surah: number, ayah: number): Promise<string | null> {
-  try { return (await loadMushaf()).words(surah, ayah).join(" ") || null; } catch { return null; }
-}

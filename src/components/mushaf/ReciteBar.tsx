@@ -14,7 +14,7 @@ export type BarMode = "RECITATION_MODE" | "MEMORIZATION_MODE";
  * The Sheikh player lives in the screen's top row (SheikhControls); `player` here is optional.
  * `onHeight` reports the bar's height so the Mushaf page can fit the rest of the screen exactly.
  */
-export function ReciteBar({ mode, onMode, listening, busy, onMic, paused = false, onPause, getLevel, status, player, nextPage, hint, extra, docked = false, onHeight, onReset, onReview, reviewCount = 0 }: {
+export function ReciteBar({ mode, onMode, listening, busy, onMic, paused = false, onPause, getLevel, status, player, nextPage, hint, extra, onHeight, onReset, onReview, reviewCount = 0 }: {
   /** v38 «إعادة»: start the session again from scratch (shown while there is something to reset). */
   onReset?: (() => void) | undefined;
   /** v38: open the review of the last recitation's mistakes again. */
@@ -23,8 +23,6 @@ export function ReciteBar({ mode, onMode, listening, busy, onMic, paused = false
   onHeight?: ((px: number) => void) | undefined;
   /** Extra row above the controls (the user's own recording). */
   extra?: ReactNode;
-  /** No tab bar below (full-screen Mushaf). */
-  docked?: boolean;
   /** Memorization: reveal the next word (max per verse). */
   /** One-tap hint (memorization): reveals one more word per tap; `used` = words shown so far. */
   hint?: { onClick: () => void; used: number; disabled: boolean } | undefined;

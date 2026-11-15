@@ -262,10 +262,6 @@ export function loadTranslation(optionId: string, language: Language, surah: num
   });
 }
 
-/** One verse's translation. */
-export async function verseTranslation(optionId: string, language: Language, surah: number, ayah: number): Promise<string> {
-  return (await loadTranslation(optionId, language, surah))[ayah - 1] ?? "";
-}
 
 async function fromCdns(path: string): Promise<unknown> {
   let last: unknown;

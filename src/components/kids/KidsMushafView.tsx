@@ -6,7 +6,7 @@
  */
 import { surahMeaning } from "@/lib/goTo";
 import { getTranslation, loadTranslation } from "@/lib/quranContent";
-import { KidsBadge, Sparkles } from "@/components/kids/KidsArt";
+import { KidsBadge, TwinkleStars } from "@/components/kids/KidsArt";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -173,7 +173,7 @@ export function KidsMushafView({ surah, onSurah }: { surah: number; onSurah: (s:
         <span aria-hidden="true" className="absolute end-6 top-0 z-[1] h-14 w-7" style={{ background: "linear-gradient(180deg,#fb7185,#e04e66)", clipPath: "polygon(0 0,100% 0,100% 100%,50% 78%,0 100%)" }} />
         {/* surah title — sequential blocks: title → Basmala → verses (never overlapping) */}
         <header className="relative flex flex-col items-center gap-1 overflow-hidden px-4 pb-4 pt-5 text-center" style={{ background: "linear-gradient(180deg, var(--kd-sun), color-mix(in srgb, var(--kd-sun) 30%, transparent) 70%, transparent)" }}>
-          <Sparkles count={4} seed={1} />
+          <TwinkleStars count={4} seed={1} />
           <KidsBadge id="mushaf" className="relative h-16 w-16 kd-float" />
           <button type="button" onClick={() => setPicker(true)} className="kd-btn kd-btn-mango !min-h-0 px-5 py-2 text-sm" data-kids-picker-open="">📖 {t("kidsPickSurah")}</button>
           <h1 className="relative mt-2 font-arabic text-4xl font-black leading-snug">سورة {meta?.nameArabic}</h1>

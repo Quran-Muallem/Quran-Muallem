@@ -9,15 +9,6 @@ const TIERS = {
   silver: { from: "#ffffff", mid: "#cfd8e3", to: "#7c8a9c", icon: "#e8eef5", ring: "#dfe6ee" },
 } as const;
 
-/** Thematic symbol of a surah, drawn like a Lucide icon (24 × 24, stroke 2). */
-export function SurahSymbol({ surah, className, color = "currentColor" }: { surah: number; className?: string; color?: string }) {
-  const theme = surahBadge(surah);
-  if (!theme) return null;
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
-      className={className} dangerouslySetInnerHTML={{ __html: BADGE_ICONS[theme.icon] }} />
-  );
-}
 
 /**
  * The badge of a surah: an eight-pointed star (Rub el Hizb) in gold or silver with the surah's symbol

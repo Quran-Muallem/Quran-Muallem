@@ -185,7 +185,6 @@ export function loadKhatma(): Promise<void> {
   loaded ??= kv.getJson<unknown>(KEY, null).then((raw) => signal.set(sanitize(raw))).catch(() => {});
   return loaded;
 }
-export const getKhatmaState = () => signal.get();
 export function useKhatma(): KhatmaState {
   return useSyncExternalStore(signal.subscribe, signal.get, signal.get);
 }
@@ -215,7 +214,4 @@ export async function startKhatma(kind: KhatmaKind, plan: KhatmaPlan) {
 export async function endKhatma(kind: KhatmaKind) {
   await loadKhatma();
   await save({ ...signal.get(), [kind]: null });
-}
-export async function changePlan(kind: KhatmaKind, plan: KhatmaPlan) {
-  await updateKhatma(kind, (k) => ({ ...k, plan }));
 }

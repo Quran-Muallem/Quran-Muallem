@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, CheckCircle2, Download, Loader2, Trash2, X } from "lucide-react";
-import { GOLD, GOLD_LIGHT, alpha } from "@/components/ornaments";
+import { Check, CheckCircle2, Download, Loader2, Trash2 } from "lucide-react";
+import { GOLD, alpha } from "@/components/ornaments";
 import {
   CONTENT_LANGUAGE_NAMES, ContentLoadError, TAFSIRS, TRANSLATIONS, downloadTafsir, downloadTranslation, isDownloaded, languageOrder, removeDownload,
   type ContentKind, type ContentLanguage, type TafsirOption, type TranslationOption,
 } from "@/lib/quranContent";
-import { directionFor, isRtlText, useI18n } from "@/lib/i18n";
+import { isRtlText, useI18n } from "@/lib/i18n";
 import { toArabicDigits } from "@/lib/quranService";
 import { cn } from "@/lib/utils";
+import { SanctuarySheet } from "@/components/SanctuarySheet";
 
 type Option = TranslationOption | TafsirOption;
 type DlState = { status: "none" } | { status: "done" } | { status: "loading"; done: number } | { status: "error"; offline: boolean };
@@ -21,32 +22,13 @@ export function ContentSelectModal({ kind, open, selectedId, onSelect, onClose }
   kind: ContentKind; open: boolean; selectedId: string; onSelect: (id: string) => void; onClose: () => void;
 }) {
   const { t, language } = useI18n();
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-  if (!open) return null;
   const title = kind === "tr" ? t("translationSettings") : t("tafsirSettings");
+  // v56.3: the shared full-screen sub-view (‹ back · title · ✕, Android back) instead of an own bottom sheet
   return (
-    <div className="fixed inset-0 z-[70]" dir={directionFor(language)} lang={language}>
-      <button type="button" aria-label={t("close")} onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-[2px] animate-in fade-in" />
-      <section role="dialog" aria-modal="true" aria-label={title}
-        className="absolute inset-x-0 bottom-0 mx-auto flex max-h-[90dvh] w-full max-w-md flex-col rounded-t-3xl pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-200"
-        style={{ background: "linear-gradient(180deg, var(--hq-emerald), var(--hq-emerald-deep))", boxShadow: `inset 0 1px 0 ${alpha(GOLD, 0.6)}` }}>
-        <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-amber-200/40" aria-hidden="true" />
-        <div className="flex items-center gap-2 px-4">
-          <h2 className="min-w-0 flex-1 text-base font-semibold" style={{ color: GOLD_LIGHT }}>
-            {title}{language !== "ar" && <span className="ms-2 font-arabic text-sm text-amber-100/70">{kind === "tr" ? "إعدادات الترجمة" : "اختيار التفسير"}</span>}
-          </h2>
-          <button type="button" onClick={onClose} aria-label={t("close")} className="flex h-8 w-8 items-center justify-center rounded-full text-amber-200 hover:bg-white/10"><X className="h-4 w-4" /></button>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-3">
-          <ContentSelectList kind={kind} selectedId={selectedId} onSelect={(id) => { onSelect(id); onClose(); }} stickyBg="var(--hq-emerald)" />
-        </div>
-      </section>
-    </div>
+    <SanctuarySheet open={open} onClose={onClose} title={title}
+      subtitle={language !== "ar" ? <span className="font-arabic">{kind === "tr" ? "إعدادات الترجمة" : "اختيار التفسير"}</span> : undefined}>
+      <ContentSelectList kind={kind} selectedId={selectedId} onSelect={(id) => { onSelect(id); onClose(); }} stickyBg="var(--sx-sheet)" />
+    </SanctuarySheet>
   );
 }
 

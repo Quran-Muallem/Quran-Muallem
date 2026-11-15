@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 
 /* Mushaf palette (dark emerald page, cream text, antique gold). */
 export const PAGE_BG = "var(--mf-page)";
-export const PAGE_BG_HI = "var(--mf-page-hi)";
 export const PAGE_BG_DEEP = "var(--mf-page-deep)";
 export const INK = "var(--mf-ink)";
 export const GOLD_A = "var(--mf-gold-a)";

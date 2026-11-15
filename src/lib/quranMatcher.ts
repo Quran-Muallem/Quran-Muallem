@@ -36,7 +36,8 @@ export interface MatchResult {
 // ───────────────────────── Normalization ─────────────────────────
 
 /** Tashkeel, Quranic annotation marks, tatweel and invisible formatting characters. */
-const STRIP_RE = /[ؐ-ًؚ-ٰٟۖ-ۭـ​-‏࣓-ࣿ]/g;
+// eslint-disable-next-line no-misleading-character-class -- a set of combining marks (harakāt, Quranic signs) on purpose
+const STRIP_RE = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640\u200B-\u200F\u08D3-\u08FF]/g;
 
 /**
  * Normalizes Arabic text for comparison:

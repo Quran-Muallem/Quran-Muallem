@@ -17,6 +17,7 @@
  */
 import { MISTAKE_PAUSE_MS, MISTAKE_RUN, continuationToken, trailingErrors, type PromptMode } from "@/lib/SalatPrayerTracker";
 import type { LiveMatch } from "@/lib/quranMatcher";
+import { backgroundAudio } from "@/lib/audioPlayback";
 
 export type HandsFreeState = "OFF" | "IDLE_LISTENING" | "ACTIVE_MEMORIZATION";
 export type HandsFreeConfig = { silenceMs: number; promptMode: PromptMode; idleMs: number };
@@ -163,7 +164,6 @@ const BT_NAME = /bluetooth|airpods|buds|headset|hands-?free|bt[\s-]|\bcar\b|jabr
 /** Connected audio devices: native list in the Android app, `enumerateDevices` labels elsewhere. */
 export async function listAudioDevices(): Promise<AudioDevice[]> {
   try {
-    const { backgroundAudio } = await import("@/lib/audioPlayback");
     const p = await backgroundAudio();
     if (p) return (await p.audioDevices()).devices;
   } catch { /* fall back to the web */ }
@@ -181,7 +181,6 @@ export const hasBluetooth = (ds: readonly AudioDevice[]) => ds.some((d) => d.kin
 /** Applies the route (Android app: microphone via the Bluetooth headset / car, or the phone). */
 export async function applyAudioRoute(route: AudioRoute): Promise<boolean> {
   try {
-    const { backgroundAudio } = await import("@/lib/audioPlayback");
     const p = await backgroundAudio();
     if (!p) return route === "auto";
     return (await p.setAudioRoute({ route })).ok;

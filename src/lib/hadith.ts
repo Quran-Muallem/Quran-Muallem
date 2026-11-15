@@ -66,9 +66,6 @@ export function loadBook(id: BookId, lang: string, onProgress?: (loaded: number)
   return p;
 }
 
-export async function isBookStored(id: BookId, lang: string): Promise<boolean> {
-  return !!(await idb.get<HadithBook>(`qm.hadith.${editionName(id, lang)}.v1`))?.hadiths?.length;
-}
 
 async function fetchWithProgress(url: string, onProgress?: (loaded: number) => void): Promise<unknown> {
   const r = await fetch(url);

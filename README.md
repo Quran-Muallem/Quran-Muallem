@@ -50,7 +50,7 @@ Mobile Apps (iOS/Android): siehe [DEPLOY.md](./DEPLOY.md).
 - **Silber** = jedes Wort der ganzen Sure im Lesemodus abgeschlossen (grün/orange). **Gold** = jedes Wort der ganzen Sure auswendig abgeschlossen (ohne „Wort zeigen“). Beides unabhängig voneinander.
   - Wörter werden pro Modus und pro Mushaf-Wort gesammelt, über Seiten, Sitzungen und beide Ansichten hinweg (`src/lib/badges.ts`, Version 2).
   - Geprüft wird **nur**, wenn das letzte Wort der Sure abgeschlossen wird (`RecitationContext.finishSurah` → `completeSurah`). Kein Timer, kein „Seite lange genug offen“, keine Genauigkeits-Abkürzung mehr. Alte, zeitbasierte Lese-Daten werden verworfen; bereits verdiente Abzeichen bleiben.
-  - `src/context/BadgeContext.tsx`: Provider/Hook für Abzeichen. `src/components/MushafView.tsx` / `ReciteView.tsx`: Einstiegspunkte der beiden Ansichten.
+  - `src/context/BadgeContext.tsx`: Provider/Hook für Abzeichen. `src/components/MushafReader.tsx` (Mushaf) und `PracticeScreen` in `src/routes/index.tsx` (Tasmīʿ): die beiden Rezitationsansichten.
 - **Installierbare Web-App (PWA, GitHub Pages, iOS-Homescreen)**: `bun run build:pwa` → `dist-app/` mit `manifest.webmanifest`, Service Worker `sw.js`, `precache.json`, `404.html`, `.nojekyll`.
   - Beim ersten Start werden App, Mushaf-Daten und Phonem-Lexikon gespeichert; danach lädt der Service Worker das Sprachmodell (~70 MB) in den Cache → Rezitation komplett offline.
   - GitHub Actions: `.github/workflows/pages.yml` (Settings → Pages → Source „GitHub Actions“). Das Modell (72 MB) liegt unter dem 100-MB-Dateilimit von GitHub; Git LFS ist optional.

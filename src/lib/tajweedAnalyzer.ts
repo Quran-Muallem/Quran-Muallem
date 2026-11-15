@@ -69,7 +69,6 @@ export function ibtidaForms(phonemes: string, word = ""): string[] {
 
 /** Heavy letter ↔ the light letter it is most often confused with (the recognizer can tell these apart). */
 export const HEAVY_LIGHT: readonly [string, string][] = [["ص", "س"], ["ط", "ت"], ["ض", "د"], ["ظ", "ذ"], ["ظ", "ز"], ["ق", "ك"], ["غ", "ع"], ["خ", "ح"], ["خ", "ه"]];
-export const HEAVY_LETTERS = "خصضغطقظ";
 
 /** If the only difference is a heavy letter read light (or the reverse): which one, else null. */
 export function tafkheemSlip(expected: string, heard: string): { expected: string; heard: string; heavyReadLight: boolean } | null {

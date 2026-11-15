@@ -8,6 +8,7 @@ import { useSettings } from "@/lib/settings";
 import { diagnoseWord, type TajweedIssue } from "@/lib/tajweedAnalyzer";
 import { directionFor, useI18n, type CopyKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { useDismissLayer } from "@/lib/backStack";
 
 /** A word marked red / orange in the recitation that just ended. */
 export type ReviewItem = {
@@ -46,11 +47,7 @@ export function SessionReview({ items, stats, onClose, onRetryVerse, onRetryAll,
   const reciter = getReciter(settings.reciterId);
   const [audio, setAudio] = useState<{ key: string; state: "loading" | "playing" | "failed" } | null>(null);
   useEffect(() => () => stopWordAudio(), []);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  useDismissLayer(true, onClose); // Escape + Android back
   const ar = language === "ar" || language === "ur";
   const num = (n: number) => (ar ? toArabicDigits(n) : String(n));
   const verses = useMemo(() => {

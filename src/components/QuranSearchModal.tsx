@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, Loader2, Search, X } from "lucide-react";
-import { GOLD, GOLD_LIGHT, alpha } from "@/components/ornaments";
+import { GOLD_LIGHT } from "@/components/ornaments";
 import { loadMushaf, type Mushaf } from "@/lib/mushafData";
 import { getSurahMeta, toArabicDigits } from "@/lib/quranService";
 import { search, type SearchResult } from "@/lib/quranSearch";
-import { directionFor, useI18n } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { SanctuarySheet } from "@/components/SanctuarySheet";
 
 /** Where a result leads: the verse (or the surah's first page) in the Mushaf, with the found words marked. */
 export type SearchTarget = { surahId: number; ayah?: number | undefined; words?: number[] | undefined };
@@ -24,11 +25,9 @@ export function QuranSearchModal({ open, onClose, onSelect }: { open: boolean; o
     if (!open) return;
     setQuery(""); setDebounced("");
     void loadMushaf().then(setMushaf).catch(() => {});
-    const focus = setTimeout(() => input.current?.focus(), 50);
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => { clearTimeout(focus); window.removeEventListener("keydown", onKey); };
-  }, [open, onClose]);
+    const focus = setTimeout(() => input.current?.focus(), 300); // after the sheet has mounted and slid in
+    return () => clearTimeout(focus);
+  }, [open]);
   useEffect(() => { const id = setTimeout(() => setDebounced(query), 180); return () => clearTimeout(id); }, [query]);
   const outcome = useMemo(() => search(mushaf, debounced), [mushaf, debounced]);
   if (!open) return null;
@@ -58,24 +57,19 @@ export function QuranSearchModal({ open, onClose, onSelect }: { open: boolean; o
   };
   const textLoading = !mushaf && /[؀-ۿ]/.test(debounced);
 
+  // v56.3: the shared full-screen sub-view (‹ back · title · ✕, Android back) instead of an own top sheet
   return (
-    <div className="fixed inset-0 z-[60]" dir={directionFor(language)} lang={language}>
-      <button type="button" aria-label={t("close")} onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-[2px] animate-in fade-in" />
-      <section role="dialog" aria-modal="true" aria-label={t("searchTitle")}
-        className="absolute inset-x-0 top-0 mx-auto flex max-h-[92dvh] w-full max-w-md flex-col rounded-b-3xl px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] shadow-2xl animate-in fade-in slide-in-from-top-4 duration-200"
-        style={{ background: "linear-gradient(180deg, var(--hq-emerald), var(--hq-emerald-deep))", boxShadow: `inset 0 -1px 0 ${alpha(GOLD, 0.6)}` }}>
-        <div className="flex items-center gap-2">
-          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl border border-amber-400/50 bg-black/25 px-3">
-            <Search className="h-5 w-5 shrink-0" style={{ color: GOLD_LIGHT }} aria-hidden="true" />
-            <input ref={input} value={query} onChange={(e) => setQuery(e.target.value)} type="text" inputMode="search" enterKeyHint="search" autoComplete="off" spellCheck={false}
-              placeholder={t("searchPlaceholder")} aria-label={t("searchTitle")}
-              className="h-12 min-w-0 flex-1 bg-transparent text-base text-emerald-50 placeholder:text-emerald-100/45 focus:outline-none" />
-            {query && <button type="button" onClick={() => setQuery("")} aria-label={t("searchClear")} className="text-emerald-100/70"><X className="h-4 w-4" /></button>}
-          </label>
-          <button type="button" onClick={onClose} className="shrink-0 px-1 text-sm text-amber-200">{t("close")}</button>
-        </div>
-
-        <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
+    <SanctuarySheet open={open} onClose={onClose} title={t("searchTitle")}>
+      <div className="sticky top-0 z-10 -mx-1 -mt-1 bg-[var(--sx-sheet)] px-1 pb-3 pt-1">
+        <label className="flex min-w-0 items-center gap-2 rounded-2xl border border-amber-400/50 bg-black/25 px-3">
+          <Search className="h-5 w-5 shrink-0" style={{ color: GOLD_LIGHT }} aria-hidden="true" />
+          <input ref={input} value={query} onChange={(e) => setQuery(e.target.value)} type="text" inputMode="search" enterKeyHint="search" autoComplete="off" spellCheck={false}
+            placeholder={t("searchPlaceholder")} aria-label={t("searchTitle")}
+            className="h-12 min-w-0 flex-1 bg-transparent text-base text-emerald-50 placeholder:text-emerald-100/45 focus:outline-none" />
+          {query && <button type="button" onClick={() => setQuery("")} aria-label={t("searchClear")} className="text-emerald-100/70"><X className="h-4 w-4" /></button>}
+        </label>
+      </div>
+      <div>
           {!debounced.trim() && <p className="px-1 text-sm leading-relaxed text-emerald-100/70">{t("searchHint")}</p>}
           {debounced.trim() && !outcome.results.length && !textLoading && <p className="px-1 py-6 text-center text-sm text-emerald-100/70">{t("searchNoResults")}</p>}
           {textLoading && <p className="flex items-center justify-center gap-2 py-6 text-sm text-emerald-100/70"><Loader2 className="h-4 w-4 animate-spin" />{t("loadingSurah")}</p>}
@@ -101,9 +95,8 @@ export function QuranSearchModal({ open, onClose, onSelect }: { open: boolean; o
             ))}
           </ul>
           {outcome.more && <p className="px-1 pt-2 text-center text-xs text-emerald-100/60">{t("searchMore")}</p>}
-        </div>
-      </section>
-    </div>
+      </div>
+    </SanctuarySheet>
   );
 }
 

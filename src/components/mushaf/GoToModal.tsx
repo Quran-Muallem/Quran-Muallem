@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Bookmark, Clock, CornerDownLeft, Search, X } from "lucide-react";
-import { GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import { type Mushaf } from "@/lib/mushafData";
 import { SURAH_META, getSurahMeta, toArabicDigits } from "@/lib/quranService";
 import { directionFor, useI18n } from "@/lib/i18n";
@@ -9,6 +8,7 @@ import { useProgress } from "@/lib/progressStorage";
 import { JUZ_COUNT, memorizedShare, useBookmarks, useRecentReads } from "@/lib/mushafNav";
 
 import { parseGoTo, searchSurahs, surahMeaning, type GoToTarget } from "@/lib/goTo";
+import { useDismissLayer } from "@/lib/backStack";
 export { parseGoTo, type GoToTarget };
 
 /**
@@ -31,10 +31,9 @@ export function GoToModal({ open, page, surah, mushaf, onClose, onGo }: {
     setQ(""); setTab("surahs");
     // Scroll the surah being read into view.
     const id = setTimeout(() => listRef.current?.querySelector(`[data-goto-surah="${surah}"]`)?.scrollIntoView({ block: "center" }), 60);
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => { clearTimeout(id); window.removeEventListener("keydown", onKey); };
-  }, [open, surah, onClose]);
+    return () => clearTimeout(id);
+  }, [open, surah]);
+  useDismissLayer(open, onClose); // Escape + Android back
   const shares = useMemo(() => (open ? SURAH_META.map((m) => memorizedShare(progress, m.id, m.versesCount)) : []), [open, progress]);
   if (!open) return null;
 

@@ -35,6 +35,7 @@ const rms = (data: Float32Array) => {
 
 export { encodeWav } from "./wav";
 import { encodeWav } from "./wav";
+import { backgroundAudio } from "./audioPlayback";
 
 /** Whisper works at 16 kHz. */
 export const TARGET_RATE = SAMPLE_RATE;
@@ -241,7 +242,6 @@ export function pcm16ToFloat(b64: string): Float32Array {
  * also fires `qm:mic-data`, so live recognition keeps stepping even when the hidden page's timers are throttled.
  */
 async function recordNative(onLimit: () => void, onInterrupted?: () => void): Promise<Awaited<ReturnType<typeof recordWebMic>> | null> {
-  const { backgroundAudio } = await import("./audioPlayback");
   const plugin = await backgroundAudio();
   if (!plugin?.startMicStream) return null;
   const outRate = TARGET_RATE;

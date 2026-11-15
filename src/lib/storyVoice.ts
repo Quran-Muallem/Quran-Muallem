@@ -12,8 +12,6 @@ export type VoiceLang = "ar" | "de" | "en" | "fr" | "es" | "tr" | "ur" | "id" | 
 export const VOICE_LOCALE: Record<VoiceLang, string> = {
   ar: "ar-SA", de: "de-DE", en: "en-US", fr: "fr-FR", es: "es-ES", tr: "tr-TR", ur: "ur-PK", id: "id-ID", ms: "ms-MY", ru: "ru-RU", bn: "bn-BD", sq: "sq-AL", bs: "bs-BA",
 };
-export const VOICE_LANGS = Object.keys(VOICE_LOCALE) as VoiceLang[];
-export const isVoiceLang = (l: string): l is VoiceLang => (VOICE_LANGS as string[]).includes(l);
 /** Close relatives used when a device has no voice for the language itself (e.g. Bosnian → Croatian / Serbian). */
 const VOICE_FALLBACK: Partial<Record<VoiceLang, string[]>> = { bs: ["hr", "sr"], ms: ["id"], ur: ["hi"] };
 const native = () => Capacitor.isNativePlatform();

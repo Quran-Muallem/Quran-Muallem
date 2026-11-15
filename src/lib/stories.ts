@@ -41,7 +41,6 @@ export const QURAN_STORIES: Story[] = ALL.filter((s) => s.kind === "quran");
 export const storyById = (id: string) => ALL.find((s) => s.id === id) ?? null;
 /** UI language → narration/text language: v53 every app language has its own text (English only as last resort). */
 export const storyLang = (language: string): StoryLang => ((STORY_LANGS as string[]).includes(language) ? (language as StoryLang) : "en");
-export const storyRtl = (l: StoryLang) => l === "ar" || l === "ur";
 
 /** The next station on the journey (prophets) or the next Quran story; null at the end. */
 export function nextStory(id: string): Story | null {
@@ -66,7 +65,6 @@ function write(p: Progress) {
   try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* ignore */ }
   listeners.forEach((l) => l());
 }
-export const storyProgress = () => read();
 export function markStoryOpened(id: string) { const p = read(); if (p.last !== id) write({ ...p, last: id }); }
 export function markStoryDone(id: string) { const p = read(); if (!p.done[id]) write({ ...p, done: { ...p.done, [id]: Date.now() }, last: id }); }
 export function useStoryProgress(): Progress {

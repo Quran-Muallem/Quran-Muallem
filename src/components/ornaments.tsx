@@ -1,7 +1,4 @@
 import { useId, type ReactNode } from "react";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
-import { directionFor, useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { SanctuarySheet } from "@/components/SanctuarySheet";
 import { APP_NAME, APP_NAME_ARABIC, APP_NAME_LATIN, assetUrl } from "@/lib/assets";
@@ -9,7 +6,6 @@ import { APP_NAME, APP_NAME_ARABIC, APP_NAME_LATIN, assetUrl } from "@/lib/asset
 /* Shared palette: deep emerald with ornate gold frames. */
 /* Theme colours (see styles.css: emerald / light / dark). */
 export const EMERALD = "var(--hq-emerald)";
-export const EMERALD_HI = "var(--hq-emerald-hi)";
 export const EMERALD_DEEP = "var(--hq-emerald-deep)";
 export const GOLD = "var(--hq-gold)";
 export const GOLD_LIGHT = "var(--hq-gold-light)";
@@ -57,26 +53,6 @@ export function Star({ className }: { className?: string }) {
   );
 }
 
-export function Medallion() {
-  return (
-    <div aria-hidden="true" className="mx-auto flex h-16 w-16 items-center justify-center">
-      <svg viewBox="0 0 64 64" className="h-16 w-16 drop-shadow-[0_0_14px_rgba(251,191,36,.45)]">
-        <defs>
-          <linearGradient id="medal-gradient" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor={GOLD_LIGHT} />
-            <stop offset="1" stopColor={GOLD} />
-          </linearGradient>
-        </defs>
-        <rect x="14" y="14" width="36" height="36" rx="3" fill="url(#medal-gradient)" />
-        <rect x="14" y="14" width="36" height="36" rx="3" fill="url(#medal-gradient)" transform="rotate(45 32 32)" />
-        <circle cx="32" cy="32" r="15" fill={EMERALD} stroke="#fde68a" strokeWidth="1.2" />
-        {/* open book */}
-        <path d="M23 27.5c3.2-1.2 6.2-.9 9 1v11c-2.8-1.9-5.8-2.2-9-1z M41 27.5c-3.2-1.2-6.2-.9-9 1v11c2.8-1.9 5.8-2.2 9-1z"
-          fill="none" stroke={GOLD_LIGHT} strokeWidth="1.6" strokeLinejoin="round" />
-      </svg>
-    </div>
-  );
-}
 
 export function Divider() {
   return (

@@ -64,7 +64,6 @@ export type ModelState =
   | { status: "error"; model: WhisperModelId; progress: number; message: string };
 
 const state = createSignal<ModelState>({ status: "idle", model: null, progress: 0 });
-export const getModelState = () => state.get();
 const IDLE: ModelState = { status: "idle", model: null, progress: 0 };
 
 /** Live model state: show a loading indicator while the model initializes the first time. */
@@ -247,24 +246,6 @@ export function resampleLinear(input: Float32Array, from: number, to = SAMPLE_RA
   return out;
 }
 
-/** Any recorded audio Blob → 16 kHz mono Float32Array (what Whisper expects). */
-export async function decodeTo16k(audio: Blob): Promise<Float32Array> {
-  const buf = await audio.arrayBuffer();
-  const wav = wavToFloat32(buf);
-  if (wav) return resampleLinear(wav.samples, wav.rate);
-  // Other formats (webm/ogg/m4a): let the browser decode, then render at 16 kHz.
-  const AC = (globalThis as unknown as { OfflineAudioContext?: typeof OfflineAudioContext }).OfflineAudioContext;
-  if (!AC) throw new WhisperError("bad-audio");
-  try {
-    const decoded = await new AC(1, 1, SAMPLE_RATE).decodeAudioData(buf.slice(0));
-    const off = new AC(1, Math.ceil(decoded.duration * SAMPLE_RATE), SAMPLE_RATE);
-    const src = off.createBufferSource();
-    src.buffer = decoded; src.connect(off.destination); src.start();
-    return (await off.startRendering()).getChannelData(0);
-  } catch {
-    throw new WhisperError("bad-audio");
-  }
-}
 
 /* ------------------------------------------------------------------ */
 /* Transcription                                                        */
@@ -348,13 +329,3 @@ export async function transcribeSamples(input: Float32Array, { signal, kind = "f
   return scheduleTranscription(kind, run);
 }
 
-/**
- * Transcribes a recorded audio Blob (WAV from our recorder, or any format the browser can decode).
- * `askForKey` is accepted for compatibility and ignored: no key is needed.
- */
-export async function transcribeArabic(audio: Blob, { signal, kind = "final" }: { signal?: AbortSignal; askForKey?: boolean; kind?: "live" | "final" } = {}): Promise<string> {
-  if (audio.size > MAX_AUDIO_BYTES) throw new WhisperError("too-large");
-  if (audio.size < MIN_AUDIO_BYTES) throw new WhisperError("bad-audio");
-  audioDebug("decoding blob", { bytes: audio.size, type: audio.type });
-  return transcribeSamples(await decodeTo16k(audio), { ...(signal ? { signal } : {}), kind });
-}

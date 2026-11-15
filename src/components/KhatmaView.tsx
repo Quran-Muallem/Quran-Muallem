@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, BookOpenCheck, Check, ChevronLeft, ChevronRight, Minus, Plus, RotateCcw, Sparkles, Target } from "lucide-react";
+import { BookOpen, BookOpenCheck, Check, ChevronLeft, ChevronRight, Minus, Plus, RotateCcw, Star, Target } from "lucide-react";
 import { GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import {
   KHATMA_PAGES, dailyPages, endKhatma, khatmaStats, loadKhatma, logPages, logUpTo, pageIndexFrom, planDays, startKhatma, toggleJuz, undoLast,
@@ -63,7 +63,7 @@ export function KhatmaView({ onOpenPage }: { onOpenPage?: (page: number) => void
           <ul className="space-y-1.5">
             {history.map((f) => (
               <li key={`${f.startDate}-${f.completedAt}`} className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-emerald-50" style={card}>
-                <Sparkles className="h-4 w-4 shrink-0" style={{ color: GOLD_LIGHT }} />
+                <Star className="h-4 w-4 shrink-0" style={{ color: GOLD_LIGHT }} />
                 <span className="flex-1">{dayName(f.completedAt, language)}</span>
                 <span className="text-xs text-emerald-100/65">{fill(t("khatmaInDays"), { n: num(f.days) })}</span>
               </li>
@@ -161,7 +161,7 @@ function ActiveKhatma({ k, index, num, onOpenPage }: { k: Khatma; index: PageInd
     <div className="space-y-4">
       {(celebrate || k.completedAt) && (
         <section className="rounded-3xl p-4 text-center animate-in zoom-in-95" style={{ background: "linear-gradient(135deg, rgba(120,53,15,.45), rgba(6,78,59,.55))", boxShadow: `inset 0 0 0 1px ${GOLD_LIGHT}` }}>
-          <Sparkles className="mx-auto h-8 w-8" style={{ color: GOLD_LIGHT }} />
+          <Star className="mx-auto h-8 w-8" style={{ color: GOLD_LIGHT }} />
           <p className="mt-2 font-arabic text-xl" style={{ color: GOLD_LIGHT }}>{t("khatmaDoneTitle")}</p>
           <p className="mt-1 text-sm text-emerald-50/85">{t("khatmaDoneSub")}</p>
           <button type="button" onClick={() => void endKhatma(k.kind)} className="mt-3 rounded-full px-5 py-2 text-sm font-semibold text-emerald-950" style={{ background: GOLD_GRADIENT }}>{t("khatmaNewTitle")}</button>

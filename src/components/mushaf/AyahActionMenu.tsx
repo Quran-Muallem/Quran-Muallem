@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { BookOpen, Crosshair, Headphones, Languages, Mic, X } from "lucide-react";
 import { GOLD, alpha } from "@/components/ornaments";
 import { getSurahMeta, toArabicDigits } from "@/lib/quranService";
 import { directionFor, useI18n } from "@/lib/i18n";
+import { useDismissLayer } from "@/lib/backStack";
 
 export type AyahAction = "listen" | "translation" | "tafsir" | "mark" | "practiceRange";
 
@@ -31,11 +32,7 @@ export function AyahActionMenu({ surah, ayah, at, markedFrom, onAction, onClose 
     const top = at.y - h - 14 >= m ? at.y - h - 14 : Math.min(at.y + 18, vh - h - m);
     setPos({ left, top });
   }, [at.x, at.y, markedFrom]);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  useDismissLayer(true, onClose); // Escape + Android back
 
   const num = (n: number) => (language === "ar" ? toArabicDigits(n) : String(n));
   const meta = getSurahMeta(surah);

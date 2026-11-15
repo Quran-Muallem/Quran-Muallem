@@ -305,8 +305,6 @@ export async function deleteSurahDownload(reciterId: string, surah: number): Pro
   setLive(mKey(reciterId, surah), null);
 }
 
-/** Total bytes downloaded (all reciters). */
-export const downloadedBytes = () => Object.values(manifest.get()).reduce((s, e) => s + e.bytes, 0);
 
 export const formatBytes = (b: number) =>
   b >= 1e9 ? `${(b / 1e9).toFixed(1)} GB` : b >= 1e6 ? `${(b / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1e3))} KB`;

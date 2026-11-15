@@ -4,14 +4,13 @@ import { LargePrintToggle } from "@/components/LargePrintToggle";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Smile, Type } from "lucide-react";
 import { TypographySettings } from "@/components/TypographySettings";
-import { AlertOctagon, AlertTriangle, BellRing, Highlighter, Info, BookOpen, BookText, CheckCircle2, ChevronLeft, ChevronRight, Download, ExternalLink, Eye, EyeOff, FileText, Globe, Languages, Loader2, Lock, Mic, MinusCircle, Play, Podcast, ShieldCheck, Sun, Trash2, Upload, XCircle } from "lucide-react";
-import { GoldDialog, GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
+import { AlertOctagon, AlertTriangle, BellRing, Highlighter, Info, BookOpen, BookText, ChevronLeft, ChevronRight, Download, EyeOff, FileText, Globe, Languages, Loader2, Lock, Mic, MinusCircle, Play, Podcast, Sun, Trash2, Upload, XCircle } from "lucide-react";
+import { GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import { PLAYBACK_RATES, QURAN_FONT_SIZES, THEME_COLORS, updateSettings, useSettings, type MushafStyle, type ThemeId } from "@/lib/settings";
 import { TAJWEED_LEGEND } from "@/lib/tajweedColors";
 import { BackupError, downloadBackup, importProgressJson } from "@/lib/progressStorage";
 import { cachedSurahIds, downloadWholeQuran, toArabicDigits } from "@/lib/quranService";
 import { directionFor, useI18n, type CopyKey } from "@/lib/i18n";
-import { ReciterSelectModal } from "@/components/ReciterSelectModal";
 import { ContentSelectList } from "@/components/ContentSelectModal";
 import { playMistakeSound } from "@/lib/feedbackSounds";
 import { RECITERS } from "@/lib/reciterManager";
@@ -55,7 +54,6 @@ export function SettingsModal({ open, onOpenChange, initialPage = null, onBackTo
   const s0 = useSettings();
   useEffect(() => { setPage(open ? initialPage : null); }, [open, initialPage]);
   const row = page ? GROUPS.flatMap((g) => g.rows).find((r) => r.id === page) : null;
-  const Back = directionFor(language) === "rtl" ? ChevronRight : ChevronLeft;
   const Next = directionFor(language) === "rtl" ? ChevronLeft : ChevronRight;
   return (
     <SanctuarySheet open={open} onClose={() => onOpenChange(false)} title={row ? t(row.label) : t("settingsTitle")} subtitle={row ? undefined : t("settingsSub")}

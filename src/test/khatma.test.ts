@@ -19,7 +19,7 @@ describe("Khatma", () => {
   it("logs today's portion in Mushaf order, tracks juz and surahs, and can undo", () => {
     let k = newKhatma("tilawa", { type: "days", days: 30 }, "2026-11-01");
     k = logPages(k, undefined, "2026-11-01");
-    let s = khatmaStats(k, index, "2026-11-01");
+    const s = khatmaStats(k, index, "2026-11-01");
     expect(s.pagesDone).toBe(21);
     expect(s.today).toBe(21);
     expect(s.juzDone).toBe(1);

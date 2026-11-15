@@ -95,8 +95,8 @@ export function KidsMeadow() {
   );
 }
 
-/** Floating sparkles over a card. */
-export function Sparkles({ count = 4, seed = 0 }: { count?: number; seed?: number }) {
+/** Floating five-pointed stars (★) over a card — never a four-point sparkle. */
+export function TwinkleStars({ count = 4, seed = 0 }: { count?: number; seed?: number }) {
   const spots = [[12, 18], [84, 14], [70, 78], [22, 70], [50, 8], [92, 52]];
   return (
     <span aria-hidden="true" className="pointer-events-none absolute inset-0">

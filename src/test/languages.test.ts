@@ -1,3 +1,4 @@
+import type { LiveStatus } from "@/lib/quranMatcher";
 import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { LANGUAGES, WEEKDAY_LETTERS, isLanguage, isRtl, localeFor } from "@/i18n";
@@ -52,14 +53,14 @@ describe("Surah completion", () => {
   });
 
   it("is complete once the reciter reached the last word", () => {
-    const st = keys.map((_, i) => (i < 14 ? "CORRECT" : "PENDING") as const);
+    const st = keys.map((_, i): LiveStatus => (i < 14 ? "CORRECT" : "PENDING"));
     expect(finishedSurah(ends, (i) => st[i])).toBe(null);
-    const done = keys.map((_, i) => (i <= 14 ? (i === 14 ? "WARNING" : "CORRECT") : "PENDING") as const);
+    const done = keys.map((_, i): LiveStatus => (i <= 14 ? (i === 14 ? "WARNING" : "CORRECT") : "PENDING"));
     expect(finishedSurah(ends, (i) => done[i])).toBe(112);
     expect(finishedSurah(ends, (i) => done[i], new Set([112]))).toBe(null);
     expect(isReached("ERROR")).toBe(true);
     // "أحد" heard right at the start also matches the surah's last word: not a completion.
-    const jump = keys.map((_, i) => (i < 2 || i === 14 ? "CORRECT" : i < 14 ? "ERROR" : "PENDING") as const);
+    const jump = keys.map((_, i): LiveStatus => (i < 2 || i === 14 ? "CORRECT" : i < 14 ? "ERROR" : "PENDING"));
     expect(finishedSurah(ends, (i) => jump[i])).toBe(null);
     expect(passageFinished(jump.slice(0, 15), 14)).toBe(false);
     expect(passageFinished(done.slice(0, 15), 14)).toBe(true);
@@ -87,7 +88,7 @@ describe("RecitationContext store", () => {
 
   it("keeps view snapshots across re-mounts", () => {
     const s = createRecitationStore();
-    s.mushaf = { surahId: 1, focusAyah: undefined, page: 3, mode: "RECITATION_MODE", selected: null, hints: [], statuses: [["2:6:1", "CORRECT"]] };
+    s.mushaf = { surahId: 1, focusAyah: undefined, jumpId: 0, page: 3, mode: "RECITATION_MODE", selected: null, hints: [] };
     expect(s.mushaf.page).toBe(3);
   });
 });

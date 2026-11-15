@@ -38,7 +38,7 @@ export function RecordingSessionsView({ onRetest }: { onRetest: (t: StudyTarget)
   const n = (x: number) => sessionNum(language, x);
 
   const stop = () => { audio.current?.pause(); audio.current = null; releaseUrl(url.current); url.current = null; setPlaying(null); };
-  useEffect(() => stop, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => stop, []);
 
   const toggle = async (r: RecordingMeta) => {
     if (playing === r.id) { stop(); return; }

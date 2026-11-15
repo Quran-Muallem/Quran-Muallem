@@ -1,25 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { FirstLaunchBasmalah } from "@/components/FirstLaunchBasmalah";
-import { CORRECTION_GRACE_MS, combineLock, lockComplete, lockSegment, startLock, type CorrectionLock } from "@/lib/correctionLock";
+import { CORRECTION_GRACE_MS, startLock } from "@/lib/correctionLock";
 import { CrashBoundary } from "@/components/CrashBoundary";
 import { useBackLayer } from "@/lib/backStack";
 import { stepAppFontScale } from "@/lib/settings";
-import { chooseLanguage } from "@/components/LanguageSelector";
 import type { SettingsPage } from "@/components/SettingsModal";
 import { AppLogo } from "@/components/ornaments";
 import { PrayingPersonIcon } from "@/components/icons/PrayingPersonIcon";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { BookOpen, BookOpenText, Headphones, Home, Star, LayoutGrid, Loader2, PenLine, Mic, Lightbulb, RotateCcw, Search, Settings, Sparkles, Square, Target, Pause, Play } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { BookOpen, Headphones, Home, Loader2, PenLine, Mic, Lightbulb, RotateCcw, Square, Pause, Play } from "lucide-react";
 import { VoiceWordFix, type WordFix } from "@/components/VoiceWordFix";
-import { useVoiceProfile } from "@/lib/userAdaptation";
-import { deferLiveMistakes, firstNewError, instantLiveMistakes, tokenVerses } from "@/lib/liveMistakes";
+import { firstNewError } from "@/lib/liveMistakes";
 import { SessionReview, type ReviewItem } from "@/components/SessionReview";
 import { useTajweedWords, type TajweedSeg } from "@/lib/tajweedColors";
 import { useMistakeHaptics } from "@/lib/useMistakeHaptics";
-import { matchLive, normalizeArabic, type LiveMatch, type LiveStatus, type WordStatus } from "@/lib/quranMatcher";
+import { normalizeArabic, type LiveMatch, type LiveStatus, type WordStatus } from "@/lib/quranMatcher";
 import { useSpeechRecognition, type SpeechErrorCode } from "@/lib/useSpeechRecognition";
 import { useTranscribingRecorder, type TranscriptKind } from "@/lib/use-transcribing-recorder";
-import { loadQuranPhonemes, matchLivePhonemes, phonemeRefs, usePhonemeLexicon } from "@/lib/quranAlignment";
+import { loadQuranPhonemes, phonemeRefs, usePhonemeLexicon } from "@/lib/quranAlignment";
 import { locateRecitation, locatorIndex } from "@/lib/ayahLocator";
 import { loadMushaf, TOTAL_PAGES, type Mushaf } from "@/lib/mushafData";
 import { BurgerButton, MushafMenu, type AppTab } from "@/components/mushaf/MushafMenu";
@@ -29,9 +27,8 @@ import { Button } from "@/components/ui/button";
 import { startAdhanService } from "@/lib/AdhanNotificationService";
 import { syncDailyReminder } from "@/lib/dailyReminder";
 import { AdhanAlert } from "@/components/hub/AdhanAlert";
-import { LanguageContext, directionFor, translate, useI18n, type CopyKey, type Language } from "@/lib/i18n";
+import { LanguageContext, directionFor, translate, useI18n, type CopyKey } from "@/lib/i18n";
 import { loadLanguage } from "@/i18n";
-import { LanguageSelector } from "@/components/LanguageSelector";
 import { BadgeProvider } from "@/context/BadgeContext";
 import { RecitationProvider, recitationStore, unifiedMode, useRecitationStore, useWordColors, type RecitedWord } from "@/context/RecitationContext";
 import { isJudged, passageTokenKeys } from "@/lib/wordColors";
@@ -54,7 +51,6 @@ import { KidsTafsirView } from "@/components/kids/KidsTafsirView";
 import { KidsStarJourney } from "@/components/kids/KidsStarJourney";
 import { KidsSettingsView } from "@/components/kids/KidsSettingsView";
 import { StoriesView } from "@/components/stories/StoriesView";
-import { openKidsMushaf as openKidsMushafNav, openKidsSection as openKidsSectionNav } from "@/components/kids/kidsNav";
 import { KidsModeProvider } from "@/components/kids/KidsModeContext";
 import { KidsPraiseToast } from "@/components/kids/KidsStarJourney";
 import { BadgesModal } from "@/components/badges/BadgesModal";
@@ -77,8 +73,7 @@ import { ayahResults } from "@/lib/practiceResults";
 import { ayahMarker, toArabicDigits, type Ayah } from "@/lib/quranService";
 import { useSurahList, useSurahText } from "@/lib/useQuran";
 import { useAyahPlayer } from "@/lib/useAyahPlayer";
-import { getReciter } from "@/lib/reciterManager";
-import { holdStartup, useStartupIdentification } from "@/lib/recitationStartup";
+import { useLiveJudgement } from "@/lib/useLiveJudgement";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -295,7 +290,7 @@ export function App() {
             {tab === "home" && !settings.kidsMode && <Dashboard userName={auth.session?.provider === "guest" ? null : auth.session?.name || null} onOpen={open} onInvite={() => setInviteOpen(true)} onBadges={() => setBadgesOpen({ surah: null })} />}
             {tab === "mushaf" && (
               <MushafReader surahId={mushaf.surahId} focusAyah={mushaf.focus} focusMode={mushaf.mode} mark={mushaf.mark} jumpId={mushaf.jumpId} onPractice={open}
-                onNavigate={go} onSettings={() => setSettingsOpen("manual")} onInvite={() => setInviteOpen(true)} onSearch={() => setSearchOpen(true)} />
+                onSettings={() => setSettingsOpen("manual")} />
             )}
             {tab === "practice" && <PracticeScreen target={practice} onTargetChange={setPractice} />}
             {tab === "khatma" && <KhatmaView onOpenPage={openPage} />}
@@ -306,10 +301,8 @@ export function App() {
           {/* v53: one shell everywhere — the same header and 4-tab bar on Home, Mushaf, Recite and «المرافق» */}
           <BottomNav tab={companion ? null : tab} setTab={go} hubSection={hubSection} kids={settings.kidsMode} />
           {(
-            <MushafMenu open={menuOpen} onClose={() => setMenuOpen(false)} current={tab} page={1} surah={mushaf.surahId} juz={1}
+            <MushafMenu open={menuOpen} onClose={() => setMenuOpen(false)} current={tab}
               profile={auth.status === "signedIn" ? <AccountMenu session={auth.session} onRename={() => setRenameOpen(true)} /> : undefined}
-              onPage={openPage} onSurah={(s2) => { jump({ surahId: s2, focus: 1 }); go("mushaf"); }}
-              onJuz={(j) => { void loadMushaf().then((m) => openPage(m.juzStartPage(j))).catch(() => {}); }}
               onNavigate={go} onSettings={() => setSettingsOpen("manual")} onInvite={() => setInviteOpen(true)} onSearch={() => setSearchOpen(true)} />
           )}
           <QuranSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} onSelect={onSearchResult} />
@@ -350,27 +343,7 @@ function TextSizeButtons() {
   );
 }
 
-/** v51: language quick switch on the home screen — العربية · DE · EN · FR (others in the menu). */
-function LanguageQuickSwitch() {
-  const { language } = useI18n();
-  const opts: { id: Language; label: string }[] = [{ id: "ar", label: "العربية" }, { id: "de", label: "DE" }, { id: "en", label: "EN" }, { id: "fr", label: "FR" }];
-  return (
-    <div role="radiogroup" aria-label="Language" className="mt-2 grid grid-cols-4 gap-1.5" data-lang-quick="">
-      {opts.map((o) => (
-        <button key={o.id} type="button" role="radio" aria-checked={language === o.id} onClick={() => void chooseLanguage(o.id)} data-lang={o.id}
-          className={cn("h-[3.25rem] rounded-2xl text-base font-extrabold transition", o.id === "ar" && "font-arabic text-lg", language === o.id ? "bg-[linear-gradient(135deg,#f3d27a,#d4af37)] text-[#1b1300] shadow-[0_6px_16px_-8px_rgba(212,175,55,.9)]" : "border-2 border-[color:var(--sx-card-border)] bg-[var(--sx-card)] text-[var(--sx-ink)]")}>
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
-function TopButton({ onClick, label, children }: { onClick: () => void; label: string; children: ReactNode }) {
-  return (
-    <Button variant="outline" onClick={onClick} aria-label={label} className="h-10 w-10 rounded-full border-accent/40 bg-card p-0 text-accent">{children}</Button>
-  );
-}
 
 function AccountMenu({ session, onRename }: { session: UserSession; onRename: () => void }) {
   const { t, language } = useI18n();
@@ -505,34 +478,21 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
     if (base.kind === "phonemes") return fullTranscript.slice(base.pos);
     return fullTranscript.trim().split(/\s+/).slice(base.pos).join(" ");
   }, [fullTranscript, base]);
-  const profile = useVoiceProfile(); // re-judge when a word is added to the voice profile
-  // v55 «Ayah Correction Lock» (correctionLock.ts), as in the Mushaf.
-  const [lock, setLock] = useState<CorrectionLock | null>(null);
-  const runMatch = useCallback((tg: readonly string[], rf: readonly (string | null)[] | null | undefined) => (useWhisper && textKind === "phonemes" && rf
-    ? matchLivePhonemes(transcript, tg, rf, { final: !whisper.recording })
-    : matchLive(transcript, tg)), [transcript, textKind, useWhisper, whisper.recording]);
-  const segMatch = useMemo(() => { if (!lock) return null; const seg = lockSegment(texts, refs, lock); return runMatch(seg.targets, seg.refs); },
-    [lock, texts, refs, runMatch, profile]); // eslint-disable-line react-hooks/exhaustive-deps
-  const match = useMemo(() => (lock && segMatch ? combineLock(texts, lock, segMatch) : runMatch(texts, refs)),
-    [lock, segMatch, texts, refs, runMatch, profile]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (lock?.locked && lockComplete(segMatch, lock)) setLock({ ...lock, locked: false }); }, [lock, segMatch]);
-  useEffect(() => { setLock(null); }, [texts, base]); // a new passage / jump: no lock
+  const listening = useWhisper ? whisper.recording : speech.isListening;
+  // v56.3: matcher → correction lock (v55) → identification window (v56) → live colours (v38 / v53),
+  // shared with the Mushaf (useLiveJudgement.ts).
+  const { match, lock, setLock, liveStatuses, ident } = useLiveJudgement({
+    targets: texts, refs, transcript, phonemeText: useWhisper && textKind === "phonemes",
+    final: !whisper.recording, listening, instant: settings.instantCorrection,
+  });
+  useEffect(() => { setLock(null); }, [texts, base]); // eslint-disable-line react-hooks/exhaustive-deps -- a new passage / jump: no lock
   const pendingFixP = useRef<number | null>(null);
   const graceP = useRef(0);
   const resumeCorrectedP = useRef<() => void>(() => {});
-  const listening = useWhisper ? whisper.recording : speech.isListening;
-  // v38: while reciting, red / orange appear only once their verse is finished (liveMistakes.ts).
-  const verseOf = useMemo(() => tokenVerses(texts), [texts]);
-  // v56: silent Surah / Ayah identification window at the start (recitationStartup.ts): no red, no
-  // correction until the passage is confirmed here or switched to the surah actually recited.
-  const ident = useStartupIdentification({ listening, match, transcript, kind: useWhisper && textKind === "phonemes" ? "phonemes" : "text" });
   const resetGraceP = ident.resetGrace;
   const identRestartP = useRef(ident.restart);
   identRestartP.current = ident.restart;
   useEffect(() => { resetGraceP(); }, [texts, resetGraceP]); // another passage: token indices changed meaning
-  const liveStatuses = useMemo(() => (!listening ? match.statuses
-    : holdStartup(settings.instantCorrection ? instantLiveMistakes(match.statuses, match.cursor) : deferLiveMistakes(match.statuses, verseOf, match.cursor), ident.identifying, ident.graceTokens)),
-    [listening, match.statuses, match.cursor, verseOf, settings.instantCorrection, ident.identifying, ident.graceTokens]);
   // Word colours shared with the Mushaf (RecitationContext): a passage recited there shows the same
   // green / orange / red here; a new recitation replaces them verse by verse as the reciter reaches them.
   const colors = useWordColors();
@@ -991,6 +951,7 @@ export function PracticeScreen({ target, onTargetChange }: { target: PracticeTar
 }
 
 function LevelMeter({ active, getLevel }: { active: boolean; getLevel: () => number }) {
+  const { t } = useI18n();
   const bars = useRef<(HTMLSpanElement | null)[]>([]);
   useEffect(() => {
     if (!active) return;
@@ -1008,7 +969,7 @@ function LevelMeter({ active, getLevel }: { active: boolean; getLevel: () => num
   }, [active, getLevel]);
   if (!active) return null;
   return (
-    <div role="meter" aria-label="Input level" aria-valuemin={0} aria-valuemax={1} dir="ltr" className="flex h-10 items-center justify-center gap-1.5">
+    <div role="meter" aria-label={t("micLevel")} aria-valuemin={0} aria-valuemax={1} dir="ltr" className="flex h-10 items-center justify-center gap-1.5">
       {Array.from({ length: 7 }, (_, i) => (
         <span key={i} ref={(el) => { bars.current[i] = el; }} className="h-10 w-1.5 origin-center rounded-full bg-success transition-transform duration-75" style={{ transform: "scaleY(0.12)" }} />
       ))}
@@ -1170,7 +1131,7 @@ function RecorderFeedback({ transcribing, transcript, error }: { transcribing: b
   const { t } = useI18n();
   return (
     <>
-      {transcribing && <p className="flex items-center justify-center gap-2 text-sm text-accent"><Sparkles className="h-4 w-4 animate-pulse" /> {t("transcribing")}</p>}
+      {transcribing && <p className="flex items-center justify-center gap-2 text-sm text-accent"><Loader2 className="h-4 w-4 animate-spin" /> {t("transcribing")}</p>}
       {error && <p role="alert" className={cn("rounded-xl border bg-card p-3 text-sm", error === "errSilent" || error === "errEmpty" ? "border-accent/50 text-accent" : "border-destructive/40 text-destructive")}>{t(error)}</p>}
       {transcript && (
         <div className="space-y-2 rounded-2xl border border-border bg-card p-4 animate-in fade-in">

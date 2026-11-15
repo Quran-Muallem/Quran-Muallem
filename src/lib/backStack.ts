@@ -67,3 +67,19 @@ export function useBackLayer(active: boolean, onBack: () => void) {
 
 /** Test helper. */
 export const backStackDepth = () => stack.length;
+
+/**
+ * v56.3: the one way an overlay closes — Escape (keyboard / web) and the Android back button both call
+ * `onClose`. Replaces the Escape handler that every sheet used to copy (and that never handled Android back).
+ */
+export function useDismissLayer(open: boolean, onClose: () => void) {
+  const fn = useRef(onClose);
+  fn.current = onClose;
+  useEffect(() => {
+    if (!open) return;
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") fn.current(); };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [open]);
+  useBackLayer(open, () => fn.current());
+}

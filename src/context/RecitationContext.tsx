@@ -19,7 +19,6 @@
 import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import { createSignal, idb } from "@/lib/storage";
 import { applyRecitation, extendRange, parseColors, rangeOf, serializeColors, type ActiveRange, type RecitedWord, type WordColorMap } from "@/lib/wordColors";
-import type { LiveStatus } from "@/lib/quranMatcher";
 import { completeSurah, recordWords, type BadgeEarned, type RecitationMode, type WordResult } from "@/lib/badges";
 import { celebrateWhenStopped } from "@/lib/recordingActivity";
 export { wordDone } from "@/lib/surahCompletion";
@@ -179,8 +178,3 @@ export function useWordColors(): WordColorMap {
   return useSyncExternalStore(store.colors.subscribe, store.colors.get, store.colors.get);
 }
 
-/** The passage recited last in either view. */
-export function useActiveRange(): ActiveRange | null {
-  const store = useRecitationStore();
-  return useSyncExternalStore(store.activeRange.subscribe, store.activeRange.get, store.activeRange.get);
-}

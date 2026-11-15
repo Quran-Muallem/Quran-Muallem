@@ -3,7 +3,6 @@ import { BookOpen, ChevronLeft, Medal } from "lucide-react";
 import { BadgeMedal } from "@/components/badges/BadgeMedal";
 import { GoldDialog, GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import { badgeCounts, recentBadges, surahBadgeProgress, useBadges, type BadgeState } from "@/lib/badges";
-import { useProgress, type LocalProgress } from "@/lib/progressStorage";
 import { getSurahMeta, toArabicDigits } from "@/lib/quranService";
 import { surahBadge } from "@/lib/surahBadges";
 import { useI18n } from "@/lib/i18n";
@@ -22,7 +21,6 @@ export function BadgesModal({ open, onOpenChange, onOpenSurah, initialSurah }: {
 }) {
   const { t, language } = useI18n();
   const badges = useBadges();
-  const progress = useProgress();
   const [filter, setFilter] = useState<"all" | "earned">("all");
   const [selected, setSelected] = useState<number | null>(null);
   const [lastInitial, setLastInitial] = useState<number | null | undefined>(undefined);
@@ -35,7 +33,7 @@ export function BadgesModal({ open, onOpenChange, onOpenSurah, initialSurah }: {
     <GoldDialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setSelected(null); setLastInitial(undefined); } }}
       title={t("badgesTitle")} description={t("badgesSub")} closeLabel={t("close")} className="max-w-md">
       {selected ? (
-        <BadgeDetail surah={selected} badges={badges} progress={progress} onBack={() => setSelected(null)}
+        <BadgeDetail surah={selected} badges={badges} onBack={() => setSelected(null)}
           onOpenSurah={onOpenSurah ? () => { onOpenChange(false); setSelected(null); onOpenSurah(selected); } : undefined} />
       ) : (
         <>
@@ -89,8 +87,8 @@ function Count({ value, label, color }: { value: string; label: string; color: s
   );
 }
 
-function BadgeDetail({ surah, badges, progress, onBack, onOpenSurah }: {
-  surah: number; badges: BadgeState; progress: LocalProgress; onBack: () => void; onOpenSurah?: (() => void) | undefined;
+function BadgeDetail({ surah, badges, onBack, onOpenSurah }: {
+  surah: number; badges: BadgeState; onBack: () => void; onOpenSurah?: (() => void) | undefined;
 }) {
   const { t, language } = useI18n();
   const num = (n: number) => (language === "ar" ? toArabicDigits(n) : String(n));

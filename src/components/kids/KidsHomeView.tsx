@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { toArabicDigits } from "@/lib/quranService";
 import { useSurahStars } from "@/components/kids/KidsStarJourney";
 import type { KidsTab } from "@/components/kids/KidsLayoutTemplate";
-import { KidsBadge, Sparkles, StarMeter, type KidsBadgeId } from "@/components/kids/KidsArt";
+import { KidsBadge, TwinkleStars, StarMeter, type KidsBadgeId } from "@/components/kids/KidsArt";
 
 export function KidsHomeView({ userName, onGo }: { userName?: string | null; onGo: (t: KidsTab) => void }) {
   const { t, language } = useI18n();
@@ -24,7 +24,7 @@ export function KidsHomeView({ userName, onGo }: { userName?: string | null; onG
   return (
     <div className="space-y-5" data-kids-home="">
       <div className="kd-card kd-3d kd-pop relative space-y-3 overflow-hidden p-4" style={{ background: "linear-gradient(160deg, var(--kd-cream) 55%, color-mix(in srgb, var(--kd-sun) 55%, var(--kd-cream)))" }}>
-        <Sparkles count={3} seed={2} />
+        <TwinkleStars count={3} seed={2} />
         <div className="relative flex items-center gap-3">
           <span className="kd-bounce text-4xl" aria-hidden="true">👋</span>
           <div className="min-w-0 flex-1">
@@ -45,7 +45,7 @@ export function KidsHomeView({ userName, onGo }: { userName?: string | null; onG
               style={{ background: c.bg, borderRadius: 30, borderBottom: `7px solid ${c.edge}` }}>
               <span aria-hidden="true" className="pointer-events-none absolute -bottom-10 -start-8 h-32 w-32 rounded-full bg-white/15" />
               <span aria-hidden="true" className="pointer-events-none absolute -top-12 end-6 h-28 w-28 rounded-full bg-white/10" />
-              <Sparkles count={4} seed={i} />
+              <TwinkleStars count={4} seed={i} />
               <span className="kd-float relative shrink-0 drop-shadow-[0_8px_10px_rgba(0,0,0,.18)]" style={{ animationDelay: `${i * 0.7}s` }}>
                 <KidsBadge id={c.badge} />
               </span>

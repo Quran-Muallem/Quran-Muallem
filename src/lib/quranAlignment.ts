@@ -21,9 +21,6 @@ import { assetUrl } from "@/lib/assets";
 import { createSignal } from "@/lib/storage";
 import { getMatcherAdaptation, normalizeArabic, type LiveMatch, type LiveStatus } from "./quranMatcher";
 
-/** The names used in the engine specification. */
-export type WordState = "MATCHED" | "WRONG_WORD" | "PENDING";
-export const wordState = (s: LiveStatus): WordState => (s === "PENDING" ? "PENDING" : s === "ERROR" ? "WRONG_WORD" : "MATCHED");
 
 /* ───────────── canonical phonemes ───────────── */
 
@@ -41,7 +38,6 @@ export function loadQuranPhonemes(): Promise<PhonemeLexicon> {
 export function usePhonemeLexicon(): PhonemeLexicon | null {
   return useSyncExternalStore(lexicon.subscribe, lexicon.get, lexicon.get);
 }
-export const setPhonemeLexicon = (l: PhonemeLexicon | null) => lexicon.set(l);
 
 /**
  * Canonical phonemes per flat token of `words.join(" ").split(" ")` — the token list the matchers use.

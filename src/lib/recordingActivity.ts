@@ -19,7 +19,6 @@ let celebrate: () => void = celebrateSurah;
 /** Tests: replace the sound / vibration. */
 export function setCelebrator(fn: () => void) { celebrate = fn; }
 
-export const isMicActive = () => mic.get();
 export function useMicActive(): boolean { return useSyncExternalStore(mic.subscribe, mic.get, mic.get); }
 
 /** Called by the reciting views whenever their microphone goes on or off. */

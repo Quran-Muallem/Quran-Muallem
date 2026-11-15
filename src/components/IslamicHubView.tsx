@@ -40,7 +40,6 @@ const SECTIONS: { id: HubSection; icon: typeof Clock; emoji: string; title: Copy
 export function IslamicHubView({ section, onSection, onRetest, onClose }: { section: HubSection | null; onSection: (s: HubSection | null) => void; onRetest: (t: StudyTarget) => void; onClose?: () => void }) {
   const { t, language } = useI18n();
   const kids = useKidsMode();
-  const Back = isRtl(language) ? ChevronRight : ChevronLeft;
   const current = SECTIONS.find((s) => s.id === section);
   let body: ReactNode = null;
   if (section === "prayer") body = <PrayerTimesView />;
@@ -81,6 +80,7 @@ export function IslamicHubView({ section, onSection, onRetest, onClose }: { sect
     <div className="space-y-4" data-hub="">
       <header>
         <h1 className="font-arabic text-3xl leading-snug" style={{ color: GOLD_LIGHT }}>المزيد</h1>
+        {language !== "ar" && <p className="text-lg font-bold" style={{ color: GOLD_LIGHT }}>{t("navHub")}</p>}
         <p className="text-sm text-emerald-100/70">{t("hubSub")}</p>
       </header>
       <KidsHubBlock onSection={onSection} />

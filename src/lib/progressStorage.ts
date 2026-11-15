@@ -114,8 +114,6 @@ export function loadProgress(): Promise<LocalProgress> {
 
 export const getProgress = () => signal.get();
 
-/** Called after every change of the progress store (used by the badges). */
-export const subscribeProgress = (listener: () => void) => signal.subscribe(listener);
 
 async function commit(update: (p: LocalProgress) => LocalProgress): Promise<LocalProgress> {
   await loadProgress();
@@ -209,22 +207,6 @@ export function recordAttempt(input: { surahId: number; mode: StudyMode; results
   });
 }
 
-/** Manually set a verse's status (e.g. "I already know this surah"). */
-export function setVerseStatus(surahId: number, ayahIds: number[], status: VerseStatus): Promise<LocalProgress> {
-  const today = localDate();
-  return commit((p) => {
-    for (const a of ayahIds) {
-      const key = verseKey(surahId, a);
-      if (status === "NEW") { delete p.verses[key]; continue; }
-      const v = p.verses[key] ?? { status, lastAccuracy: null, bestAccuracy: null, attempts: 0, lastPracticed: null, nextReview: null, intervalDays: 0 };
-      v.status = status;
-      v.intervalDays = status === "MEMORIZED" ? Math.max(v.intervalDays, 3) : 0;
-      v.nextReview = addDays(today, v.intervalDays);
-      p.verses[key] = v;
-    }
-    return p;
-  });
-}
 
 export const resetProgress = () => commit(() => emptyProgress());
 
@@ -290,23 +272,7 @@ export function getStats(p: LocalProgress, today = localDate()): ProgressStats {
   };
 }
 
-/** Per-surah summary for progress bars. */
-export function surahProgress(p: LocalProgress, surahId: number, versesCount: number) {
-  let memorized = 0, revision = 0;
-  for (let a = 1; a <= versesCount; a++) {
-    const s = verseStatus(p, surahId, a);
-    if (s === "MEMORIZED") memorized++; else if (s === "NEEDS_REVISION") revision++;
-  }
-  return { memorized, revision, percent: versesCount ? Math.round((memorized / versesCount) * 100) : 0 };
-}
 
-/** Surahs the user has touched, most recent first. */
-export function recentSurahs(p: LocalProgress, limit = 4): number[] {
-  const seen: number[] = [];
-  if (p.lastPosition) seen.push(p.lastPosition.surahId);
-  for (const s of p.sessions) if (!seen.includes(s.surahId)) seen.push(s.surahId);
-  return seen.slice(0, limit);
-}
 
 /* ------------------------------------------------------------------ */
 /* Backup                                                              */

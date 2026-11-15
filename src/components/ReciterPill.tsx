@@ -1,5 +1,5 @@
 import { ChevronDown, Loader2, Pause, Play, Repeat } from "lucide-react";
-import { GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
+import { GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import { getReciter, type Reciter } from "@/lib/reciterManager";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -25,39 +25,7 @@ export function ReciterAvatar({ reciter, selected = false, className }: { recite
   );
 }
 
-/** Animated "audio wave" bars; still when nothing plays. */
-export function AudioWave({ active, className }: { active: boolean; className?: string }) {
-  return (
-    <span aria-hidden="true" className={cn("flex h-4 items-end gap-[2px]", className)}>
-      {[0.55, 1, 0.7, 0.9].map((h, i) => (
-        <span key={i} className={cn("w-[3px] rounded-full", active && "reciter-wave")}
-          style={{ height: `${h * 100}%`, background: GOLD_LIGHT, opacity: active ? 1 : 0.55, animationDelay: `${i * 0.13}s` }} />
-      ))}
-    </span>
-  );
-}
 
-/**
- * Prominent Sheikh selector shown at the top of the Mushaf and the Recitation screen:
- * monogram · name · audio wave. Opens the reciter list.
- */
-export function ReciterPill({ reciterId, playing, onOpen, className }: { reciterId: string; playing: boolean; onOpen: () => void; className?: string }) {
-  const { t, language } = useI18n();
-  const r = getReciter(reciterId);
-  return (
-    <button type="button" onClick={onOpen} aria-haspopup="dialog" aria-label={`${t("reciterChange")}: ${language === "ar" ? r.nameArabic : r.nameEnglish}`}
-      className={cn("flex w-full items-center gap-3 rounded-full py-1.5 pe-4 ps-1.5 text-start transition active:scale-[.99]", className)}
-      style={{ background: "linear-gradient(135deg, #064e3b, #022c22)", boxShadow: `inset 0 0 0 1px ${alpha(GOLD_LIGHT, 0.7)}, 0 6px 18px -8px rgba(0,0,0,.7)` }}>
-      <ReciterAvatar reciter={r} className="h-9 w-9 text-base" />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold text-emerald-50">{language === "ar" ? r.nameArabic : r.nameEnglish}</span>
-        <span className="block truncate text-[0.7rem]" style={{ color: alpha(GOLD_LIGHT, 0.85) }}>{playing ? t("reciterPlaying") : t("reciterChange")}</span>
-      </span>
-      <AudioWave active={playing} />
-      <ChevronDown className="h-4 w-4 shrink-0" style={{ color: GOLD_LIGHT }} />
-    </button>
-  );
-}
 
 /**
  * The Sheikh player for a screen's top row (Mushaf and Recite): ▶/⏸ · the Sheikh (opens the reciter list)

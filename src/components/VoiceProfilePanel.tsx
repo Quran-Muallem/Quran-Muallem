@@ -116,7 +116,7 @@ function Sparkline({ values }: { values: number[] }) {
   const w = 56, h = 20;
   const pts = values.map((v, i) => `${(i / (values.length - 1)) * w},${h - (Math.max(0, Math.min(100, v)) / 100) * h}`).join(" ");
   return (
-    <svg aria-hidden="true" width={w} height={h} viewBox={`0 -1 ${w} ${h + 2}`} className="shrink-0" dir="ltr">
+    <svg aria-hidden="true" width={w} height={h} viewBox={`0 -1 ${w} ${h + 2}`} className="shrink-0" style={{ direction: "ltr" }}>
       <polyline points={pts} fill="none" stroke={GOLD_LIGHT} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );

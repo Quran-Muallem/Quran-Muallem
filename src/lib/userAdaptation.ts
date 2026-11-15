@@ -155,8 +155,6 @@ export function addVariant(input: { word: string; heard: string; surah?: number 
   }).then(() => true);
 }
 
-export const hasVariant = (word: string, heard: string) =>
-  signal.get().variants.some((v) => v.expected === normalizeArabic(word) && v.heard === normalizeArabic(heard));
 
 export const removeVariant = (expected: string, heard: string) =>
   update((p) => ({ ...p, variants: p.variants.filter((v) => !(v.expected === expected && v.heard === heard)) }));

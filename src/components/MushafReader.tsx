@@ -10,7 +10,6 @@ import { AyahActionMenu, type AyahAction } from "@/components/mushaf/AyahActionM
 import { GoToModal, type GoToTarget } from "@/components/mushaf/GoToModal";
 import { TafsirModal, type AyahInfoTab } from "@/components/TafsirModal";
 import { useKeepAwake } from "@/lib/wakeLock";
-import { BurgerButton, MushafMenu, type AppTab } from "@/components/mushaf/MushafMenu";
 import { GOLD_B } from "@/components/mushaf/MushafOrnaments";
 import { GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
 import type { StudyTarget } from "@/components/Dashboard";
@@ -24,7 +23,7 @@ import { usePagePlayer } from "@/lib/usePagePlayer";
 import { getReciter } from "@/lib/reciterManager";
 import { recordAttempt, setLastPosition, useProgress, verseStatus } from "@/lib/progressStorage";
 import { ayahResults } from "@/lib/practiceResults";
-import { accuracyOf, covers, recordingForVerse, saveRecording, useRecordings } from "@/lib/audioStorage";
+import { covers, recordingForVerse, saveRecording, useRecordings } from "@/lib/audioStorage";
 import { RecitationPlayerBar } from "@/components/RecitationPlayerBar";
 import type { KeptAudio } from "@/lib/use-transcribing-recorder";
 import { QURAN_FONT_SIZES, getSettings, updateSettings, useSettings, type MushafStyle } from "@/lib/settings";
@@ -58,7 +57,7 @@ function useMushaf() {
  * Swipe or tap the arrows to turn pages. Recite on the page itself: Recitation colours the words,
  * Memorization hides them until recited correctly. The selected Sheikh can read the page aloud.
  */
-export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, onPractice, onNavigate, onSettings, onInvite, onSearch }: {
+export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, onPractice, onSettings }: {
   surahId: number;
   focusAyah?: number | undefined;
   /** Mode to open in (from the passage last recited on the Recite screen). */
@@ -67,13 +66,8 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
   mark?: readonly string[] | undefined;
   /** Changes on every new jump request (the same verse can be requested again, e.g. from search). */
   jumpId?: number;
-  onSearch?: () => void;
-  onSurahChange?: (id: number) => void;
   onPractice?: (target: StudyTarget) => void;
-  /** Full-screen Mushaf: the app navigation lives in the burger menu. */
-  onNavigate?: (tab: AppTab) => void;
   onSettings?: () => void;
-  onInvite?: () => void;
 }) {
   const { t, language } = useI18n();
   const { data: mushaf, error, retry } = useMushaf();
@@ -98,7 +92,6 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
   const [completed, setCompleted] = useState<number | null>(null);
   const [reciterOpen, setReciterOpen] = useState(false);
   const [saved, setSaved] = useState<number | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   /** Verse menu (listen · translation · tafsir · mark for practice) at the tapped point. */
   const [kidsVerse, setKidsVerse] = useState<{ surah: number; ayah: number } | null>(null);
   const [verseMenu, setVerseMenu] = useState<{ surah: number; ayah: number; at: { x: number; y: number } } | null>(null);
@@ -442,7 +435,7 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
       if (r.top < top || r.bottom > bottom) el.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 60);
     return () => window.clearTimeout(id);
-  }, [rec.listening, cursorAyah, rec.match.cursor]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rec.listening, cursorAyah, rec.match.cursor]);
   const pageKeys = useMemo(() => verses.flatMap((v) => v.words.map((w) => `${v.surah}:${v.ayah}:${w}`)), [verses]);
   const showPast = settings.showPastMistakes, detectErrors = settings.errorDetection;
   const statuses = useMemo(() => {
@@ -785,7 +778,7 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
         </div>
       </div>
 
-      <ReciteBar docked mode={mode} onMode={(m) => { setMode(m); }} listening={rec.listening} busy={rec.processing}
+      <ReciteBar mode={mode} onMode={(m) => { setMode(m); }} listening={rec.listening} busy={rec.processing}
         hint={mode === "MEMORIZATION_MODE" ? { onClick: giveHint, used: hints.size, disabled: !nextHint() } : undefined}
         onMic={() => { player.pause(); rec.toggle(); }} getLevel={rec.getLevel} status={rec.paused ? t("recitePausedStatus") : status}
         paused={rec.paused} onPause={rec.canPause ? () => { if (rec.paused) resumeCorrected.current(); else { rec.pause(); } } : undefined}
@@ -821,11 +814,6 @@ export function MushafReader({ surahId, focusAyah, focusMode, mark, jumpId = 0, 
             setWordFix({ id: it.key, word: it.word, heard: it.heard, surah: s2, ayah: a2, phonemes: it.expected ?? undefined, status: it.status });
           }} />
       )}
-      <MushafMenu open={menuOpen} onClose={() => setMenuOpen(false)} page={page} surah={firstSurah} juz={juz}
-        onPage={(p) => { setSelected(null); setPage(Math.min(TOTAL_PAGES, Math.max(1, p))); }}
-        onSurah={(s2) => { setPage(mushaf.surahStartPage(s2)); setSelected(`${s2}:1`); }}
-        onJuz={(j) => { setSelected(null); setPage(mushaf.juzStartPage(j)); }}
-        onNavigate={(tab) => onNavigate?.(tab)} onSettings={() => onSettings?.()} onInvite={() => onInvite?.()} onSearch={onSearch} onGoTo={() => setGoToOpen(true)} />
 
       {kidsVerse && <KidsTafsirDrawer surah={kidsVerse.surah} ayah={kidsVerse.ayah} onClose={() => { setKidsVerse(null); setSelected(null); }} />}
       {verseMenu && (
@@ -861,6 +849,5 @@ const PAGE_GAP_PX = 6;
 const FRAME_PX = 78;
 /** Below this the lines would be unreadable; the font size also has its own minimum. */
 const MIN_TEXT_PX = 180;
-const chip = "rounded-full border border-amber-300/50 bg-black/25 px-3 py-1 text-amber-100 hover:bg-black/40";
 
 export default MushafReader;

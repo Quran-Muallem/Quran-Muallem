@@ -4,9 +4,8 @@ import { ArrowRight, Loader2, X } from "lucide-react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { MAX_NAME_LENGTH, startWithName, updateProfile, type UserSession } from "@/lib/authService";
 import { directionFor, useI18n } from "@/lib/i18n";
-import { updateSettings } from "@/lib/settings";
 import { LegalDialog, type LegalDoc } from "@/components/LegalDialog";
-import { GOLD, GOLD_GRADIENT, GoldFrame, Divider, AppLogo, AppWordmark, alpha } from "@/components/ornaments";
+import { GOLD_GRADIENT, GoldFrame, Divider, AppLogo, AppWordmark } from "@/components/ornaments";
 
 export type WelcomeModalProps = {
   open: boolean;

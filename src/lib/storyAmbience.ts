@@ -27,7 +27,6 @@ function noiseBuffer(c: AudioContext, seconds: number): AudioBuffer {
   return buf;
 }
 
-export const ambienceOn = () => bed !== null;
 
 /** Starts the nature bed (volume ≈ 0.1). */
 export function startAmbience(volume = 0.1) {

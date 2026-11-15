@@ -126,7 +126,7 @@ export class VadGate {
   private pending = new Float32Array(0);
   private sinceVoice = Infinity;
 
-  constructor(private readonly rate: number, opts: { keepPauseSeconds?: number } = {}) {
+  constructor(rate: number, opts: { keepPauseSeconds?: number } = {}) {
     this.frame = Math.max(1, Math.round(rate * FRAME_S));
     this.keepPause = Math.round((opts.keepPauseSeconds ?? 0.6) * rate);
     this.hang = Math.round(HANGOVER_S * rate);

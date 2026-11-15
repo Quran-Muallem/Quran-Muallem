@@ -8,6 +8,7 @@ import { ContentLoadError, getTafsir, getTranslation, loadTafsir, loadTranslatio
 import { updateSettings, useSettings } from "@/lib/settings";
 import { directionFor, isRtlText, useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { useDismissLayer } from "@/lib/backStack";
 
 export type AyahInfoTab = "translation" | "tafsir";
 type Load<T> = { status: "loading" } | { status: "ready"; data: T } | { status: "error"; offline: boolean };
@@ -30,12 +31,7 @@ export function TafsirModal({ open, surah, ayah, tab: initialTab, onClose, onAya
   const [retry, setRetry] = useState(0);
   useEffect(() => { if (open) setTab(initialTab); }, [open, initialTab]);
   useEffect(() => { if (open) void loadMushaf().then(setMushaf).catch(() => {}); }, [open]);
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  useDismissLayer(open, onClose); // Escape + Android back
 
   const translation = getTranslation(settings.translations[language], language);
   const tafsir = getTafsir(settings.tafsirs[language], language);

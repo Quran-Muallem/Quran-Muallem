@@ -278,7 +278,7 @@ function MiniPlayer() {
       {p.failed && <p className="mt-1 text-[0.7rem] leading-snug text-red-200" role="alert" data-hub-player-error="">{t("recPlayFailed")}</p>}
       <div className="mt-1 flex items-center gap-2 text-[0.65rem] tabular-nums text-emerald-100/60" dir="ltr">
         <span>{time(p.position)}</span>
-        <input type="range" min={0} max={Math.max(1, p.duration)} step={1} value={Math.min(p.position, p.duration || 0)} onChange={(e) => seek(Number(e.target.value))} aria-label="progress"
+        <input type="range" min={0} max={Math.max(1, p.duration)} step={1} value={Math.min(p.position, p.duration || 0)} onChange={(e) => seek(Number(e.target.value))} aria-label={t("progress")}
           className="h-1 flex-1 accent-amber-400" data-hub-seek="" />
         <span>{time(p.duration)}</span>
       </div>

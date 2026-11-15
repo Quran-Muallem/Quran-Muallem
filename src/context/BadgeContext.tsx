@@ -8,7 +8,7 @@
  * (`completeSurah`, called through `RecitationContext.finishSurah`). There is no timer, no
  * "page open long enough" and no accuracy shortcut. The rules live in `src/lib/badges.ts` (tested).
  */
-import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
+import { createContext, useEffect, useMemo, type ReactNode } from "react";
 import {
   badgeCounts, completeSurah, initBadges, onBadgeEarned, recentBadges, recordWords, surahBadgeProgress, useBadges,
   type BadgeEarned, type BadgeState, type RecitationMode, type WordResult,
@@ -41,12 +41,3 @@ export function BadgeProvider({ children }: { children: ReactNode }) {
   return <BadgeContext.Provider value={value}>{children}</BadgeContext.Provider>;
 }
 
-/** Badge state and actions; works without a provider too (falls back to the shared store). */
-export function useBadgeContext(): BadgeApi {
-  const ctx = useContext(BadgeContext);
-  const state = useBadges();
-  return ctx ?? {
-    state, counts: badgeCounts(state), recent: recentBadges(state), progress: (s) => surahBadgeProgress(state, s),
-    recordWords, completeSurah, onEarned: onBadgeEarned,
-  };
-}

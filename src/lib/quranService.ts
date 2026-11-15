@@ -118,7 +118,7 @@ export function stripBasmalah(text: string): string {
 }
 
 /** Removes stray BOM / zero-width characters and collapses spaces; keeps all Tashkeel and Quranic marks. */
-const cleanText = (t: string) => t.replace(/[﻿​]/g, "").replace(/\s+/g, " ").trim();
+const cleanText = (t: string) => t.replace(/[\uFEFF\u200B]/g, "").replace(/\s+/g, " ").trim();
 
 function bundled(id: number): Ayah[] | null {
   const s = BUNDLED.find((b) => b.number === id);
@@ -173,9 +173,6 @@ export class QuranOfflineError extends Error {
   constructor(readonly surahId: number) { super(`Surah ${surahId} is not cached and the device is offline`); this.name = "QuranOfflineError"; }
 }
 
-export async function isSurahCached(surahId: number): Promise<boolean> {
-  return !!(await idb.get<SurahText>(surahKey(surahId)))?.ayahs?.length || !!bundled(surahId);
-}
 
 export async function cachedSurahIds(): Promise<number[]> {
   const keys = await idb.keys();
@@ -204,12 +201,6 @@ export async function downloadWholeQuran(onProgress?: (done: number, total: numb
   return { failed: failed.sort((a, b) => a - b) };
 }
 
-/** Clears cached text (it is downloaded again when needed). */
-export async function clearQuranCache(): Promise<void> {
-  const keys = await idb.keys();
-  await Promise.all(keys.filter((k) => k.startsWith("quran:")).map((k) => idb.delete(k)));
-  listMemo = null;
-}
 
 /* ------------------------------------------------------------------ */
 /* Formatting                                                          */
@@ -221,5 +212,3 @@ export const toArabicDigits = (n: number | string) => String(n).replace(/\d/g, (
 /** Traditional end-of-ayah ornament with Eastern Arabic numerals, e.g. ﴿١٢﴾. */
 export const ayahMarker = (n: number) => `﴿${toArabicDigits(n)}﴾`;
 
-export const revelationLabel = (place: RevelationPlace, language: string) =>
-  language === "ar" ? (place === "madinah" ? "مدنية" : "مكية") : place === "madinah" ? "Medinan" : "Meccan";
