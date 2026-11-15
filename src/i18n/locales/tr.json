@@ -956,5 +956,9 @@
   "kidsMicStop": "Dur",
   "kidsMicListening": "Dinliyorum… oku!",
   "kidsMicDone": "Aferin! Hepsini okudun",
-  "menuLanguage": "Uygulama dili"
+  "menuLanguage": "Uygulama dili",
+  "crashTitle": "Bu ekranda bir sorun oluştu",
+  "crashBody": "Uygulamanın geri kalanı çalışıyor. Tekrar dene ya da ana sayfaya dön. Tekrarlarsa «Ayrıntılar»ın ekran görüntüsünü gönder.",
+  "crashRetry": "Tekrar dene",
+  "crashHome": "Ana sayfa"
 }

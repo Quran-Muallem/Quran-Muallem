@@ -956,5 +956,9 @@
   "kidsMicStop": "Berhenti",
   "kidsMicListening": "Saya mendengar… bacalah!",
   "kidsMicDone": "Syabas! Kamu membaca semuanya",
-  "menuLanguage": "Bahasa aplikasi"
+  "menuLanguage": "Bahasa aplikasi",
+  "crashTitle": "Skrin ini menghadapi masalah",
+  "crashBody": "Bahagian lain aplikasi masih berfungsi. Cuba lagi atau kembali ke utama. Jika berulang, hantar tangkapan skrin «Butiran».",
+  "crashRetry": "Cuba lagi",
+  "crashHome": "Ke utama"
 }

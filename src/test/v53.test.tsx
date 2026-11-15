@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { PROPHETS, QURAN_STORIES, STORY_LANGS } from "@/lib/stories";
 import { KIDS_TAFSIR } from "@/lib/kidsTafsir";
 import MIRACLES from "@/data/miracles.json";
@@ -72,5 +72,22 @@ describe("v53.1 – Android back stack", () => {
     expect(calls).toEqual(["settings"]);
     b.rerender({ on: false }); a.unmount();
     expect(backStackDepth()).toBe(0);
+  });
+});
+
+describe("v54.1 – crash boundary", () => {
+  it("shows a card with the error instead of unmounting, and retries", async () => {
+    const { render, screen, fireEvent } = await import("@testing-library/react");
+    const { CrashBoundary } = await import("@/components/CrashBoundary");
+    let boom = true;
+    const Bomb = () => { if (boom) throw new Error("kaputt im Mushaf"); return <p>ok</p>; };
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<CrashBoundary area="mushaf" copy={{ title: "T", body: "B", retry: "R", home: "H" }}><Bomb /></CrashBoundary>);
+    expect(screen.getByRole("alert").textContent).toContain("kaputt im Mushaf");
+    expect(JSON.parse(localStorage.getItem("qm.lastCrash")!).area).toBe("mushaf");
+    boom = false;
+    fireEvent.click(screen.getByText("R"));
+    expect(screen.getByText("ok")).toBeTruthy();
+    spy.mockRestore();
   });
 });

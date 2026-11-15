@@ -956,5 +956,9 @@
   "kidsMicStop": "Arrêter",
   "kidsMicListening": "J'écoute… récite !",
   "kidsMicDone": "Bravo ! Tu as tout récité",
-  "menuLanguage": "Langue de l'app"
+  "menuLanguage": "Langue de l'app",
+  "crashTitle": "Cet écran a rencontré un problème",
+  "crashBody": "Le reste de l'app fonctionne. Réessaie ou reviens à l'accueil. Si cela se répète, envoie-nous une capture des «Détails».",
+  "crashRetry": "Réessayer",
+  "crashHome": "Accueil"
 }

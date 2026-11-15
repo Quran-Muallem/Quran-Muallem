@@ -956,5 +956,9 @@
   "kidsMicStop": "Ndalo",
   "kidsMicListening": "Po të dëgjoj… lexo!",
   "kidsMicDone": "Të lumtë! I lexove të gjitha",
-  "menuLanguage": "Gjuha e aplikacionit"
+  "menuLanguage": "Gjuha e aplikacionit",
+  "crashTitle": "Ky ekran pati një problem",
+  "crashBody": "Pjesa tjetër e aplikacionit funksionon. Provo përsëri ose kthehu në kreu. Nëse përsëritet, na dërgo një pamje të «Detajeve».",
+  "crashRetry": "Provo përsëri",
+  "crashHome": "Te kreu"
 }

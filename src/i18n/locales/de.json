@@ -956,5 +956,9 @@
   "kidsMicStop": "Stopp",
   "kidsMicListening": "Ich höre zu … lies vor!",
   "kidsMicDone": "Super! Du hast alles gelesen",
-  "menuLanguage": "App-Sprache"
+  "menuLanguage": "App-Sprache",
+  "crashTitle": "Dieser Bereich hatte ein Problem",
+  "crashBody": "Der Rest der App funktioniert. Versuch es erneut oder geh zur Startseite. Wenn es wieder passiert, schick uns einen Screenshot der «Details».",
+  "crashRetry": "Erneut versuchen",
+  "crashHome": "Zur Startseite"
 }

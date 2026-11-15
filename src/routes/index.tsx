@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { CrashBoundary } from "@/components/CrashBoundary";
 import { useBackLayer } from "@/lib/backStack";
 import { stepAppFontScale } from "@/lib/settings";
 import { chooseLanguage } from "@/components/LanguageSelector";
@@ -215,6 +216,8 @@ export function App() {
     window.addEventListener("qm:open-hub", hub);
     return () => { window.removeEventListener("qm:open-mushaf", mushafTab); window.removeEventListener("qm:open-surah", surah); window.removeEventListener("qm:open-hub", hub); };
   }, [switchTab]);
+  const [crashKey, setCrashKey] = useState(0);
+  const crashCopy = { title: translate(language, "crashTitle"), body: translate(language, "crashBody"), retry: translate(language, "crashRetry"), home: translate(language, "crashHome") };
   const go = useCallback((t: Tab) => { setCompanion(null); if (t === "hub") setHubSection(null); switchTab(t); window.scrollTo({ top: 0 }); }, [switchTab]);
   // v53.1 Android back: companion → closes; hub section → hub overview; any other tab → home.
   useBackLayer(!settings.kidsMode && (companion !== null || tab !== "home"), () => {
@@ -283,6 +286,7 @@ export function App() {
             </div>
           </div>
           <main key={companion ? `companion-${companion}` : tab} className={cn("flex-1 animate-in fade-in slide-in-from-bottom-2 duration-300", companion ? "px-5 pt-4" : tab === "mushaf" ? "px-1.5 pb-0 pt-2" : "px-5 pb-28 pt-5")}>
+            <CrashBoundary key={companion ? `c-${companion}` : `${tab}-${crashKey}`} area={companion ? `companion:${companion}` : tab} copy={crashCopy} onHome={() => { setCrashKey((k) => k + 1); go("home"); }}>
             {companion ? <CompanionView tab={companion} onTab={setCompanion} onClose={() => setCompanion(null)} /> : <>
             {tab === "home" && settings.kidsMode && <KidsHome userName={auth.session?.provider === "guest" ? null : auth.session?.name || null} />}
             {tab === "home" && !settings.kidsMode && <Dashboard userName={auth.session?.provider === "guest" ? null : auth.session?.name || null} onOpen={open} onInvite={() => setInviteOpen(true)} onBadges={() => setBadgesOpen({ surah: null })} />}
@@ -294,6 +298,7 @@ export function App() {
             {tab === "khatma" && <KhatmaView onOpenPage={openPage} />}
             {tab === "hub" && <IslamicHubView section={hubSection} onSection={(s) => { if (s === "salat") openCompanion("salat"); else setHubSection(s); }} onRetest={open} onClose={() => go("home")} />}
             </>}
+            </CrashBoundary>
           </main>
           {/* v53: one shell everywhere — the same header and 4-tab bar on Home, Mushaf, Recite and «المرافق» */}
           <BottomNav tab={companion ? null : tab} setTab={go} hubSection={hubSection} kids={settings.kidsMode} />

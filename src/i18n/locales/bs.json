@@ -956,5 +956,9 @@
   "kidsMicStop": "Stani",
   "kidsMicListening": "Slušam te… uči!",
   "kidsMicDone": "Bravo! Proučio si sve",
-  "menuLanguage": "Jezik aplikacije"
+  "menuLanguage": "Jezik aplikacije",
+  "crashTitle": "Ovaj ekran je imao problem",
+  "crashBody": "Ostatak aplikacije radi. Pokušaj ponovo ili idi na početnu. Ako se ponovi, pošalji nam snimak ekrana «Detalja».",
+  "crashRetry": "Pokušaj ponovo",
+  "crashHome": "Na početnu"
 }
