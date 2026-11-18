@@ -1,3 +1,4 @@
+import { useReaderState } from "@/lib/useNavigationHistory";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Download, Heart, Loader2, Pause, Play, Search, SkipBack, SkipForward, Trash2, X } from "lucide-react";
 import { GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
@@ -35,7 +36,7 @@ export function RecitersHubView() {
   const favorites = useFavorites();
   const [tab, setTab] = useState<Tab>("all");
   const [query, setQuery] = useState("");
-  const [open, setOpen] = useState<number | null>(null);
+  const [open, setOpen, closeReciter] = useReaderState<number>();
   const [chosen, setChosen] = useState<Record<number, number>>({});
   const moshafOf = (r: HubReciter) => getMoshaf(r, chosen[r.id] ?? r.moshaf[0]!.id);
 
@@ -50,7 +51,7 @@ export function RecitersHubView() {
   if (opened) {
     return (
       <>
-        <ReciterDetail r={opened} m={moshafOf(opened)} onMoshaf={(id) => setChosen({ ...chosen, [opened.id]: id })} onBack={() => setOpen(null)} />
+        <ReciterDetail r={opened} m={moshafOf(opened)} onMoshaf={(id) => setChosen({ ...chosen, [opened.id]: id })} onBack={closeReciter} />
         <MiniPlayer />
       </>
     );

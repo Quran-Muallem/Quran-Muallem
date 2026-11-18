@@ -1,3 +1,4 @@
+import { useReaderState } from "@/lib/useNavigationHistory";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Loader2, RefreshCw, Search, X } from "lucide-react";
 import { GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
@@ -21,7 +22,8 @@ export function HadithLibrary() {
   const [bookId, setBookId] = useState<BookId>("bukhari");
   const [books, setBooks] = useState<Record<string, Load>>({});
   const [retry, setRetry] = useState(0);
-  const [section, setSection] = useState<number | null>(null);
+  // v57: a section is a reader — Android back returns to the section list at the same place
+  const [section, setSection, closeSection] = useReaderState<number>();
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [scope, setScope] = useState<SearchScope>("all");
@@ -118,7 +120,7 @@ export function HadithLibrary() {
         <>
           <div className="grid grid-cols-2 gap-1 rounded-2xl bg-black/20 p-1" role="tablist" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.3)}` }}>
             {BOOKS.map((b) => (
-              <button key={b.id} type="button" role="tab" aria-selected={bookId === b.id} onClick={() => { setBookId(b.id); setSection(null); }}
+              <button key={b.id} type="button" role="tab" aria-selected={bookId === b.id} onClick={() => { setBookId(b.id); closeSection(); }}
                 className={cn("rounded-xl py-2 font-arabic text-sm", bookId === b.id ? "font-semibold text-emerald-950" : "text-emerald-100/80")}
                 style={bookId === b.id ? { background: GOLD_GRADIENT } : undefined}>{b.ar}</button>
             ))}
@@ -135,7 +137,7 @@ export function HadithLibrary() {
             <ul className="space-y-1.5">
               {current.sections.map((s) => (
                 <li key={s.n}>
-                  <button type="button" onClick={() => { setSection(s.n); window.scrollTo({ top: 0 }); }}
+                  <button type="button" onClick={() => setSection(s.n)}
                     className="flex w-full items-center gap-3 rounded-xl bg-black/15 px-3 py-2.5 text-start hover:bg-white/5" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.2)}` }}>
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs text-amber-200" style={{ boxShadow: `inset 0 0 0 1px ${alpha(GOLD, 0.6)}` }}>{num(s.n)}</span>
                     <SectionTitle book={bookId} n={s.n} title={s.title} arabicOnly={arabicUi} />
@@ -147,7 +149,7 @@ export function HadithLibrary() {
           )}
           {current && section != null && (
             <section>
-              <button type="button" onClick={() => setSection(null)} className="mb-2 flex items-center gap-1 text-sm text-amber-200">
+              <button type="button" onClick={closeSection} className="mb-2 flex items-center gap-1 text-sm text-amber-200">
                 {language === "ar" || language === "ur" ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}{t("hadithChapters")}
               </button>
               <h2 className="mb-2 text-base font-semibold" style={{ color: GOLD_LIGHT }}>

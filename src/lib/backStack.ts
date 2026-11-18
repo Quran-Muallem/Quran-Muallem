@@ -65,8 +65,22 @@ export function useBackLayer(active: boolean, onBack: () => void) {
   }, [active]);
 }
 
-/** Test helper. */
+/** How many layers are open (0 = the app is at its root screen). */
 export const backStackDepth = () => stack.length;
+
+/**
+ * v57: one back step from outside the browser history — the native Android back button (`@capacitor/app`)
+ * and the iOS edge swipe. Goes through the guard entry when it is armed (so history stays in step),
+ * otherwise closes the top-most layer directly. Returns false at the root (nothing to close).
+ */
+export function popBackLayer(): boolean {
+  const top = stack[stack.length - 1];
+  if (!top) return false;
+  if (guarded && typeof window !== "undefined") { window.history.back(); return true; }
+  top.fn();
+  schedule();
+  return true;
+}
 
 /**
  * v56.3: the one way an overlay closes — Escape (keyboard / web) and the Android back button both call

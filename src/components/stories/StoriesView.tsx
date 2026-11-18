@@ -3,7 +3,7 @@
  * and the story reader. Used in normal mode (المزيد / home) and inside the kids storybook layout.
  */
 import { StoryEmblem, hasStoryEmblem } from "@/components/stories/StoryEmblem";
-import { useBackLayer } from "@/lib/backStack";
+import { useReaderState } from "@/lib/useNavigationHistory";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -18,11 +18,11 @@ export function StoriesView({ kids = false }: { kids?: boolean }) {
   const { t, language } = useI18n();
   const look = kids ? KIDS_LOOK : ADULT_LOOK;
   const [tab, setTabState] = useState<Tab>(() => { try { return localStorage.getItem(TAB_KEY) === "quran" ? "quran" : "prophets"; } catch { return "prophets"; } });
-  const [open, setOpen] = useState<string | null>(null);
-  useBackLayer(open !== null, () => setOpen(null));
+  // v57: back from a story returns to the journey / list at the same place
+  const [open, setOpen, closeStory] = useReaderState<string>();
   const setTab = (x: Tab) => { setTabState(x); try { localStorage.setItem(TAB_KEY, x); } catch { /* ignore */ } };
   const story = open ? storyById(open) : null;
-  if (story) return <StoryReaderView key={story.id} story={story} look={look} onBack={() => setOpen(null)} onOpen={setOpen} />;
+  if (story) return <StoryReaderView key={story.id} story={story} look={look} onBack={closeStory} onOpen={setOpen} />;
   const ar = language === "ar";
   return (
     <div className="space-y-4" data-stories={tab}>

@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**App:** Quran Muallem - معلم القرآن (Learn Quran with the help of AI), Android, iOS and web version · **Version:** 1.23 · **Last updated:** 15 November 2026
+**App:** Quran Muallem - معلم القرآن (Learn Quran with the help of AI), Android, iOS and web version · **Version:** 1.24 · **Last updated:** 18 November 2026
 
 Quran Muallem is built as a local-first app. We do not run servers for it, we do not create user accounts on any server, and we do not use analytics, advertising, crash-reporting or tracking tools. This policy explains which data the app handles, where it is stored, which device functions it uses and which third parties the app contacts on your behalf. It complies with the EU General Data Protection Regulation (GDPR).
 
@@ -19,7 +19,7 @@ All data the app creates is stored **only on your device**, inside the app's pri
 |---|---|
 | Your name (optional, as you typed it on the first start) | Greet you in the app |
 | Memorization progress, streak, review dates, practice results (accuracy per verse), word colours (correct / almost / mistake) per verse, surah badges, khatma progress | Progress tracking, smart review and badges |
-| Settings (language, theme, fonts and text size, reciter, speech engine, correction options, Kids Mode) | Your preferences |
+| Settings (language, theme, fonts and text size, reciter, speech engine, correction options, Kids Mode) and your Home screen layout (which shortcuts you pinned and their order) | Your preferences |
 | Your own recitation recordings (one per surah, with accuracy and mode; switch saving off in Settings → Privacy → Data use, delete them in Settings → Privacy → Delete all recordings) | Listen back to your recitation |
 | Your voice profile: words you added after a misrecognition, your recognition strictness, average recitation speed and accuracy per surah | Adapt the recognition to your voice |
 | Hands-free Hifdh and Salat Companion: your settings, the list of your hands-free sessions (date, surah and verses, duration) | Show your sessions and continue where you stopped |

@@ -3,7 +3,8 @@
  * → an entry → three bite-sized cards (ماذا تقول الآية؟ · قصة أو مثال من حياتنا · ماذا نتعلم ونطبق اليوم؟),
  * each with «استمع للتفسير» (text-to-speech). Text in Arabic, German or English (others: English).
  */
-import { useEffect, useState } from "react";
+import { useReaderState } from "@/lib/useNavigationHistory";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Square, Volume2 } from "lucide-react";
 import { useI18n, type CopyKey } from "@/lib/i18n";
 import { isRtl } from "@/i18n";
@@ -23,14 +24,17 @@ export function KidsTafsirView() {
   const { t, language } = useI18n();
   const L = kidsLang(language);
   const rtl = L === "ar" || L === "ur";
-  const [open, setOpen] = useState<KidsTafsirEntry | null>(null);
+  // v57: back (button or Android) returns to the list at the same place and stops the narration
+  const [open, setOpen, closeEntry] = useReaderState<KidsTafsirEntry>();
+  const wasOpen = useRef(false);
+  useEffect(() => { if (wasOpen.current && !open) void stopSpeaking(); wasOpen.current = open !== null; }, [open]);
   useEffect(() => () => { void stopSpeaking(); }, []);
   const Back = isRtl(language) ? ChevronRight : ChevronLeft;
 
   if (open) {
     return (
       <div className="space-y-4" data-kids-tafsir-entry={open.id}>
-        <button type="button" onClick={() => { void stopSpeaking(); setOpen(null); }} className="kd-btn kd-btn-soft !min-h-0 px-4 py-2 text-sm">
+        <button type="button" onClick={closeEntry} className="kd-btn kd-btn-soft !min-h-0 px-4 py-2 text-sm">
           <Back className="h-4 w-4" />{t("kidsTafsirTitle")}
         </button>
         <KidsTafsirCards entry={open} />
@@ -47,7 +51,7 @@ export function KidsTafsirView() {
           <ul className="grid grid-cols-2 gap-2.5 min-[480px]:grid-cols-3">
             {g.entries.map((e) => (
               <li key={e.id}>
-                <button type="button" onClick={() => { setOpen(e); window.scrollTo({ top: 0 }); }} data-kids-entry={e.id}
+                <button type="button" onClick={() => setOpen(e)} data-kids-entry={e.id}
                   className="kd-card flex h-full w-full flex-col items-center gap-1 p-3 text-center active:translate-y-[2px]">
                   <span className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black text-white" style={{ background: "var(--kd-turquoise, #14b8a6)" }} aria-hidden="true">{language === "ar" ? toArabicDigits(e.surah) : e.surah}</span>
                   <span className="font-arabic text-lg leading-snug">{e.title.ar}</span>

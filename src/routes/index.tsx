@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { FirstLaunchBasmalah } from "@/components/FirstLaunchBasmalah";
 import { CORRECTION_GRACE_MS, startLock } from "@/lib/correctionLock";
 import { CrashBoundary } from "@/components/CrashBoundary";
-import { useBackLayer } from "@/lib/backStack";
+import { useNativeBackNavigation, useNavigationHistory } from "@/lib/useNavigationHistory";
+import { AppToast } from "@/components/AppToast";
 import { stepAppFontScale } from "@/lib/settings";
 import type { SettingsPage } from "@/components/SettingsModal";
 import { AppLogo } from "@/components/ornaments";
@@ -101,6 +102,12 @@ type MushafTarget = { surahId: number; focus?: number | undefined; mode?: Practi
 
 /** At most this many verses per practice range (keeps live matching fast on phones). */
 const MAX_RANGE = 15;
+
+/** v57: one screen of the adult app (what the back history stores). */
+type Screen = { tab: Tab; hub: HubSection | null; companion: CompanionTab | null };
+const HOME_SCREEN: Screen = { tab: "home", hub: null, companion: null };
+const screenKey = (s: Screen) => (s.companion ? "companion" : s.tab === "hub" ? `hub:${s.hub ?? ""}` : s.tab);
+const kidsKey = (k: KidsTab) => k;
 
 export function App() {
   const settings = useSettings();
@@ -217,12 +224,21 @@ export function App() {
   const [crashKey, setCrashKey] = useState(0);
   const crashCopy = { title: translate(language, "crashTitle"), body: translate(language, "crashBody"), retry: translate(language, "crashRetry"), home: translate(language, "crashHome") };
   const go = useCallback((t: Tab) => { setCompanion(null); if (t === "hub") setHubSection(null); switchTab(t); window.scrollTo({ top: 0 }); }, [switchTab]);
-  // v53.1 Android back: companion → closes; hub section → hub overview; any other tab → home.
-  useBackLayer(!settings.kidsMode && (companion !== null || tab !== "home"), () => {
-    if (companion) setCompanion(null);
-    else if (tab === "hub" && hubSection) setHubSection(null);
-    else go("home");
-  });
+  // v57 back navigation: the screens visited step back in order (Mushaf → Recite → … → Home, each at its
+  // scroll position); sheets and readers above them close first (backStack.ts); at Home the native back
+  // shows «press back again to exit».
+  const screen = useMemo<Screen>(() => ({ tab, hub: tab === "hub" ? hubSection : null, companion }), [tab, hubSection, companion]);
+  const restoreScreen = useCallback((s: Screen) => { setCompanion(s.companion); setHubSection(s.hub); switchTab(s.tab); }, [switchTab]);
+  useNavigationHistory({ current: screen, keyOf: screenKey, restore: restoreScreen, root: HOME_SCREEN, enabled: !settings.kidsMode });
+  useNavigationHistory({ current: kidsTab, keyOf: kidsKey, restore: goKids, root: "home" as KidsTab, enabled: settings.kidsMode });
+  useNativeBackNavigation(() => translate(language, "backExitHint"));
+  useEffect(() => {
+    const search = () => setSearchOpen(true);
+    const menu = () => setMenuOpen(true);
+    window.addEventListener("qm:open-search", search);
+    window.addEventListener("qm:open-menu", menu);
+    return () => { window.removeEventListener("qm:open-search", search); window.removeEventListener("qm:open-menu", menu); };
+  }, []);
   const jump = useCallback((target: { surahId: number; focus?: number | undefined; mark?: string[] | undefined; mode?: PracticeMode | undefined }) => {
     // An explicit target wins over the last recited passage.
     synced.current = Math.max(synced.current, recitationStore.activeRange.get()?.at ?? 0);
@@ -258,6 +274,7 @@ export function App() {
       <div lang={language} dir={directionFor(language)} className="min-h-screen bg-background">
         <AdhanAlert />
         <KidsPraiseToast />
+        <AppToast />
         {settings.kidsMode ? (
           <div className="mx-auto min-h-screen max-w-md">
             {/* v47: Kids Mode is its own storybook layout — no adult header, menu, account or search */}

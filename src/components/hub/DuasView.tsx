@@ -1,3 +1,4 @@
+import { useReaderState } from "@/lib/useNavigationHistory";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, Minus, Plus, Search, Settings2, Share2, Star, X } from "lucide-react";
 import { GOLD, GOLD_GRADIENT, GOLD_LIGHT, alpha } from "@/components/ornaments";
@@ -28,15 +29,15 @@ export function DuasView() {
   const [tab, setTab] = useState<Tab>("all");
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<Set<DuaCategory>>(() => new Set(["daynight"]));
-  const [detail, setDetail] = useState<string | null>(null);
-  const [daily, setDaily] = useState(false);
-  const scrollY = useRef(0);
+  // v57: the dua and «daily adhkar» readers return to the list at the same place (Android back too)
+  const [detail, setDetail, closeDetail] = useReaderState<string>();
+  const [daily, openDaily, closeDaily] = useReaderState<true>();
 
   const entry = detail && list ? list.find((e) => e.key === detail) ?? null : null;
   if (daily) {
     return (
       <div data-duas-daily="">
-        <button type="button" onClick={() => setDaily(false)} className="mb-3 flex items-center gap-1 text-sm" style={{ color: GOLD_LIGHT }}>
+        <button type="button" onClick={closeDaily} className="mb-3 flex items-center gap-1 text-sm" style={{ color: GOLD_LIGHT }}>
           {ar ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}{t("duaAll")}
         </button>
         <AdhkarTab />
@@ -45,9 +46,9 @@ export function DuasView() {
   }
   if (entry && list) {
     const pool = tab === "fav" ? list.filter((e) => favs.includes(e.key)) : query ? searchDuas(list, query) : list;
-    return <DuaDetail entry={entry} pool={pool} onOpen={setDetail} onBack={() => { setDetail(null); requestAnimationFrame(() => window.scrollTo(0, scrollY.current)); }} />;
+    return <DuaDetail entry={entry} pool={pool} onOpen={setDetail} onBack={closeDetail} />;
   }
-  const openEntry = (key: string) => { scrollY.current = window.scrollY; setDetail(key); window.scrollTo(0, 0); };
+  const openEntry = setDetail;
   const title = (e: DuaEntry) => (ar ? e.ar : e.en || e.ar);
 
   const favList = list ? list.filter((e) => favs.includes(e.key)) : [];
@@ -73,7 +74,7 @@ export function DuasView() {
             <span aria-hidden="true">{emoji}</span><span className="truncate">{ar ? arLabel : t(key)}</span>
           </button>
         ))}
-        <button type="button" onClick={() => setDaily(true)} data-duas-daily-open="" className="flex items-center justify-center gap-1.5 rounded-xl px-1 py-2 text-xs font-semibold text-emerald-100/80">
+        <button type="button" onClick={() => openDaily(true)} data-duas-daily-open="" className="flex items-center justify-center gap-1.5 rounded-xl px-1 py-2 text-xs font-semibold text-emerald-100/80">
           <span aria-hidden="true">📿</span><span className="truncate">{t("duaDaily")}</span>
         </button>
       </div>
