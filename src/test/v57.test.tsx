@@ -16,8 +16,18 @@ const tick = () => act(async () => { await new Promise((r) => setTimeout(r, 5));
 describe("v57 personal Home layout (qm_custom_home_tiles)", () => {
   beforeEach(() => { localStorage.clear(); reloadHomeTiles(); });
 
-  it("starts with the five v52 destinations", () => {
+  it("starts with «continue where you left off», then the five v52 destinations", () => {
     expect(getHomeTiles()).toEqual(DEFAULT_HOME_TILES);
+    expect(getHomeTiles()[0]).toBe("continue");
+  });
+
+  it("a layout saved by the first v57 build gets «continue» once; removing it later sticks", () => {
+    localStorage.setItem(HOME_TILES_KEY, JSON.stringify(["recite", "read"]));
+    reloadHomeTiles();
+    expect(getHomeTiles()).toEqual(["continue", "recite", "read"]);
+    unpinTile("continue");
+    reloadHomeTiles();
+    expect(getHomeTiles()).toEqual(["recite", "read"]);
   });
 
   it("pins a menu item at the end, once, and persists it", () => {
@@ -33,9 +43,9 @@ describe("v57 personal Home layout (qm_custom_home_tiles)", () => {
     expect(togglePin("qibla")).toBe(true);
     expect(togglePin("qibla")).toBe(false);
     moveTile("recite", -1);
-    expect(getHomeTiles().slice(0, 2)).toEqual(["recite", "read"]);
-    moveTile("recite", -1); // already first: no-op
-    expect(getHomeTiles()[0]).toBe("recite");
+    expect(getHomeTiles().slice(0, 3)).toEqual(["continue", "recite", "read"]);
+    moveTile("continue", -1); // already first: no-op
+    expect(getHomeTiles()[0]).toBe("continue");
     placeTile("stories", 0);
     expect(getHomeTiles()[0]).toBe("stories");
     unpinTile("read");
@@ -47,7 +57,7 @@ describe("v57 personal Home layout (qm_custom_home_tiles)", () => {
   it("ignores unknown ids and duplicates from storage", () => {
     localStorage.setItem(HOME_TILES_KEY, JSON.stringify(["kids", "nope", "kids", "search"]));
     reloadHomeTiles();
-    expect(getHomeTiles()).toEqual(["kids", "search"]);
+    expect(getHomeTiles()).toEqual(["continue", "kids", "search"]);
     localStorage.setItem(HOME_TILES_KEY, "{broken");
     reloadHomeTiles();
     expect(getHomeTiles()).toEqual(DEFAULT_HOME_TILES);

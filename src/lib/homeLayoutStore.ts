@@ -13,7 +13,7 @@ import type { CopyKey } from "@/lib/i18n";
 export const HOME_TILES_KEY = "qm_custom_home_tiles";
 
 export type HomeTileId =
-  | "read" | "recite" | "companion" | "tajweed" | "stories"
+  | "continue" | "read" | "recite" | "companion" | "tajweed" | "stories"
   | "prophets" | "khatma" | "prayer" | "qibla" | "adhkar" | "hadith" | "reciters" | "recordings"
   | "search" | "adhan" | "reminders" | "kids";
 
@@ -28,6 +28,8 @@ export type HomeTileDef = { id: HomeTileId; title: CopyKey; sub: CopyKey; open: 
 
 /** Every destination, in the order the «+ Add» picker lists them. */
 export const HOME_TILE_CATALOG: readonly HomeTileDef[] = [
+  // «تابع من حيث توقفت»: the reading spotlight (its own read / listen buttons; `open` = read on)
+  { id: "continue", title: "continueReading", sub: "tileContinueSub", open: () => emit("qm:open-mushaf") },
   { id: "read", title: "homeReadTitle", sub: "homeReadSub", open: () => emit("qm:open-mushaf") },
   { id: "recite", title: "homeReciteTitle", sub: "homeReciteSub", open: () => emit("qm:go", "practice") },
   { id: "companion", title: "homeCompanionTitle", sub: "homeCompanionSub", open: () => emit("qm:open-companion") },
@@ -49,8 +51,11 @@ export const HOME_TILE_CATALOG: readonly HomeTileDef[] = [
 const IDS = new Set<string>(HOME_TILE_CATALOG.map((t) => t.id));
 export const homeTileDef = (id: HomeTileId) => HOME_TILE_CATALOG.find((t) => t.id === id)!;
 
-/** The v52 Home: the five destinations of the bento grid. */
-export const DEFAULT_HOME_TILES: readonly HomeTileId[] = ["read", "recite", "companion", "tajweed", "stories"];
+/** The Home: «continue where you left off» first, then the five v52 destinations. */
+export const DEFAULT_HOME_TILES: readonly HomeTileId[] = ["continue", "read", "recite", "companion", "tajweed", "stories"];
+/** Layouts saved before «continue» became a tile (the v57 test build) get it once, at the top. */
+const LAYOUT_VERSION_KEY = "qm_custom_home_tiles_v";
+const LAYOUT_VERSION = "2";
 
 function read(): HomeTileId[] {
   try {
@@ -59,7 +64,9 @@ function read(): HomeTileId[] {
     const list = JSON.parse(raw) as unknown;
     if (!Array.isArray(list)) return [...DEFAULT_HOME_TILES];
     // unknown ids (an older / newer app version) are dropped, duplicates removed
-    return [...new Set(list.filter((x): x is HomeTileId => typeof x === "string" && IDS.has(x)))];
+    const ids = [...new Set(list.filter((x): x is HomeTileId => typeof x === "string" && IDS.has(x)))];
+    if (localStorage.getItem(LAYOUT_VERSION_KEY) !== LAYOUT_VERSION && !ids.includes("continue")) ids.unshift("continue");
+    return ids;
   } catch { return [...DEFAULT_HOME_TILES]; }
 }
 
@@ -69,7 +76,7 @@ const snapshot = () => (current ??= read());
 
 function write(next: HomeTileId[]) {
   current = next;
-  try { localStorage.setItem(HOME_TILES_KEY, JSON.stringify(next)); } catch { /* storage full / blocked: still in memory */ }
+  try { localStorage.setItem(HOME_TILES_KEY, JSON.stringify(next)); localStorage.setItem(LAYOUT_VERSION_KEY, LAYOUT_VERSION); } catch { /* storage full / blocked: still in memory */ }
   listeners.forEach((l) => l());
 }
 

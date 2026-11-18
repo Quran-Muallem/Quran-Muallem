@@ -1,4 +1,4 @@
-import { ContinueSpotlight, HomeActionCards, HomeHero } from "@/components/HomeActionCards";
+import { HomeActionCards, HomeHero } from "@/components/HomeActionCards";
 import { ChevronLeft, RotateCcw, Share2, Star } from "lucide-react";
 
 import { DailyAyah } from "@/components/DailyAyah";
@@ -34,8 +34,8 @@ export function Dashboard({ userName, onOpen, onInvite, onBadges }: {
     <div className="space-y-5">
       {/* v52 Warm Sanctuary: hero welcome, continue spotlight, bento grid; ayah of the day closes the page */}
       <HomeHero userName={userName} />
-      <ContinueSpotlight onContinue={(surah, ayah) => onOpen({ surahId: surah, fromAyah: ayah, toAyah: ayah, mode: "READING" })} />
-      <HomeActionCards />
+      {/* v57: the personal part of the Home starts with «تابع من حيث توقفت» (a tile like the others) */}
+      <HomeActionCards onContinue={(surah, ayah) => onOpen({ surahId: surah, fromAyah: ayah, toAyah: ayah, mode: "READING" })} />
 
       <ReviewCard due={due} total={stats.dueToday} num={num} name={name}
         onReview={(r) => onOpen({ surahId: r.surahId, fromAyah: r.fromAyah, toAyah: r.toAyah, mode: "MEMORIZATION_MODE" })} />

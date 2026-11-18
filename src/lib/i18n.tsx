@@ -594,6 +594,7 @@ export const copy = {
   tileProphetsSub: ["من آدم إلى محمد ﷺ", "From Adam to Muhammad ﷺ"],
   tileRemindersTitle: ["تذكير الوِرد", "Wird reminder"],
   tileRemindersSub: ["تذكير يومي بوقت تختاره", "A daily reminder at your time"],
+  tileContinueSub: ["آخر آية وقفت عندها، مع زر للقراءة والاستماع", "The last verse you read, with read and listen"],
   hubTajweedSub: ["دليل مختصر بالأمثلة", "A short guide with examples"],
   hubHadith: ["كتب الحديث", "Hadith library"],
   hubHadithSub: ["صحيح البخاري وصحيح مسلم مع البحث", "Sahih al-Bukhari and Sahih Muslim, with search"],

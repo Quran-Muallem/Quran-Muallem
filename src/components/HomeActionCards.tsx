@@ -199,6 +199,7 @@ const line = (Icon: LucideIcon) => (cls: string) => <Icon className={cls} stroke
 
 /** How each tile looks; what it opens lives in `homeLayoutStore` (shared with the burger menu pins). */
 const HOME_TILE_LOOK: Record<HomeTileId, Look> = {
+  continue: { icon: duo(BookOpen), tint: "#0f5132" },
   read: { icon: duo(BookOpen), bg: "linear-gradient(135deg,#0d4a2e 0%,#0f5132 45%,#2a7a52 100%)", tint: "#f3d27a" },
   recite: { icon: duo(Mic), bg: "linear-gradient(150deg,#0d5c62 0%,#16807a 55%,#b8901f 130%)", tint: "#ffe7a3" },
   companion: { icon: (cls) => <PrayingPersonIcon className={cls} />, bg: "linear-gradient(150deg,#2a3577 0%,#25507a 50%,#1a6b5a 100%)", tint: "#c9d6ff" },
@@ -225,7 +226,7 @@ const LONG_PRESS_MS = 550;
  * add from the menu catalog (+). «تخصيص الرئيسية» or a long press on a tile enters edit mode; «تم» or
  * back leaves it. Outside edit mode a tile simply opens its place.
  */
-export function HomeActionCards() {
+export function HomeActionCards({ onContinue }: { onContinue: (surah: number, ayah: number) => void }) {
   const { t } = useI18n();
   const tiles = useHomeTiles();
   const [editing, setEditing] = useState(false);
@@ -295,7 +296,7 @@ export function HomeActionCards() {
       <div ref={grid} className="grid grid-cols-2 gap-3.5" onPointerMove={dragMove}
         onPointerUp={() => setDragging(null)} onPointerCancel={() => setDragging(null)}>
         {tiles.map((id, i) => (
-          <HomeTile key={id} id={id} editing={editing} dragging={dragging === id} first={i === 0} last={i === tiles.length - 1}
+          <HomeTile key={id} id={id} onContinue={onContinue} editing={editing} dragging={dragging === id} first={i === 0} last={i === tiles.length - 1}
             onOpen={() => openTile(id)} onPressStart={startPress} onPressMove={movePress} onPressEnd={endPress}
             onDragStart={(e) => { (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId); setDragging(id); }} />
         ))}
@@ -316,8 +317,8 @@ export function HomeActionCards() {
   );
 }
 
-function HomeTile({ id, editing, dragging, first, last, onOpen, onPressStart, onPressMove, onPressEnd, onDragStart }: {
-  id: HomeTileId; editing: boolean; dragging: boolean; first: boolean; last: boolean; onOpen: () => void;
+function HomeTile({ id, onContinue, editing, dragging, first, last, onOpen, onPressStart, onPressMove, onPressEnd, onDragStart }: {
+  id: HomeTileId; onContinue: (surah: number, ayah: number) => void; editing: boolean; dragging: boolean; first: boolean; last: boolean; onOpen: () => void;
   onPressStart: (e: ReactPointerEvent) => void; onPressMove: (e: ReactPointerEvent) => void; onPressEnd: () => void;
   onDragStart: (e: ReactPointerEvent) => void;
 }) {
@@ -325,6 +326,27 @@ function HomeTile({ id, editing, dragging, first, last, onOpen, onPressStart, on
   const ar = language === "ar";
   const Chevron = directionFor(language) === "rtl" ? ChevronLeft : ChevronRight;
   const def = homeTileDef(id), look = HOME_TILE_LOOK[id];
+  if (id === "continue") {
+    // the spotlight keeps its own read / listen buttons; in edit mode they rest and the controls sit below it
+    return (
+      <div data-home-card={id} className={cn("relative col-span-2", dragging && "z-10 scale-[1.02] opacity-90 transition-transform")}
+        onPointerDown={onPressStart} onPointerMove={onPressMove} onPointerUp={onPressEnd} onPointerLeave={onPressEnd} onPointerCancel={onPressEnd}
+        onContextMenu={(e) => e.preventDefault()}>
+        <div className={cn("select-none rounded-[24px] [-webkit-touch-callout:none]", editing && "pointer-events-none outline-dashed outline-[2.5px] outline-offset-[3px] outline-[#d4af37]")}>
+          <ContinueSpotlight onContinue={onContinue} />
+        </div>
+        {editing && (
+          <>
+            <button type="button" onClick={() => unpinTile(id)} aria-label={`${t("homeRemoveTile")}: ${t(def.title)}`} data-home-remove={id}
+              className="qm-native-colors absolute -end-2 -top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-[#b91c1c] text-white shadow-md ring-2 ring-white">
+              <X className="h-5 w-5" strokeWidth={3} aria-hidden="true" />
+            </button>
+            <EditControls id={id} title={t(def.title)} first={first} last={last} onDragStart={onDragStart} className="mt-2.5 rounded-2xl sx-chip p-1.5" />
+          </>
+        )}
+      </div>
+    );
+  }
   const wide = id === "read";
   const solid = !!look.bg;
   const title = t(def.title);
@@ -359,17 +381,25 @@ function HomeTile({ id, editing, dragging, first, last, onOpen, onPressStart, on
             className="qm-native-colors absolute -end-2 -top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-[#b91c1c] text-white shadow-md ring-2 ring-white">
             <X className="h-5 w-5" strokeWidth={3} aria-hidden="true" />
           </button>
-          <div className="qm-native-colors absolute inset-x-2.5 bottom-2.5 z-10 flex items-center gap-1.5" dir="ltr">
-            <span role="button" tabIndex={-1} aria-label={t("homeDragTile")} onPointerDown={onDragStart} data-home-handle={id}
-              className="flex h-11 w-11 cursor-grab touch-none select-none items-center justify-center rounded-xl bg-black/35 text-[1.45rem] font-black leading-none text-white">⠿</span>
-            <span className="flex-1" />
-            <button type="button" disabled={first} onClick={() => moveTile(id, -1)} aria-label={`${t("homeMoveUp")}: ${title}`} data-home-up={id}
-              className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/90 text-[#1b1300] shadow disabled:opacity-35"><ArrowUp className="h-5 w-5" strokeWidth={2.6} /></button>
-            <button type="button" disabled={last} onClick={() => moveTile(id, 1)} aria-label={`${t("homeMoveDown")}: ${title}`} data-home-down={id}
-              className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/90 text-[#1b1300] shadow disabled:opacity-35"><ArrowDown className="h-5 w-5" strokeWidth={2.6} /></button>
-          </div>
+          <EditControls id={id} title={title} first={first} last={last} onDragStart={onDragStart} className="absolute inset-x-2.5 bottom-2.5 z-10" />
         </>
       )}
+    </div>
+  );
+}
+
+/** ⠿ drag handle and ↑ / ↓ (edit mode), the same on every tile. */
+function EditControls({ id, title, first, last, onDragStart, className }: { id: HomeTileId; title: string; first: boolean; last: boolean; onDragStart: (e: ReactPointerEvent) => void; className?: string }) {
+  const { t } = useI18n();
+  return (
+    <div className={cn("qm-native-colors flex items-center gap-1.5", className)} dir="ltr">
+      <span role="button" tabIndex={-1} aria-label={t("homeDragTile")} onPointerDown={onDragStart} data-home-handle={id}
+        className="flex h-11 w-11 cursor-grab touch-none select-none items-center justify-center rounded-xl bg-black/35 text-[1.45rem] font-black leading-none text-white">⠿</span>
+      <span className="flex-1" />
+      <button type="button" disabled={first} onClick={() => moveTile(id, -1)} aria-label={`${t("homeMoveUp")}: ${title}`} data-home-up={id}
+        className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/90 text-[#1b1300] shadow disabled:opacity-35"><ArrowUp className="h-5 w-5" strokeWidth={2.6} /></button>
+      <button type="button" disabled={last} onClick={() => moveTile(id, 1)} aria-label={`${t("homeMoveDown")}: ${title}`} data-home-down={id}
+        className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/90 text-[#1b1300] shadow disabled:opacity-35"><ArrowDown className="h-5 w-5" strokeWidth={2.6} /></button>
     </div>
   );
 }
